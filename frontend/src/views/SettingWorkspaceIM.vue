@@ -19,7 +19,12 @@
             {{ item.name }}
           </div>
         </template>
-        <component :is="() => item.render()" />
+        <div>
+          <BBAttention v-if="item.enabled" class="mt-2 mb-4" type="success">
+            <template #default>IM App Enabled</template>
+          </BBAttention>
+          <component :is="() => item.render()" />
+        </div>
       </NTabPane>
     </NTabs>
     <div class="flex items-center justify-end space-x-2 pt-2">
@@ -56,6 +61,7 @@ import {
   AppIMSetting_Slack,
   AppIMSetting_Wecom,
 } from "@/types/proto/v1/setting_service";
+import { isDev } from "@/utils";
 
 interface LocalState {
   selectedTab: Webhook_Type;
@@ -85,8 +91,6 @@ const imSetting = computed(
 watch(
   () => imSetting.value,
   (setting) => {
-    console.log("setting change");
-    console.log(setting);
     state.setting = cloneDeep(setting);
   },
   { once: true, immediate: true }
@@ -121,6 +125,7 @@ const imList = computed(() => {
     {
       name: t("common.slack"),
       type: Webhook_Type.TYPE_SLACK,
+      enabled: state.setting.slack?.enabled,
       render: () => {
         return (
           <div>
@@ -140,6 +145,8 @@ const imList = computed(() => {
     {
       name: t("common.feishu"),
       type: Webhook_Type.TYPE_DINGTALK,
+      enabled: state.setting.feishu?.enabled,
+      hide: !isDev(),
       render: () => {
         return (
           <div class="space-y-4">
@@ -172,6 +179,8 @@ const imList = computed(() => {
     {
       name: t("common.wecom"),
       type: Webhook_Type.TYPE_WECOM,
+      enabled: state.setting.wecom?.enabled,
+      hide: !isDev(),
       render: () => {
         return (
           <div class="space-y-4">
@@ -201,7 +210,7 @@ const imList = computed(() => {
         );
       },
     },
-  ];
+  ].filter((item) => !item.hide);
 });
 
 const dataChanged = computed(() => {
@@ -256,15 +265,20 @@ const discardChanges = () => {
 const onSave = async () => {
   state.loading = true;
   const updateMask: string[] = [];
+  const data = cloneDeep(state.setting);
+
   switch (state.selectedTab) {
     case Webhook_Type.TYPE_SLACK:
       updateMask.push("value.app_im_setting_value.slack");
+      data.slack!.enabled = true;
       break;
     case Webhook_Type.TYPE_DINGTALK:
       updateMask.push("value.app_im_setting_value.feishu");
+      data.feishu!.enabled = true;
       break;
     case Webhook_Type.TYPE_WECOM:
       updateMask.push("value.app_im_setting_value.wecom");
+      data.wecom!.enabled = true;
       break;
   }
 
@@ -272,7 +286,7 @@ const onSave = async () => {
     const setting = await settingStore.upsertSetting({
       name: "bb.app.im",
       value: {
-        appImSettingValue: state.setting,
+        appImSettingValue: data,
       },
       updateMask,
     });
