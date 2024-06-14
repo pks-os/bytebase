@@ -90,7 +90,6 @@ func (m *Manager) CreateEvent(ctx context.Context, e *Event) {
 
 func (m *Manager) getWebhookContextFromEvent(ctx context.Context, e *Event, activityType api.ActivityType) (*webhook.Context, error) {
 	var webhookCtx webhook.Context
-	var webhookTaskResult *webhook.TaskResult
 	var mentions []string
 	var mentionUsers []*store.UserMessage
 
@@ -105,84 +104,78 @@ func (m *Manager) getWebhookContextFromEvent(ctx context.Context, e *Event, acti
 	link := fmt.Sprintf("%s/projects/%s/issues/%s-%d", setting.ExternalUrl, e.Project.ResourceID, slug.Make(e.Issue.Title), e.Issue.UID)
 	switch e.Type {
 	case EventTypeIssueCreate:
-		title = fmt.Sprintf("Issue created - %s", e.Issue.Title)
-		titleZh = fmt.Sprintf("创建工单 - %s", e.Issue.Title)
+		title = "Issue created"
+		titleZh = "创建工单"
 
 	case EventTypeIssueStatusUpdate:
 		switch e.Issue.Status {
 		case "OPEN":
-			title = fmt.Sprintf("Issue reopened - %s", e.Issue.Title)
-			titleZh = fmt.Sprintf("工单重开 - %s", e.Issue.Title)
+			title = "Issue reopened"
+			titleZh = "工单重开"
 		case "DONE":
 			level = webhook.WebhookSuccess
-			title = fmt.Sprintf("Issue resolved - %s", e.Issue.Title)
-			titleZh = fmt.Sprintf("工单完成 - %s", e.Issue.Title)
+			title = "Issue resolved"
+			titleZh = "工单完成"
 		case "CANCELED":
-			title = fmt.Sprintf("Issue canceled - %s", e.Issue.Title)
-			titleZh = fmt.Sprintf("工单取消 - %s", e.Issue.Title)
+			title = "Issue canceled"
+			titleZh = "工单取消"
 		}
 
 	case EventTypeIssueCommentCreate:
-		title = fmt.Sprintf("Comment created - %s", e.Issue.Title)
-		titleZh = fmt.Sprintf("工单新评论 - %s", e.Issue.Title)
+		title = "Comment created"
+		titleZh = "工单新评论"
 
 	case EventTypeIssueUpdate:
 		update := e.IssueUpdate
 		switch update.Path {
 		case "description":
-			title = fmt.Sprintf("Changed issue description - %s", e.Issue.Title)
-			titleZh = fmt.Sprintf("工单描述变更 - %s", e.Issue.Title)
+			title = "Changed issue description"
+			titleZh = "工单描述变更"
 		case "title":
-			title = fmt.Sprintf("Changed issue name - %s", e.Issue.Title)
-			titleZh = fmt.Sprintf("工单标题变更 - %s", e.Issue.Title)
+			title = "Changed issue name"
+			titleZh = "工单标题变更"
 		default:
-			title = fmt.Sprintf("Updated issue - %s", e.Issue.Title)
-			titleZh = fmt.Sprintf("工单信息变更 - %s", e.Issue.Title)
+			title = "Updated issue"
+			titleZh = "工单信息变更"
 		}
 
 	case EventTypeStageStatusUpdate:
 		u := e.StageStatusUpdate
 		link += fmt.Sprintf("?stage=%d", u.StageUID)
-		title = fmt.Sprintf("Stage ends - %s", u.StageTitle)
-		titleZh = fmt.Sprintf("阶段结束 - %s", u.StageTitle)
+		title = "Stage ends"
+		titleZh = "阶段结束"
 
 	case EventTypeTaskRunStatusUpdate:
 		u := e.TaskRunStatusUpdate
-		webhookTaskResult = &webhook.TaskResult{
-			Name:   u.Title,
-			Status: u.Status,
-		}
 		switch u.Status {
 		case api.TaskRunPending.String():
-			title = "Task run started - " + u.Title
-			titleZh = "任务开始 - " + u.Title
+			title = "Task run started"
+			titleZh = "任务开始"
 		case api.TaskRunRunning.String():
-			title = "Task run is running - " + u.Title
-			titleZh = "任务运行中 - " + u.Title
+			title = "Task run is running"
+			titleZh = "任务运行中"
 		case api.TaskRunDone.String():
 			level = webhook.WebhookSuccess
-			title = "Task run completed - " + u.Title
-			titleZh = "任务完成 - " + u.Title
+			title = "Task run completed"
+			titleZh = "任务完成"
 		case api.TaskRunFailed.String():
 			level = webhook.WebhookError
-			title = "Task run failed - " + u.Title
-			titleZh = "任务失败 - " + u.Title
-			webhookTaskResult.Detail = u.Detail
+			title = "Task run failed"
+			titleZh = "任务失败"
 		case api.TaskRunCanceled.String():
-			title = "Task run is canceled - " + u.Title
-			titleZh = "任务取消 - " + u.Title
+			title = "Task run is canceled"
+			titleZh = "任务取消"
 		case api.TaskRunSkipped.String():
-			title = "Task is skipped - " + u.Title
-			titleZh = "任务跳过 - " + u.Title
-			webhookTaskResult.SkippedReason = u.SkippedReason
+			title = "Task is skipped"
+			titleZh = "任务跳过"
 		default:
-			title = "Task run status changed - " + u.Title
-			titleZh = "任务状态变更 - " + u.Title
+			title = "Task run status changed"
+			titleZh = "任务状态变更"
 		}
 
 	case EventTypeIssueApprovalPass:
-		title = "Issue approved - " + e.Issue.Title
-		titleZh = "工单审批通过 - " + e.Issue.Title
+		title = "Issue approved"
+		titleZh = "工单审批通过"
 
 		mentionUsers = append(mentionUsers, e.Issue.Creator)
 		phone, err := maybeGetPhoneFromUser(e.Issue.Creator)
@@ -194,8 +187,8 @@ func (m *Manager) getWebhookContextFromEvent(ctx context.Context, e *Event, acti
 
 	case EventTypeIssueRolloutReady:
 		u := e.IssueRolloutReady
-		title = fmt.Sprintf("Issue is waiting for rollout (%s) - %s", u.StageName, e.Issue.Title)
-		titleZh = fmt.Sprintf("工单待发布 (%s) - %s", u.StageName, e.Issue.Title)
+		title = "Issue is waiting for rollout"
+		titleZh = "工单待发布"
 		var usersGetters []func(context.Context) ([]*store.UserMessage, error)
 		if u.RolloutPolicy.GetAutomatic() {
 			usersGetters = append(usersGetters, getUsersFromUsers(e.Issue.Creator))
@@ -248,8 +241,8 @@ func (m *Manager) getWebhookContextFromEvent(ctx context.Context, e *Event, acti
 	case EventTypeIssueApprovalCreate:
 		pendingStep := e.IssueApprovalCreate.ApprovalStep
 
-		title = "Issue approval needed - " + e.Issue.Title
-		titleZh = "工单待审批 - " + e.Issue.Title
+		title = "Issue approval needed"
+		titleZh = "工单待审批"
 
 		if len(pendingStep.Nodes) != 1 {
 			slog.Warn("Failed to post webhook event after changing the issue approval node status, pending step nodes length is not 1")
@@ -325,7 +318,8 @@ func (m *Manager) getWebhookContextFromEvent(ctx context.Context, e *Event, acti
 			ID:   e.Project.UID,
 			Name: e.Project.Title,
 		},
-		TaskResult:          webhookTaskResult,
+		Stage:               nil,
+		TaskResult:          nil,
 		Description:         e.Comment,
 		Link:                link,
 		CreatorID:           e.Actor.ID,
@@ -334,6 +328,20 @@ func (m *Manager) getWebhookContextFromEvent(ctx context.Context, e *Event, acti
 		MentionUsers:        mentionUsers,
 		MentionUsersByPhone: mentions,
 	}
+	if u := e.TaskRunStatusUpdate; u != nil {
+		webhookCtx.TaskResult = &webhook.TaskResult{
+			Name:          u.Title,
+			Status:        u.Status,
+			Detail:        u.Detail,
+			SkippedReason: u.SkippedReason,
+		}
+	}
+	if u := e.StageStatusUpdate; u != nil {
+		webhookCtx.Stage = &webhook.Stage{
+			Name: u.StageTitle,
+		}
+	}
+
 	return &webhookCtx, nil
 }
 
