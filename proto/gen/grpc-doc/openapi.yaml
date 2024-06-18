@@ -8667,6 +8667,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     description: The database engine of the branch.
                     format: enum
@@ -8849,6 +8850,16 @@ components:
                 version:
                     type: string
                     description: The migration version for a change.
+        CheckConstraintMetadata:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: The name is the name of a check constraint.
+                expression:
+                    type: string
+                    description: The expression is the expression of a check constraint.
+            description: CheckConstraintMetadata is the metadata for check constraints.
         CheckRequest:
             required:
                 - database
@@ -9106,6 +9117,12 @@ components:
                 region:
                     type: string
                     description: region is the location of where the DB is, works for AWS RDS. For example, us-east-1.
+                accountId:
+                    type: string
+                    description: account_id is used by Databricks.
+                warehouseId:
+                    type: string
+                    description: warehouse_id is used by Databricks.
         DataSourceExternalSecret:
             type: object
             properties:
@@ -9383,6 +9400,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     description: The database engine of the schema.
                     format: enum
@@ -9449,6 +9467,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     format: enum
                 oldSchema:
@@ -9941,6 +9960,11 @@ components:
                     description: |-
                         The key_lengths are the ordered key lengths of an index.
                          If the key length is not specified, it's -1.
+                descending:
+                    type: array
+                    items:
+                        type: boolean
+                    description: The descending is the ordered descending of an index.
                 type:
                     type: string
                     description: The type is the type of an index.
@@ -10007,6 +10031,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     format: enum
                 engineVersion:
@@ -10072,6 +10097,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     format: enum
                 engineVersion:
@@ -11455,6 +11481,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     format: enum
                 currentSchema:
@@ -12058,6 +12085,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     format: enum
                 comment:
@@ -12526,6 +12554,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     description: The SQL dialect.
                     format: enum
@@ -12777,6 +12806,7 @@ components:
                         - ELASTICSEARCH
                         - BIGQUERY
                         - DYNAMODB
+                        - DATABRICKS
                     type: string
                     description: The database engine of the schema string.
                     format: enum
@@ -12935,6 +12965,11 @@ components:
                     items:
                         $ref: '#/components/schemas/TablePartitionMetadata'
                     description: The partitions is the list of partitions in a table.
+                checkConstraints:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/CheckConstraintMetadata'
+                    description: The check_constraints is the list of check constraints in a table.
             description: TableMetadata is the metadata for tables.
         TablePartitionMetadata:
             type: object
@@ -13884,6 +13919,14 @@ components:
                     pattern: ^-?(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,9})?s$
                     type: string
                     description: The max duration for role expired.
+                domains:
+                    type: array
+                    items:
+                        type: string
+                    description: The workspace domain, e.g. bytebase.com.
+                enforceIdentityDomain:
+                    type: boolean
+                    description: Only user and group from the domains can be created and login.
         WorkspaceTrialSetting:
             type: object
             properties:

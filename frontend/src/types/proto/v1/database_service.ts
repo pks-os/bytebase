@@ -482,6 +482,16 @@ export interface TableMetadata {
   foreignKeys: ForeignKeyMetadata[];
   /** The partitions is the list of partitions in a table. */
   partitions: TablePartitionMetadata[];
+  /** The check_constraints is the list of check constraints in a table. */
+  checkConstraints: CheckConstraintMetadata[];
+}
+
+/** CheckConstraintMetadata is the metadata for check constraints. */
+export interface CheckConstraintMetadata {
+  /** The name is the name of a check constraint. */
+  name: string;
+  /** The expression is the expression of a check constraint. */
+  expression: string;
 }
 
 /** TablePartitionMetadata is the metadata for table partitions. */
@@ -993,6 +1003,8 @@ export interface IndexMetadata {
    * If the key length is not specified, it's -1.
    */
   keyLength: Long[];
+  /** The descending is the ordered descending of an index. */
+  descending: boolean[];
   /** The type is the type of an index. */
   type: string;
   /** The unique is whether the index is unique. */
@@ -3619,6 +3631,7 @@ function createBaseTableMetadata(): TableMetadata {
     userComment: "",
     foreignKeys: [],
     partitions: [],
+    checkConstraints: [],
   };
 }
 
@@ -3665,6 +3678,9 @@ export const TableMetadata = {
     }
     for (const v of message.partitions) {
       TablePartitionMetadata.encode(v!, writer.uint32(122).fork()).ldelim();
+    }
+    for (const v of message.checkConstraints) {
+      CheckConstraintMetadata.encode(v!, writer.uint32(130).fork()).ldelim();
     }
     return writer;
   },
@@ -3774,6 +3790,13 @@ export const TableMetadata = {
 
           message.partitions.push(TablePartitionMetadata.decode(reader, reader.uint32()));
           continue;
+        case 16:
+          if (tag !== 130) {
+            break;
+          }
+
+          message.checkConstraints.push(CheckConstraintMetadata.decode(reader, reader.uint32()));
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3806,6 +3829,9 @@ export const TableMetadata = {
         : [],
       partitions: globalThis.Array.isArray(object?.partitions)
         ? object.partitions.map((e: any) => TablePartitionMetadata.fromJSON(e))
+        : [],
+      checkConstraints: globalThis.Array.isArray(object?.checkConstraints)
+        ? object.checkConstraints.map((e: any) => CheckConstraintMetadata.fromJSON(e))
         : [],
     };
   },
@@ -3854,6 +3880,9 @@ export const TableMetadata = {
     if (message.partitions?.length) {
       obj.partitions = message.partitions.map((e) => TablePartitionMetadata.toJSON(e));
     }
+    if (message.checkConstraints?.length) {
+      obj.checkConstraints = message.checkConstraints.map((e) => CheckConstraintMetadata.toJSON(e));
+    }
     return obj;
   },
 
@@ -3884,6 +3913,81 @@ export const TableMetadata = {
     message.userComment = object.userComment ?? "";
     message.foreignKeys = object.foreignKeys?.map((e) => ForeignKeyMetadata.fromPartial(e)) || [];
     message.partitions = object.partitions?.map((e) => TablePartitionMetadata.fromPartial(e)) || [];
+    message.checkConstraints = object.checkConstraints?.map((e) => CheckConstraintMetadata.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseCheckConstraintMetadata(): CheckConstraintMetadata {
+  return { name: "", expression: "" };
+}
+
+export const CheckConstraintMetadata = {
+  encode(message: CheckConstraintMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.expression !== "") {
+      writer.uint32(18).string(message.expression);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CheckConstraintMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckConstraintMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expression = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckConstraintMetadata {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      expression: isSet(object.expression) ? globalThis.String(object.expression) : "",
+    };
+  },
+
+  toJSON(message: CheckConstraintMetadata): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.expression !== "") {
+      obj.expression = message.expression;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckConstraintMetadata>): CheckConstraintMetadata {
+    return CheckConstraintMetadata.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckConstraintMetadata>): CheckConstraintMetadata {
+    const message = createBaseCheckConstraintMetadata();
+    message.name = object.name ?? "";
+    message.expression = object.expression ?? "";
     return message;
   },
 };
@@ -5232,6 +5336,7 @@ function createBaseIndexMetadata(): IndexMetadata {
     name: "",
     expressions: [],
     keyLength: [],
+    descending: [],
     type: "",
     unique: false,
     primary: false,
@@ -5252,6 +5357,11 @@ export const IndexMetadata = {
     writer.uint32(74).fork();
     for (const v of message.keyLength) {
       writer.int64(v);
+    }
+    writer.ldelim();
+    writer.uint32(82).fork();
+    for (const v of message.descending) {
+      writer.bool(v);
     }
     writer.ldelim();
     if (message.type !== "") {
@@ -5307,6 +5417,23 @@ export const IndexMetadata = {
             const end2 = reader.uint32() + reader.pos;
             while (reader.pos < end2) {
               message.keyLength.push(reader.int64() as Long);
+            }
+
+            continue;
+          }
+
+          break;
+        case 10:
+          if (tag === 80) {
+            message.descending.push(reader.bool());
+
+            continue;
+          }
+
+          if (tag === 82) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.descending.push(reader.bool());
             }
 
             continue;
@@ -5371,6 +5498,9 @@ export const IndexMetadata = {
         ? object.expressions.map((e: any) => globalThis.String(e))
         : [],
       keyLength: globalThis.Array.isArray(object?.keyLength) ? object.keyLength.map((e: any) => Long.fromValue(e)) : [],
+      descending: globalThis.Array.isArray(object?.descending)
+        ? object.descending.map((e: any) => globalThis.Boolean(e))
+        : [],
       type: isSet(object.type) ? globalThis.String(object.type) : "",
       unique: isSet(object.unique) ? globalThis.Boolean(object.unique) : false,
       primary: isSet(object.primary) ? globalThis.Boolean(object.primary) : false,
@@ -5390,6 +5520,9 @@ export const IndexMetadata = {
     }
     if (message.keyLength?.length) {
       obj.keyLength = message.keyLength.map((e) => (e || Long.ZERO).toString());
+    }
+    if (message.descending?.length) {
+      obj.descending = message.descending;
     }
     if (message.type !== "") {
       obj.type = message.type;
@@ -5420,6 +5553,7 @@ export const IndexMetadata = {
     message.name = object.name ?? "";
     message.expressions = object.expressions?.map((e) => e) || [];
     message.keyLength = object.keyLength?.map((e) => Long.fromValue(e)) || [];
+    message.descending = object.descending?.map((e) => e) || [];
     message.type = object.type ?? "";
     message.unique = object.unique ?? false;
     message.primary = object.primary ?? false;

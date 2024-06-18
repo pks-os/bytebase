@@ -354,6 +354,10 @@
             <ul>
               
                 <li>
+                  <a href="#bytebase.store.CheckConstraintMetadata"><span class="badge">M</span>CheckConstraintMetadata</a>
+                </li>
+              
+                <li>
                   <a href="#bytebase.store.ColumnConfig"><span class="badge">M</span>ColumnConfig</a>
                 </li>
               
@@ -2649,6 +2653,37 @@ Some fields are omitted because they are too large or contain sensitive informat
       <p></p>
 
       
+        <h3 id="bytebase.store.CheckConstraintMetadata">CheckConstraintMetadata</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name is the name of a check constraint. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>expression</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The expression is the expression of a check constraint. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="bytebase.store.ColumnConfig">ColumnConfig</h3>
         <p></p>
 
@@ -3346,6 +3381,13 @@ This could refer to a column or an expression. </p></td>
                   <td>repeated</td>
                   <td><p>The key_lengths are the ordered key lengths of an index.
 If the key length is not specified, it&#39;s -1. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>descending</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td>repeated</td>
+                  <td><p>The descending is the ordered descending of an index. </p></td>
                 </tr>
               
                 <tr>
@@ -4048,6 +4090,13 @@ classification and user_comment is parsed from the comment. </p></td>
                   <td><a href="#bytebase.store.TablePartitionMetadata">TablePartitionMetadata</a></td>
                   <td>repeated</td>
                   <td><p>The partitions is the list of partitions in a table. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>check_constraints</td>
+                  <td><a href="#bytebase.store.CheckConstraintMetadata">CheckConstraintMetadata</a></td>
+                  <td>repeated</td>
+                  <td><p>The check_constraints is the list of check constraints in a table. </p></td>
                 </tr>
               
             </tbody>
@@ -4915,6 +4964,13 @@ Used for authentication when connecting to the data source. </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>account_id is used by Databricks. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>warehouse_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>warehouse_id is used by Databricks. </p></td>
                 </tr>
               
             </tbody>
@@ -9351,6 +9407,20 @@ GitOps workflow. The webhook endpoint points to the backend. </p></td>
                   <td><a href="#google.protobuf.Duration">google.protobuf.Duration</a></td>
                   <td></td>
                   <td><p>The max duration for role expired. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>domains</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>The workspace domain, e.g. bytebase.com. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>enforce_identity_domain</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>Only user and group from the domains can be created and login. </p></td>
                 </tr>
               
             </tbody>

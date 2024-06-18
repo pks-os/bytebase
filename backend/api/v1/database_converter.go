@@ -178,6 +178,7 @@ func convertStoreTableMetadata(table *storepb.TableMetadata) *v1pb.TableMetadata
 			Name:        index.Name,
 			Expressions: index.Expressions,
 			KeyLength:   index.KeyLength,
+			Descending:  index.Descending,
 			Type:        index.Type,
 			Unique:      index.Unique,
 			Primary:     index.Primary,
@@ -199,6 +200,15 @@ func convertStoreTableMetadata(table *storepb.TableMetadata) *v1pb.TableMetadata
 			OnDelete:          foreignKey.OnDelete,
 			OnUpdate:          foreignKey.OnUpdate,
 			MatchType:         foreignKey.MatchType,
+		})
+	}
+	for _, check := range table.CheckConstraints {
+		if check == nil {
+			continue
+		}
+		t.CheckConstraints = append(t.CheckConstraints, &v1pb.CheckConstraintMetadata{
+			Name:       check.Name,
+			Expression: check.Expression,
 		})
 	}
 	return t
@@ -570,6 +580,7 @@ func convertV1TableMetadata(table *v1pb.TableMetadata) *storepb.TableMetadata {
 			Name:        index.Name,
 			Expressions: index.Expressions,
 			KeyLength:   index.KeyLength,
+			Descending:  index.Descending,
 			Type:        index.Type,
 			Unique:      index.Unique,
 			Primary:     index.Primary,
@@ -598,6 +609,15 @@ func convertV1TableMetadata(table *v1pb.TableMetadata) *storepb.TableMetadata {
 			continue
 		}
 		t.Partitions = append(t.Partitions, convertV1TablePartitionMetadata(partition))
+	}
+	for _, check := range table.CheckConstraints {
+		if check == nil {
+			continue
+		}
+		t.CheckConstraints = append(t.CheckConstraints, &storepb.CheckConstraintMetadata{
+			Name:       check.Name,
+			Expression: check.Expression,
+		})
 	}
 	return t
 }

@@ -194,6 +194,17 @@ message TableMetadata {
 
   // The partitions is the list of partitions in a table.
   repeated TablePartitionMetadata partitions = 15;
+
+  // The check_constraints is the list of check constraints in a table.
+  repeated CheckConstraintMetadata check_constraints = 16;
+}
+
+message CheckConstraintMetadata {
+  // The name is the name of a check constraint.
+  string name = 1;
+
+  // The expression is the expression of a check constraint.
+  string expression = 2;
 }
 
 message ExternalTableMetadata {
@@ -386,6 +397,9 @@ message IndexMetadata {
   // The key_lengths are the ordered key lengths of an index.
   // If the key length is not specified, it's -1.
   repeated int64 key_length = 9;
+
+  // The descending is the ordered descending of an index.
+  repeated bool descending = 10;
 
   // The type is the type of an index.
   string type = 3;

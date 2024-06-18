@@ -49,6 +49,7 @@
     - [AuditLog.Severity](#bytebase-store-AuditLog-Severity)
   
 - [store/database.proto](#store_database-proto)
+    - [CheckConstraintMetadata](#bytebase-store-CheckConstraintMetadata)
     - [ColumnConfig](#bytebase-store-ColumnConfig)
     - [ColumnConfig.LabelsEntry](#bytebase-store-ColumnConfig-LabelsEntry)
     - [ColumnMetadata](#bytebase-store-ColumnMetadata)
@@ -880,6 +881,22 @@ Used internally for obfuscating the page token.
 
 
 
+<a name="bytebase-store-CheckConstraintMetadata"></a>
+
+### CheckConstraintMetadata
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the name of a check constraint. |
+| expression | [string](#string) |  | The expression is the expression of a check constraint. |
+
+
+
+
+
+
 <a name="bytebase-store-ColumnConfig"></a>
 
 ### ColumnConfig
@@ -1147,6 +1164,7 @@ IndexMetadata is the metadata for indexes.
 | name | [string](#string) |  | The name is the name of an index. |
 | expressions | [string](#string) | repeated | The expressions are the ordered columns or expressions of an index. This could refer to a column or an expression. |
 | key_length | [int64](#int64) | repeated | The key_lengths are the ordered key lengths of an index. If the key length is not specified, it&#39;s -1. |
+| descending | [bool](#bool) | repeated | The descending is the ordered descending of an index. |
 | type | [string](#string) |  | The type is the type of an index. |
 | unique | [bool](#bool) |  | The unique is whether the index is unique. |
 | primary | [bool](#bool) |  | The primary is whether the index is a primary key index. |
@@ -1398,6 +1416,7 @@ TableMetadata is the metadata for tables.
 | user_comment | [string](#string) |  | The user_comment is the user comment of a table parsed from the comment. |
 | foreign_keys | [ForeignKeyMetadata](#bytebase-store-ForeignKeyMetadata) | repeated | The foreign_keys is the list of foreign keys in a table. |
 | partitions | [TablePartitionMetadata](#bytebase-store-TablePartitionMetadata) | repeated | The partitions is the list of partitions in a table. |
+| check_constraints | [CheckConstraintMetadata](#bytebase-store-CheckConstraintMetadata) | repeated | The check_constraints is the list of check constraints in a table. |
 
 
 
@@ -1737,6 +1756,7 @@ PostgreSQL: RANGE, LIST, HASH (https://www.postgresql.org/docs/current/ddl-parti
 | direct_connection | [bool](#bool) |  | direct_connection is used for MongoDB to dispatch all the operations to the node specified in the connection string. |
 | region | [string](#string) |  | region is the location of where the DB is, works for AWS RDS. For example, us-east-1. |
 | account_id | [string](#string) |  | account_id is used by Databricks. |
+| warehouse_id | [string](#string) |  | warehouse_id is used by Databricks. |
 
 
 
@@ -3754,6 +3774,8 @@ The external URL is used for: 1. Constructing the correct callback URL when conf
 | token_duration | [google.protobuf.Duration](#google-protobuf-Duration) |  | The duration for token. |
 | announcement | [Announcement](#bytebase-store-Announcement) |  | The setting of custom announcement |
 | maximum_role_expiration | [google.protobuf.Duration](#google-protobuf-Duration) |  | The max duration for role expired. |
+| domains | [string](#string) | repeated | The workspace domain, e.g. bytebase.com. |
+| enforce_identity_domain | [bool](#bool) |  | Only user and group from the domains can be created and login. |
 
 
 
