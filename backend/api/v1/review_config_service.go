@@ -6,7 +6,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -90,6 +89,9 @@ func (s *ReviewConfigService) GetReviewConfig(ctx context.Context, request *v1pb
 	message, err := s.store.GetReviewConfig(ctx, id)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+	if message == nil {
+		return nil, status.Errorf(codes.NotFound, "cannot found review config %s", request.Name)
 	}
 	return s.convertToV1ReviewConfig(ctx, message)
 }
@@ -207,7 +209,7 @@ func (s *ReviewConfigService) convertToV1ReviewConfig(ctx context.Context, revie
 
 	for _, policy := range tagPolicies {
 		p := &v1pb.TagPolicy{}
-		if err := protojson.Unmarshal([]byte(policy.Payload), p); err != nil {
+		if err := common.ProtojsonUnmarshaler.Unmarshal([]byte(policy.Payload), p); err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to unmarshal tag policy, error %v", err)
 		}
 		if p.Tags[string(api.ReservedTagReviewConfig)] != config.Name {
