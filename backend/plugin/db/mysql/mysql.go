@@ -166,6 +166,7 @@ func registerRDSMysqlCerts(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	pem, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -335,12 +336,6 @@ func (d *Driver) Execute(ctx context.Context, statement string, opts db.ExecuteO
 		}
 		originalIndex = []int32{0}
 	}
-
-	tx, err := conn.BeginTx(ctx, nil)
-	if err != nil {
-		return 0, errors.Wrapf(err, "failed to begin execute transaction")
-	}
-	defer tx.Rollback()
 
 	var totalRowsAffected int64
 
