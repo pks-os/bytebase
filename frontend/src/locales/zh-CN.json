@@ -706,6 +706,16 @@
         "restrict-issue-creation-for-sql-review": {
           "title": "禁止提交包含错误告警的工单",
           "description": "启用后，只有在预览阶段不包含任何“错误”级别告警的工单才能被提交。"
+        },
+        "database-change-mode": {
+          "self": "数据库变更模式",
+          "description": "控制用户如何进行数据库变更。工单模式使用工单/任务工作流和自定义审批流来实现结构化流程。SQL 编辑器模式允许用户在 SQL 编辑器中直接执行变更语句，以便快速简单地进行更改。",
+          "issue-mode": {
+            "self": "工单模式"
+          },
+          "sql-editor-mode": {
+            "self": "SQL 编辑器模式"
+          }
         }
       }
     },
@@ -1987,10 +1997,24 @@
         "no-protection-rule-configured": "没有配置分支保护规则。",
         "only-apply-to-main-branches": "只对主分支生效"
       },
-      "labels": {
-        "issue-labels": "工单标签",
-        "configure-labels": "配置标签",
-        "force-issue-labels": "要求所有工单都必须有标签"
+      "issue-related": {
+        "self": "工单相关",
+        "labels": {
+          "self": "标签",
+          "configure-labels": "配置标签",
+          "force-issue-labels": {
+            "self": "要求所有工单都必须有标签",
+            "description": "创建工单时必须添加至少一个标签。"
+          }
+        },
+        "allow-modify-statement": {
+          "self": "允许工单创建后修改语句",
+          "description": "允许用户在创建工单后修改该变更语句。"
+        },
+        "auto-resolve-issue": {
+          "self": "自动解决工单",
+          "description": "所有任务完成后自动解决工单。"
+        }
       }
     },
     "members": {
@@ -2274,7 +2298,12 @@
     "rows-upper-limit": "到达查询结果条数上限",
     "tab-mode": {
       "readonly": "只读",
-      "admin": "管理员"
+      "admin": "管理员",
+      "standard": "标准",
+      "description": {
+        "standard": "支持 DDL 和 DML 语句。",
+        "readonly": "支持 SELECT、SHOW 和 SET 语句。"
+      }
     },
     "close-sheet": "关闭工作表",
     "connect": "连接",
@@ -2338,7 +2367,12 @@
     },
     "n-per-page": "{n} / 页",
     "customize-tree-structure": "自定义树结构",
-    "will-override-current-editing-statement": "将会覆盖当前的编辑中语句。"
+    "will-override-current-editing-statement": "将会覆盖当前的编辑中语句。",
+    "standard-mode": {
+      "self": "标准模式"
+    },
+    "to-enable-standard-mode": "来开启标准模式",
+    "add-a-new-instance": "添加实例"
   },
   "schema-editor": {
     "self": "Schema 编辑器",
@@ -2772,11 +2806,9 @@
         "display-name-default": "SQL 审核策略",
         "display-name-label": "用以区分不同审核策略的名称。",
         "attach-resource": "附加到资源",
-        "attach-resource-label": "将审核政策应用到选定的资源。一个资源只能关联一个政策。",
-        "environments-select": "选择环境",
-        "no-linked-environments": "没有选择环境",
-        "no-available-environment": "没有可供选择的环境",
-        "no-available-environment-desc": "没有可供选择的环境。一个环境只能关联一个审核策略。",
+        "attach-resource-label": "将审核策略应用于所选资源。一个资源只能关联一个策略。数据库将使用附加到项目的 SQL 审核策略，否则将回退到环境策略。",
+        "attach-resource-info-environment": "SQL 审查策略将影响属于所选环境的所有数据库。",
+        "attach-resource-info-project": "SQL 审核策略将影响所选项目下的所有数据库。环境的 SQL 审核策略将被忽略。",
         "choose-template": "选择模板"
       },
       "configure-rule": {
@@ -3281,6 +3313,7 @@
     },
     "select": "选择角色",
     "select-roles": "选择角色",
+    "default-workspace-role": "用户将默认获得“工作区成员”角色",
     "title": "称谓",
     "select-role": "选择角色",
     "expired-tip": "该角色可能已经过期。",

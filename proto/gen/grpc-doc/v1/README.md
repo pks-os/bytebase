@@ -568,6 +568,7 @@
     - [WorkspaceTrialSetting](#bytebase-v1-WorkspaceTrialSetting)
   
     - [Announcement.AlertLevel](#bytebase-v1-Announcement-AlertLevel)
+    - [DatabaseChangeMode](#bytebase-v1-DatabaseChangeMode)
     - [MaskingAlgorithmSetting.Algorithm.InnerOuterMask.MaskType](#bytebase-v1-MaskingAlgorithmSetting-Algorithm-InnerOuterMask-MaskType)
     - [SMTPMailDeliverySettingValue.Authentication](#bytebase-v1-SMTPMailDeliverySettingValue-Authentication)
     - [SMTPMailDeliverySettingValue.Encryption](#bytebase-v1-SMTPMailDeliverySettingValue-Encryption)
@@ -1816,7 +1817,7 @@ InstanceOptions is the option for instances.
 | primary | [string](#string) |  |  |
 | instance | [string](#string) |  |  |
 | realm | [string](#string) |  |  |
-| keytab | [string](#string) |  |  |
+| keytab | [bytes](#bytes) |  |  |
 | kdc_host | [string](#string) |  |  |
 | kdc_port | [string](#string) |  |  |
 | kdc_transport_protocol | [string](#string) |  |  |
@@ -3154,6 +3155,7 @@ TableMetadata is the metadata for tables.
 | indexes | [IndexMetadata](#bytebase-v1-IndexMetadata) | repeated | The indexes is the list of indexes in a table. |
 | engine | [string](#string) |  | The engine is the engine of a table. |
 | collation | [string](#string) |  | The collation is the collation of a table. |
+| charset | [string](#string) |  | The character set of table. |
 | row_count | [int64](#int64) |  | The row_count is the estimated number of rows of a table. |
 | data_size | [int64](#int64) |  | The data_size is the estimated data size of a table. |
 | index_size | [int64](#int64) |  | The index_size is the estimated index size of a table. |
@@ -6928,7 +6930,9 @@ When paginating, all other parameters provided to `ListProjects` must match the 
 | webhooks | [Webhook](#bytebase-v1-Webhook) | repeated |  |
 | data_classification_config_id | [string](#string) |  |  |
 | issue_labels | [Label](#bytebase-v1-Label) | repeated |  |
-| force_issue_labels | [bool](#bool) |  |  |
+| force_issue_labels | [bool](#bool) |  | Force issue labels to be used when creating an issue. |
+| allow_modify_statement | [bool](#bool) |  | Allow modifying statement after issue is created. |
+| auto_resolve_issue | [bool](#bool) |  | Enable auto resolve issue. |
 
 
 
@@ -8695,7 +8699,8 @@ When paginating, all other parameters provided to `ListRolloutTaskRuns` must mat
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | enabled | [bool](#bool) |  |  |
-| id | [string](#string) |  |  |
+| corp_id | [string](#string) |  |  |
+| agent_id | [string](#string) |  |  |
 | secret | [string](#string) |  |  |
 
 
@@ -9245,6 +9250,7 @@ The external URL is used for: 1. Constructing the correct callback URL when conf
 | maximum_role_expiration | [google.protobuf.Duration](#google-protobuf-Duration) |  | The max duration for role expired. |
 | domains | [string](#string) | repeated | The workspace domain, e.g. bytebase.com. |
 | enforce_identity_domain | [bool](#bool) |  | Only user and group from the domains can be created and login. |
+| database_change_mode | [DatabaseChangeMode](#bytebase-v1-DatabaseChangeMode) |  | The workspace database change mode. |
 
 
 
@@ -9284,6 +9290,19 @@ We support three levels of AlertLevel: INFO, WARNING, and ERROR.
 | ALERT_LEVEL_INFO | 1 |  |
 | ALERT_LEVEL_WARNING | 2 |  |
 | ALERT_LEVEL_CRITICAL | 3 |  |
+
+
+
+<a name="bytebase-v1-DatabaseChangeMode"></a>
+
+### DatabaseChangeMode
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DATABASE_CHANGE_MODE_UNSPECIFIED | 0 |  |
+| PIPELINE | 1 | A more advanced database change process, including custom approval workflows and other advanced features. Default to this mode. |
+| EDITOR | 2 | A simple database change process in SQL editor. Users can execute SQL directly. |
 
 
 

@@ -172,8 +172,9 @@ message AppIMSetting {
   }
   message Wecom {
     bool enabled = 1;
-    string id = 2 [(google.api.field_behavior) = INPUT_ONLY];
-    string secret = 3 [(google.api.field_behavior) = INPUT_ONLY];
+    string corp_id = 2 [(google.api.field_behavior) = INPUT_ONLY];
+    string agent_id = 3 [(google.api.field_behavior) = INPUT_ONLY];
+    string secret = 4 [(google.api.field_behavior) = INPUT_ONLY];
   }
 
   Slack slack = 1;
@@ -223,6 +224,9 @@ message WorkspaceProfileSetting {
 
   // Only user and group from the domains can be created and login.
   bool enforce_identity_domain = 10;
+
+  // The workspace database change mode.
+  DatabaseChangeMode database_change_mode = 11;
 }
 
 message Announcement {
@@ -438,4 +442,13 @@ message MaskingAlgorithmSetting {
 
   // algorithms is the list of masking algorithms.
   repeated Algorithm algorithms = 1;
+}
+
+enum DatabaseChangeMode {
+  DATABASE_CHANGE_MODE_UNSPECIFIED = 0;
+  // A more advanced database change process, including custom approval workflows and other advanced features.
+  // Default to this mode.
+  PIPELINE = 1;
+  // A simple database change process in SQL editor. Users can execute SQL directly.
+  EDITOR = 2;
 }

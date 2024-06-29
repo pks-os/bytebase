@@ -12,6 +12,64 @@ import { PlanType, planTypeFromJSON, planTypeToJSON, planTypeToNumber } from "./
 
 export const protobufPackage = "bytebase.v1";
 
+export enum DatabaseChangeMode {
+  DATABASE_CHANGE_MODE_UNSPECIFIED = "DATABASE_CHANGE_MODE_UNSPECIFIED",
+  /**
+   * PIPELINE - A more advanced database change process, including custom approval workflows and other advanced features.
+   * Default to this mode.
+   */
+  PIPELINE = "PIPELINE",
+  /** EDITOR - A simple database change process in SQL editor. Users can execute SQL directly. */
+  EDITOR = "EDITOR",
+  UNRECOGNIZED = "UNRECOGNIZED",
+}
+
+export function databaseChangeModeFromJSON(object: any): DatabaseChangeMode {
+  switch (object) {
+    case 0:
+    case "DATABASE_CHANGE_MODE_UNSPECIFIED":
+      return DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED;
+    case 1:
+    case "PIPELINE":
+      return DatabaseChangeMode.PIPELINE;
+    case 2:
+    case "EDITOR":
+      return DatabaseChangeMode.EDITOR;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return DatabaseChangeMode.UNRECOGNIZED;
+  }
+}
+
+export function databaseChangeModeToJSON(object: DatabaseChangeMode): string {
+  switch (object) {
+    case DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED:
+      return "DATABASE_CHANGE_MODE_UNSPECIFIED";
+    case DatabaseChangeMode.PIPELINE:
+      return "PIPELINE";
+    case DatabaseChangeMode.EDITOR:
+      return "EDITOR";
+    case DatabaseChangeMode.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+export function databaseChangeModeToNumber(object: DatabaseChangeMode): number {
+  switch (object) {
+    case DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED:
+      return 0;
+    case DatabaseChangeMode.PIPELINE:
+      return 1;
+    case DatabaseChangeMode.EDITOR:
+      return 2;
+    case DatabaseChangeMode.UNRECOGNIZED:
+    default:
+      return -1;
+  }
+}
+
 export interface ListSettingsRequest {
   /**
    * The maximum number of settings to return. The service may return fewer than
@@ -281,7 +339,8 @@ export interface AppIMSetting_Feishu {
 
 export interface AppIMSetting_Wecom {
   enabled: boolean;
-  id: string;
+  corpId: string;
+  agentId: string;
   secret: string;
 }
 
@@ -325,6 +384,8 @@ export interface WorkspaceProfileSetting {
   domains: string[];
   /** Only user and group from the domains can be created and login. */
   enforceIdentityDomain: boolean;
+  /** The workspace database change mode. */
+  databaseChangeMode: DatabaseChangeMode;
 }
 
 export interface Announcement {
@@ -1861,7 +1922,7 @@ export const AppIMSetting_Feishu = {
 };
 
 function createBaseAppIMSetting_Wecom(): AppIMSetting_Wecom {
-  return { enabled: false, id: "", secret: "" };
+  return { enabled: false, corpId: "", agentId: "", secret: "" };
 }
 
 export const AppIMSetting_Wecom = {
@@ -1869,11 +1930,14 @@ export const AppIMSetting_Wecom = {
     if (message.enabled === true) {
       writer.uint32(8).bool(message.enabled);
     }
-    if (message.id !== "") {
-      writer.uint32(18).string(message.id);
+    if (message.corpId !== "") {
+      writer.uint32(18).string(message.corpId);
+    }
+    if (message.agentId !== "") {
+      writer.uint32(26).string(message.agentId);
     }
     if (message.secret !== "") {
-      writer.uint32(26).string(message.secret);
+      writer.uint32(34).string(message.secret);
     }
     return writer;
   },
@@ -1897,10 +1961,17 @@ export const AppIMSetting_Wecom = {
             break;
           }
 
-          message.id = reader.string();
+          message.corpId = reader.string();
           continue;
         case 3:
           if (tag !== 26) {
+            break;
+          }
+
+          message.agentId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
             break;
           }
 
@@ -1918,7 +1989,8 @@ export const AppIMSetting_Wecom = {
   fromJSON(object: any): AppIMSetting_Wecom {
     return {
       enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
-      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      corpId: isSet(object.corpId) ? globalThis.String(object.corpId) : "",
+      agentId: isSet(object.agentId) ? globalThis.String(object.agentId) : "",
       secret: isSet(object.secret) ? globalThis.String(object.secret) : "",
     };
   },
@@ -1928,8 +2000,11 @@ export const AppIMSetting_Wecom = {
     if (message.enabled === true) {
       obj.enabled = message.enabled;
     }
-    if (message.id !== "") {
-      obj.id = message.id;
+    if (message.corpId !== "") {
+      obj.corpId = message.corpId;
+    }
+    if (message.agentId !== "") {
+      obj.agentId = message.agentId;
     }
     if (message.secret !== "") {
       obj.secret = message.secret;
@@ -1943,7 +2018,8 @@ export const AppIMSetting_Wecom = {
   fromPartial(object: DeepPartial<AppIMSetting_Wecom>): AppIMSetting_Wecom {
     const message = createBaseAppIMSetting_Wecom();
     message.enabled = object.enabled ?? false;
-    message.id = object.id ?? "";
+    message.corpId = object.corpId ?? "";
+    message.agentId = object.agentId ?? "";
     message.secret = object.secret ?? "";
     return message;
   },
@@ -2035,6 +2111,7 @@ function createBaseWorkspaceProfileSetting(): WorkspaceProfileSetting {
     maximumRoleExpiration: undefined,
     domains: [],
     enforceIdentityDomain: false,
+    databaseChangeMode: DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED,
   };
 }
 
@@ -2069,6 +2146,9 @@ export const WorkspaceProfileSetting = {
     }
     if (message.enforceIdentityDomain === true) {
       writer.uint32(80).bool(message.enforceIdentityDomain);
+    }
+    if (message.databaseChangeMode !== DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED) {
+      writer.uint32(88).int32(databaseChangeModeToNumber(message.databaseChangeMode));
     }
     return writer;
   },
@@ -2150,6 +2230,13 @@ export const WorkspaceProfileSetting = {
 
           message.enforceIdentityDomain = reader.bool();
           continue;
+        case 11:
+          if (tag !== 88) {
+            break;
+          }
+
+          message.databaseChangeMode = databaseChangeModeFromJSON(reader.int32());
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2177,6 +2264,9 @@ export const WorkspaceProfileSetting = {
       enforceIdentityDomain: isSet(object.enforceIdentityDomain)
         ? globalThis.Boolean(object.enforceIdentityDomain)
         : false,
+      databaseChangeMode: isSet(object.databaseChangeMode)
+        ? databaseChangeModeFromJSON(object.databaseChangeMode)
+        : DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED,
     };
   },
 
@@ -2212,6 +2302,9 @@ export const WorkspaceProfileSetting = {
     if (message.enforceIdentityDomain === true) {
       obj.enforceIdentityDomain = message.enforceIdentityDomain;
     }
+    if (message.databaseChangeMode !== DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED) {
+      obj.databaseChangeMode = databaseChangeModeToJSON(message.databaseChangeMode);
+    }
     return obj;
   },
 
@@ -2237,6 +2330,7 @@ export const WorkspaceProfileSetting = {
         : undefined;
     message.domains = object.domains?.map((e) => e) || [];
     message.enforceIdentityDomain = object.enforceIdentityDomain ?? false;
+    message.databaseChangeMode = object.databaseChangeMode ?? DatabaseChangeMode.DATABASE_CHANGE_MODE_UNSPECIFIED;
     return message;
   },
 };

@@ -27,6 +27,7 @@ import (
 	"github.com/bytebase/bytebase/backend/plugin/schema"
 	"github.com/bytebase/bytebase/backend/plugin/webhook/feishu"
 	"github.com/bytebase/bytebase/backend/plugin/webhook/slack"
+	"github.com/bytebase/bytebase/backend/plugin/webhook/wecom"
 	"github.com/bytebase/bytebase/backend/store"
 	storepb "github.com/bytebase/bytebase/proto/generated-go/store"
 	v1pb "github.com/bytebase/bytebase/proto/generated-go/v1"
@@ -243,6 +244,8 @@ func (s *SettingService) UpdateSetting(ctx context.Context, request *v1pb.Update
 				oldSetting.Domains = payload.Domains
 			case "value.workspace_profile_setting_value.enforce_identity_domain":
 				oldSetting.EnforceIdentityDomain = payload.EnforceIdentityDomain
+			case "value.workspace_profile_setting_value.database_change_mode":
+				oldSetting.DatabaseChangeMode = payload.DatabaseChangeMode
 			default:
 				return nil, status.Errorf(codes.InvalidArgument, "invalid update mask path %v", path)
 			}
@@ -391,17 +394,22 @@ func (s *SettingService) UpdateSetting(ctx context.Context, request *v1pb.Update
 			switch path {
 			case "value.app_im_setting_value.slack":
 				if err := slack.ValidateToken(ctx, payload.Slack.GetToken()); err != nil {
-					return nil, status.Errorf(codes.InvalidArgument, "token doesn't pass validation, error: %v", err)
+					return nil, status.Errorf(codes.InvalidArgument, "validation failed, error: %v", err)
 				}
 				setting.Slack = payload.Slack
 
 			case "value.app_im_setting_value.feishu":
 				if err := feishu.Validate(ctx, payload.GetFeishu().GetAppId(), payload.GetFeishu().GetAppSecret(), user.Email); err != nil {
-					return nil, status.Errorf(codes.InvalidArgument, "token does not pass validation, error: %v", err)
+					return nil, status.Errorf(codes.InvalidArgument, "validation failed, error: %v", err)
 				}
 				setting.Feishu = payload.Feishu
+
 			case "value.app_im_setting_value.wecom":
+				if err := wecom.Validate(ctx, payload.GetWecom().GetCorpId(), payload.GetWecom().GetAgentId(), payload.GetWecom().GetSecret()); err != nil {
+					return nil, status.Errorf(codes.InvalidArgument, "validation failed, error: %v", err)
+				}
 				setting.Wecom = payload.Wecom
+
 			default:
 				return nil, status.Errorf(codes.InvalidArgument, "invalid update mask path %v", path)
 			}

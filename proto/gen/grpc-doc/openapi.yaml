@@ -8430,7 +8430,9 @@ components:
             properties:
                 enabled:
                     type: boolean
-                id:
+                corpId:
+                    type: string
+                agentId:
                     type: string
                 secret:
                     type: string
@@ -10569,6 +10571,7 @@ components:
                     type: string
                 keytab:
                     type: string
+                    format: bytes
                 kdcHost:
                     type: string
                 kdcPort:
@@ -11704,6 +11707,13 @@ components:
                         $ref: '#/components/schemas/Label'
                 forceIssueLabels:
                     type: boolean
+                    description: Force issue labels to be used when creating an issue.
+                allowModifyStatement:
+                    type: boolean
+                    description: Allow modifying statement after issue is created.
+                autoResolveIssue:
+                    type: boolean
+                    description: Enable auto resolve issue.
         ProtectionRule:
             type: object
             properties:
@@ -13121,6 +13131,9 @@ components:
                 collation:
                     type: string
                     description: The collation is the collation of a table.
+                charset:
+                    type: string
+                    description: The character set of table.
                 rowCount:
                     type: string
                     description: The row_count is the estimated number of rows of a table.
@@ -14122,6 +14135,14 @@ components:
                 enforceIdentityDomain:
                     type: boolean
                     description: Only user and group from the domains can be created and login.
+                databaseChangeMode:
+                    enum:
+                        - DATABASE_CHANGE_MODE_UNSPECIFIED
+                        - PIPELINE
+                        - EDITOR
+                    type: string
+                    description: The workspace database change mode.
+                    format: enum
         WorkspaceTrialSetting:
             type: object
             properties:

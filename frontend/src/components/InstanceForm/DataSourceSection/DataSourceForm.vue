@@ -86,7 +86,7 @@
           KDC
           <span class="text-red-600">*</span>
         </label>
-        <div class="flex mt-2 items-center space-x-2">
+        <div class="flex items-center space-x-2">
           <div class="w-fit">
             <NRadioGroup
               v-model:value="
@@ -115,15 +115,17 @@
       </div>
       <div class="mt-4 sm:col-span-3 sm:col-start-1">
         <label class="textlabel block">
-          Keytab File Path
+          Keytab File
           <span class="text-red-600">*</span>
         </label>
-        <NInput
-          v-model:value="dataSource.saslConfig.krbConfig.keytab"
-          class="mt-2 w-full"
-          :disabled="!allowEdit"
-          placeholder="keytab file path"
-        />
+
+        <NUpload :max="1" @change="handleKeytabUpload">
+          <NUploadDragger class="mt-3">
+            <span class="text-gray-400"
+              >Click or Drag your .keytab file here</span
+            >
+          </NUploadDragger>
+        </NUpload>
       </div>
     </div>
     <div v-else class="sm:col-span-3 sm:col-start-1">
@@ -240,6 +242,8 @@
               {{ $t("instance.no-password") }}
             </NCheckbox>
             <NInput
+              type="password"
+              show-password-on="click"
               class="w-full"
               :input-props="{ autocomplete: 'off' }"
               :placeholder="
@@ -564,7 +568,10 @@ MIIEvQ...
 
   <template v-if="basicInfo.engine === Engine.DATABRICKS">
     <div>
-      <div class="textlabel black mt-4">Warehouse ID</div>
+      <div class="textlabel black mt-4">
+        Warehouse ID
+        <span class="text-red-600">*</span>
+      </div>
       <NInput
         v-model:value="dataSource.warehouseId"
         class="mt-2"
@@ -573,23 +580,32 @@ MIIEvQ...
     </div>
     <div class="mt-2 sm:col-span-3 sm:col-start-1">
       <NRadioGroup v-model:value="databricksAuth">
-        <NRadio :value="'PASSWORD'"> Password </NRadio>
+        <NRadio :value="'PASSWORD'">
+          {{ $t("common.password") }}
+        </NRadio>
         <NRadio :value="'ACCESS_TOKEN'"> Access Token </NRadio>
       </NRadioGroup>
     </div>
 
     <div v-if="databricksAuth === 'PASSWORD'">
-      <div class="textlabel black mt-4">Username</div>
+      <div class="textlabel black mt-4">
+        {{ $t("common.username") }}
+      </div>
       <NInput
         v-model:value="dataSource.username"
         class="mt-2 w-full"
         :disabled="!allowEdit"
       />
-      <div class="textlabel black mt-4">Password</div>
+      <div class="textlabel black mt-4">
+        {{ $t("common.password") }}
+      </div>
       <NInput
         v-model:value="dataSource.password"
+        type="password"
+        show-password-on="click"
         class="mt-2 w-full"
         :disabled="!allowEdit"
+        :placeholder="$t('instance.password-write-only')"
       />
       <div class="textlabel black mt-4">Account ID</div>
       <NInput
@@ -600,7 +616,10 @@ MIIEvQ...
       />
     </div>
     <div v-else>
-      <div class="textlabel black mt-4">Token</div>
+      <div class="textlabel black mt-4">
+        Token
+        <span class="text-red-600">*</span>
+      </div>
       <NInput
         v-model:value="dataSource.authenticationPrivateKey"
         class="mt-2 w-full"
@@ -774,7 +793,16 @@ MIIEvQ...
 </template>
 
 <script setup lang="ts">
-import { NButton, NRadioGroup, NRadio, NCheckbox, NInput } from "naive-ui";
+import {
+  NButton,
+  NRadioGroup,
+  NRadio,
+  NCheckbox,
+  NInput,
+  NUpload,
+  NUploadDragger,
+  type UploadFileInfo,
+} from "naive-ui";
 import { watch, reactive, computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { DataSourceOptions } from "@/types/dataSource";
@@ -1049,4 +1077,18 @@ watch(
     ds.updateAuthenticationPrivateKey = true;
   }
 );
+
+const handleKeytabUpload = (options: { file: UploadFileInfo }) => {
+  const reader = new FileReader();
+  reader.onload = function () {
+    const arrayBuffer = reader.result as ArrayBuffer;
+    const data = new Uint8Array(arrayBuffer);
+    const ds = props.dataSource;
+    if (ds.saslConfig && ds.saslConfig.krbConfig) {
+      console.log(data);
+      ds.saslConfig.krbConfig.keytab = data;
+    }
+  };
+  reader.readAsArrayBuffer(options.file.file as Blob);
+};
 </script>
