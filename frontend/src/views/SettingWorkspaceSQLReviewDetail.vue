@@ -20,11 +20,10 @@
             :text="$t('sql-review.disabled')"
             :can-remove="false"
             :badge-style="'DISABLED'"
-            ::badge-style="'DISABLED'"
           />
         </div>
         <BBTextField
-          class="flex-1 text-xl md:text-3xl py-0.5 px-0.5 font-bold truncate"
+          class="flex-1 !text-xl md:!text-2xl py-0.5 px-0.5 font-bold truncate"
           :disabled="!hasPermission"
           :required="true"
           :focus-on-mount="false"
@@ -60,26 +59,28 @@
           v-for="resource in reviewPolicy.resources"
           :key="resource"
           :can-remove="false"
-          :link="`/${resource}`"
         >
           <SQLReviewAttachedResource :resource="resource" :show-prefix="true" />
         </BBBadge>
       </div>
     </div>
-    <SQLRuleFilter
-      :rule-list="state.ruleList"
-      :params="filterParams"
-      v-on="filterEvents"
-    />
 
-    <SQLRuleTable
-      :class="[state.updating && 'pointer-events-none']"
-      :rule-list="filteredRuleList"
-      :editable="hasPermission"
-      @level-change="onLevelChange"
-      @payload-change="onPayloadChange"
-      @comment-change="onCommentChange"
-    />
+    <SQLReviewTabsByEngine
+      class="mt-5"
+      :rule-map-by-engine="state.ruleMapByEngine"
+    >
+      <template
+        #default="{ ruleList: ruleListFilteredByEngine, engine }: { ruleList: RuleTemplateV2[]; engine: Engine; }"
+      >
+        <SQLRuleTableWithFilter
+          :engine="engine"
+          :rule-list="ruleListFilteredByEngine"
+          :editable="hasPermission"
+          @rule-change="markChange"
+        />
+      </template>
+    </SQLReviewTabsByEngine>
+
     <BBButtonConfirm
       class="!my-4"
       :disabled="!hasPermission"
@@ -134,18 +135,11 @@
 
 <script lang="tsx" setup>
 import { useTitle } from "@vueuse/core";
-import { cloneDeep, groupBy } from "lodash-es";
-import { computed, reactive, toRef, watch, watchEffect } from "vue";
+import { computed, reactive, watch, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { BBTextField } from "@/bbkit";
-import {
-  payloadValueListToComponentList,
-  SQLRuleFilter,
-  useSQLRuleFilter,
-  SQLRuleTable,
-} from "@/components/SQLReview/components";
-import type { PayloadForEngine } from "@/components/SQLReview/components/RuleConfigComponents";
+import { rulesToTemplate } from "@/components/SQLReview/components/utils";
 import { WORKSPACE_ROUTE_SQL_REVIEW } from "@/router/dashboard/workspaceRoutes";
 import {
   pushNotification,
@@ -153,16 +147,15 @@ import {
   useSQLReviewStore,
   useSubscriptionV1Store,
 } from "@/store";
-import type { RuleTemplate, SchemaPolicyRule } from "@/types";
+import type { RuleTemplateV2 } from "@/types";
 import {
   unknown,
-  TEMPLATE_LIST,
-  convertPolicyRuleToRuleTemplate,
+  UNKNOWN_ID,
+  getRuleMapByEngine,
   ruleIsAvailableInSubscription,
-  convertRuleTemplateToPolicyRule,
+  convertRuleMapToPolicyRuleList,
 } from "@/types";
 import type { Engine } from "@/types/proto/v1/common";
-import { SQLReviewRuleLevel } from "@/types/proto/v1/org_policy_service";
 import { hasWorkspacePermissionV2 } from "@/utils";
 
 const props = defineProps<{
@@ -174,9 +167,7 @@ interface LocalState {
   showEnableModal: boolean;
   selectedCategory?: string;
   editMode: boolean;
-  checkedEngine: Set<Engine>;
-  checkedLevel: Set<SQLReviewRuleLevel>;
-  ruleList: RuleTemplate[];
+  ruleMapByEngine: Map<Engine, Map<string, RuleTemplateV2>>;
   rulesUpdated: boolean;
   updating: boolean;
   editingTitle: boolean;
@@ -192,9 +183,7 @@ const state = reactive<LocalState>({
   showDisableModal: false,
   showEnableModal: false,
   editMode: false,
-  checkedEngine: new Set<Engine>(),
-  checkedLevel: new Set<SQLReviewRuleLevel>(),
-  ruleList: [],
+  ruleMapByEngine: new Map(),
   rulesUpdated: false,
   updating: false,
   editingTitle: false,
@@ -215,60 +204,20 @@ const reviewPolicy = computed(() => {
   );
 });
 
-const ruleListOfPolicy = computed((): RuleTemplate[] => {
-  if (!reviewPolicy.value) {
+const ruleListOfPolicy = computed((): RuleTemplateV2[] => {
+  if (reviewPolicy.value.id === `${UNKNOWN_ID}`) {
     return [];
   }
-
-  const ruleTemplateList: RuleTemplate[] = [];
-  const ruleTemplateMap: Map<string, RuleTemplate> = TEMPLATE_LIST.reduce(
-    (map, template) => {
-      for (const rule of template.ruleList) {
-        map.set(rule.type, rule);
-      }
-      return map;
-    },
-    new Map<string, RuleTemplate>()
-  );
-
-  const groupByRule = groupBy(reviewPolicy.value.ruleList, (rule) => rule.type);
-
-  for (const [type, ruleList] of Object.entries(groupByRule)) {
-    const rule = ruleTemplateMap.get(type);
-    if (!rule) {
-      continue;
-    }
-
-    const data = convertPolicyRuleToRuleTemplate(ruleList, rule);
-    if (data) {
-      ruleTemplateList.push(data);
-      ruleTemplateMap.delete(type);
-    }
-  }
-
-  for (const rule of ruleTemplateMap.values()) {
-    ruleTemplateList.push({
-      ...rule,
-      level: SQLReviewRuleLevel.DISABLED,
-    });
-  }
-
-  return ruleTemplateList;
+  return rulesToTemplate(reviewPolicy.value, true).ruleList;
 });
 
 watch(
   ruleListOfPolicy,
   (ruleList) => {
-    state.ruleList = cloneDeep(ruleList);
+    state.ruleMapByEngine = getRuleMapByEngine(ruleList);
   },
   { immediate: true }
 );
-
-const {
-  params: filterParams,
-  events: filterEvents,
-  filteredRuleList,
-} = useSQLRuleFilter(toRef(state, "ruleList"));
 
 const pushUpdatedNotify = () => {
   pushNotification({
@@ -296,56 +245,41 @@ const changeName = async (title: string) => {
   pushUpdatedNotify();
 };
 
-const markChange = (rule: RuleTemplate, overrides: Partial<RuleTemplate>) => {
+const markChange = (
+  rule: RuleTemplateV2,
+  overrides: Partial<RuleTemplateV2>
+) => {
   if (
     !ruleIsAvailableInSubscription(rule.type, subscriptionStore.currentPlan)
   ) {
     return;
   }
 
-  const index = state.ruleList.findIndex((r) => r.type === rule.type);
-  if (index < 0) {
+  const selectedRule = state.ruleMapByEngine.get(rule.engine)?.get(rule.type);
+  if (!selectedRule) {
     return;
   }
-  const newRule = {
-    ...state.ruleList[index],
-    ...overrides,
-  };
-  state.ruleList[index] = newRule;
+  state.ruleMapByEngine
+    .get(rule.engine)
+    ?.set(rule.type, Object.assign(selectedRule, overrides));
+
   state.rulesUpdated = true;
 };
 
-const onPayloadChange = (rule: RuleTemplate, data: PayloadForEngine) => {
-  markChange(rule, payloadValueListToComponentList(rule, data));
-};
-
-const onLevelChange = (rule: RuleTemplate, level: SQLReviewRuleLevel) => {
-  markChange(rule, { level });
-};
-
-const onCommentChange = (rule: RuleTemplate, comment: string) => {
-  markChange(rule, { comment });
-};
-
 const onCancelChanges = () => {
-  state.ruleList = cloneDeep(ruleListOfPolicy.value);
+  state.ruleMapByEngine = getRuleMapByEngine(ruleListOfPolicy.value);
   state.rulesUpdated = false;
 };
 
 const onApplyChanges = async () => {
   const policy = reviewPolicy.value;
 
-  const ruleList: SchemaPolicyRule[] = [];
-  for (const rule of state.ruleList) {
-    ruleList.push(...convertRuleTemplateToPolicyRule(rule));
-  }
-
   state.updating = true;
   try {
     await store.updateReviewPolicy({
       id: policy.id,
       title: policy.name,
-      ruleList,
+      ruleList: convertRuleMapToPolicyRuleList(state.ruleMapByEngine),
     });
     state.rulesUpdated = false;
     pushUpdatedNotify();
@@ -356,8 +290,6 @@ const onApplyChanges = async () => {
 
 const onEdit = () => {
   state.editMode = true;
-  filterParams.searchText = "";
-  filterParams.selectedCategory = undefined;
 };
 
 const onArchive = async () => {

@@ -1,9 +1,112 @@
 <template>
-  <div class="space-y-3 divide-y pb-4 px-2">
+  <div class="divide-y">
     <div
-      v-for="(row, i) in tableRows"
+      v-for="(row, i) in highlightTableRows"
       :key="i"
-      class="pt-3 first:pt-2 space-y-2"
+      class="py-3 px-2 first:pt-2 space-y-2"
+      :class="[
+        row.checkResult.status === PlanCheckRun_Result_Status.ERROR &&
+          'border-error border rounded',
+        row.checkResult.status === PlanCheckRun_Result_Status.WARNING &&
+          'border-warning border rounded',
+      ]"
+    >
+      <div class="flex items-center space-x-3">
+        <div
+          class="relative w-5 h-5 flex flex-shrink-0 items-center justify-center rounded-full select-none"
+          :class="statusIconClass(row.checkResult.status)"
+        >
+          <template
+            v-if="row.checkResult.status === PlanCheckRun_Result_Status.SUCCESS"
+          >
+            <heroicons-solid:check class="w-4 h-4" />
+          </template>
+          <template
+            v-if="row.checkResult.status === PlanCheckRun_Result_Status.WARNING"
+          >
+            <heroicons-outline:exclamation class="h-4 w-4" />
+          </template>
+          <template
+            v-else-if="
+              row.checkResult.status === PlanCheckRun_Result_Status.ERROR
+            "
+          >
+            <span class="text-white font-medium text-base" aria-hidden="true">
+              !
+            </span>
+          </template>
+        </div>
+        <div v-if="showCategoryColumn" class="shrink-0">
+          {{ row.category }}
+        </div>
+        <div class="font-semibold">{{ row.title }}</div>
+
+        <slot name="row-title-extra" :row="row" />
+      </div>
+      <div class="textinfolabel">
+        <span>{{ row.checkResult.content }}</span>
+        <template v-if="row.checkResult.sqlReviewReport?.detail">
+          <span
+            class="ml-1 normal-link"
+            @click="
+              state.activeResultDefinition =
+                row.checkResult.sqlReviewReport!.detail
+            "
+            >{{ $t("sql-review.view-definition") }}</span
+          >
+          <span class="border-r border-control-border ml-1"></span>
+        </template>
+        <template
+          v-if="
+            row.checkResult.sqlReviewReport &&
+            getActiveRule(row.checkResult.title)
+          "
+        >
+          <span
+            class="ml-1 normal-link"
+            @click="setActiveRule(row.checkResult.title)"
+            >{{ $t("sql-review.rule-detail") }}</span
+          >
+          <span class="border-r border-control-border ml-1"></span>
+        </template>
+        <template v-if="row.checkResult.sqlSummaryReport">
+          {{ row.checkResult.sqlSummaryReport.affectedRows }}
+        </template>
+
+        <HideInStandaloneMode>
+          <a
+            v-if="row.link"
+            class="ml-1 normal-link"
+            :href="row.link.url"
+            :target="row.link.target"
+          >
+            {{ row.link.title }}
+          </a>
+        </HideInStandaloneMode>
+
+        <!-- Only show the error line for latest plan check run -->
+        <template v-if="isLatest && row.checkResult.sqlReviewReport?.line">
+          <span class="border-r border-control-border ml-1"></span>
+          <span
+            class="ml-1 normal-link"
+            @click="
+              handleClickPlanCheckDetailLine(
+                row.checkResult.sqlReviewReport!.line
+              )
+            "
+          >
+            Line {{ row.checkResult.sqlReviewReport.line }}
+          </span>
+        </template>
+
+        <slot name="row-extra" :row="row" />
+      </div>
+    </div>
+
+    <div
+      v-for="(row, i) in standardTableRows"
+      :key="i"
+      class="py-3 px-2 first:pt-2 space-y-2"
     >
       <div class="flex items-center space-x-3">
         <div
@@ -87,7 +190,7 @@
               )
             "
           >
-            L{{ row.checkResult.sqlReviewReport.line }}
+            Line {{ row.checkResult.sqlReviewReport.line }}
           </span>
         </template>
 
@@ -117,15 +220,13 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { SQLRuleEditDialog } from "@/components/SQLReview/components";
 import { WORKSPACE_ROUTE_SQL_REVIEW } from "@/router/dashboard/workspaceRoutes";
-import { useReviewPolicyByResource } from "@/store";
-import type { RuleTemplate } from "@/types";
+import { useReviewPolicyForDatabase } from "@/store";
+import type { RuleTemplateV2, ComposedDatabase } from "@/types";
 import {
   GeneralErrorCode,
   SQLReviewPolicyErrorCode,
-  UNKNOWN_ENVIRONMENT_NAME,
-  findRuleTemplate,
   getRuleLocalization,
-  ruleTemplateMap,
+  ruleTemplateMapV2,
 } from "@/types";
 import { convertPolicyRuleToRuleTemplate } from "@/types";
 import {
@@ -150,14 +251,15 @@ export type PlanCheckDetailTableRow = {
 };
 
 type LocalState = {
-  activeRule?: RuleTemplate;
+  activeRule?: RuleTemplateV2;
   activeResultDefinition?: string;
 };
 
 const props = defineProps<{
   planCheckRun: PlanCheckRun;
-  environment?: string;
   isLatest?: boolean;
+  database?: ComposedDatabase;
+  highlightRowFilter?: (row: PlanCheckDetailTableRow) => boolean;
 }>();
 
 const { t } = useI18n();
@@ -206,6 +308,22 @@ const checkResultList = computed((): PlanCheckRun_Result[] => {
   return [];
 });
 
+const getRuleTemplateByType = (type: string) => {
+  if (props.database) {
+    return ruleTemplateMapV2
+      .get(props.database.instanceEntity.engine)
+      ?.get(type);
+  }
+
+  // fallback
+  for (const mapByType of ruleTemplateMapV2.values()) {
+    if (mapByType.has(type)) {
+      return mapByType.get(type);
+    }
+  }
+  return;
+};
+
 const categoryAndTitle = (
   checkResult: PlanCheckRun_Result
 ): [string, string] => {
@@ -218,7 +336,7 @@ const categoryAndTitle = (
       const title = messageWithCode(checkResult.title, code);
       return ["", title];
     }
-    const rule = ruleTemplateMap.get(checkResult.title);
+    const rule = getRuleTemplateByType(checkResult.title);
     if (rule) {
       const ruleLocalization = getRuleLocalization(rule.type);
       const key = `sql-review.category.${rule.category.toLowerCase()}`;
@@ -288,27 +406,40 @@ const tableRows = computed(() => {
   });
 });
 
+const highlightTableRows = computed(() => {
+  const { highlightRowFilter } = props;
+  if (!highlightRowFilter) return [];
+  return tableRows.value.filter(highlightRowFilter);
+});
+
+const standardTableRows = computed(() => {
+  const { highlightRowFilter } = props;
+  if (!highlightRowFilter) return tableRows.value;
+  return tableRows.value.filter((row) => !highlightRowFilter(row));
+});
+
 const showCategoryColumn = computed((): boolean =>
   tableRows.value.some((row) => row.category !== "")
 );
 
-const reviewPolicy = useReviewPolicyByResource(
+const reviewPolicy = useReviewPolicyForDatabase(
   computed(() => {
-    return props.environment || UNKNOWN_ENVIRONMENT_NAME;
+    return props.database;
   })
 );
-const getActiveRule = (type: string): RuleTemplate | undefined => {
+
+const getActiveRule = (type: string): RuleTemplateV2 | undefined => {
   const rule = reviewPolicy.value?.ruleList.find((rule) => rule.type === type);
   if (!rule) {
     return undefined;
   }
 
-  const ruleTemplate = findRuleTemplate(type);
+  const ruleTemplate = getRuleTemplateByType(type);
   if (!ruleTemplate) {
     return undefined;
   }
 
-  return convertPolicyRuleToRuleTemplate([rule], ruleTemplate);
+  return convertPolicyRuleToRuleTemplate(rule, ruleTemplate);
 };
 
 const setActiveRule = (type: string) => {

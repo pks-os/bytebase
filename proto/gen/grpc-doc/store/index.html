@@ -595,6 +595,25 @@
                   <a href="#bytebase.store.DataSourceOptions.AuthenticationType"><span class="badge">E</span>DataSourceOptions.AuthenticationType</a>
                 </li>
               
+                <li>
+                  <a href="#bytebase.store.DataSourceOptions.RedisType"><span class="badge">E</span>DataSourceOptions.RedisType</a>
+                </li>
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#store%2fdb_group.proto">store/db_group.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#bytebase.store.DatabaseGroupPayload"><span class="badge">M</span>DatabaseGroupPayload</a>
+                </li>
+              
+              
               
               
             </ul>
@@ -4994,6 +5013,34 @@ Used for authentication when connecting to the data source. </p></td>
                   <td><p>warehouse_id is used by Databricks. </p></td>
                 </tr>
               
+                <tr>
+                  <td>master_name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>master_name is the master name used by connecting redis-master via redis sentinel. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>master_username</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>master_username and master_obfuscated_password are master credentials used by redis sentinel mode. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>master_obfuscated_password</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>redis_type</td>
+                  <td><a href="#bytebase.store.DataSourceOptions.RedisType">DataSourceOptions.RedisType</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -5251,6 +5298,79 @@ Used for authentication when connecting to the data source. </p></td>
             
           </tbody>
         </table>
+      
+        <h3 id="bytebase.store.DataSourceOptions.RedisType">DataSourceOptions.RedisType</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>REDIS_TYPE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>STANDALONE</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>SENTINEL</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>CLUSTER</td>
+                <td>3</td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="store/db_group.proto">store/db_group.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="bytebase.store.DatabaseGroupPayload">DatabaseGroupPayload</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>multitenancy</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
       
 
       
