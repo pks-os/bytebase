@@ -1,16 +1,17 @@
 <template>
   <NSelect
     v-bind="$attrs"
-    :value="project"
+    :value="value"
     :options="options"
     :placeholder="$t('project.select')"
     :filterable="true"
+    :multiple="multiple"
     :filter="filterByName"
     :disabled="disabled"
     :render-label="renderLabel"
     class="bb-project-select"
     style="width: 12rem"
-    @update:value="$emit('update:project', $event)"
+    @update:value="handleValueUpdated"
   />
 </template>
 
@@ -21,7 +22,12 @@ import { NSelect } from "naive-ui";
 import { computed, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { ProjectNameCell } from "@/components/v2/Model/DatabaseV1Table/cells";
-import { useCurrentUserV1, useProjectV1Store, useProjectV1List } from "@/store";
+import {
+  useCurrentUserV1,
+  useProjectV1Store,
+  useProjectV1List,
+  usePermissionStore,
+} from "@/store";
 import type { ComposedProject } from "@/types";
 import {
   DEFAULT_PROJECT_ID,
@@ -32,7 +38,7 @@ import {
 import { State } from "@/types/proto/v1/common";
 import type { Project } from "@/types/proto/v1/project_service";
 import { Workflow } from "@/types/proto/v1/project_service";
-import { hasWorkspacePermissionV2, roleListInProjectV1 } from "@/utils";
+import { hasWorkspacePermissionV2 } from "@/utils";
 
 interface ProjectSelectOption extends SelectOption {
   value: string;
@@ -43,37 +49,67 @@ const props = withDefaults(
   defineProps<{
     disabled?: boolean;
     project?: string | undefined | null; // UNKNOWN_ID(-1) to "ALL"
+    projects?: string[] | undefined | null; // UNKNOWN_ID(-1) to "ALL"
     allowedProjectRoleList?: string[]; // Empty array([]) to "ALL"
     allowedProjectWorkflowTypeList?: Workflow[];
     includeAll?: boolean;
     includeDefaultProject?: boolean;
     includeArchived?: boolean;
     useResourceId?: boolean;
+    multiple?: boolean;
     filter?: (project: ComposedProject, index: number) => boolean;
   }>(),
   {
     disabled: false,
     project: undefined,
+    projects: undefined,
     allowedProjectRoleList: () => [],
     allowedProjectWorkflowTypeList: () => [Workflow.UI, Workflow.VCS],
     includeAll: false,
     includeDefaultProject: false,
     includeArchived: false,
     useResourceId: false,
+    multiple: false,
     filter: () => true,
   }
 );
 
-defineEmits<{
+const emit = defineEmits<{
   (event: "update:project", id: string | undefined): void;
+  (event: "update:projects", id: string[]): void;
 }>();
 
 const { t } = useI18n();
 const currentUserV1 = useCurrentUserV1();
 const projectV1Store = useProjectV1Store();
+const permissionStore = usePermissionStore();
 
 const prepare = () => {
   projectV1Store.fetchProjectList(true /* showDeleted */);
+};
+
+const value = computed(() => {
+  if (props.multiple) {
+    return props.projects || [];
+  } else {
+    return props.project;
+  }
+});
+
+const handleValueUpdated = (value: string | string[]) => {
+  if (props.multiple) {
+    if (!value) {
+      // normalize value
+      value = [];
+    }
+    emit("update:projects", value as string[]);
+  } else {
+    if (value === null) {
+      // normalize value
+      value = "";
+    }
+    emit("update:project", value as string);
+  }
 };
 
 const hasWorkspaceManageProjectPermission = computed(() =>
@@ -116,7 +152,10 @@ const combinedProjectList = computed(() => {
     props.allowedProjectRoleList.length > 0
   ) {
     list = list.filter((project) => {
-      const roles = roleListInProjectV1(project.iamPolicy, currentUserV1.value);
+      const roles = permissionStore.roleListInProjectV1(
+        project,
+        currentUserV1.value
+      );
       return intersection(props.allowedProjectRoleList, roles).length > 0;
     });
   }

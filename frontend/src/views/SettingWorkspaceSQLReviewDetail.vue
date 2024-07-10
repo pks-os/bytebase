@@ -6,35 +6,28 @@
     class="mt-1"
     :policy="reviewPolicy"
     :name="reviewPolicy.name"
-    :selected-resources="reviewPolicy.resources"
     :selected-rule-list="ruleListOfPolicy"
     @cancel="state.editMode = false"
   />
   <div v-else>
+    <BBAttention v-if="!reviewPolicy.enforce" type="warning" class="mb-4">
+      {{ $t("sql-review.disabled") }}
+    </BBAttention>
     <div
       class="flex flex-col gap-y-2 items-start md:items-center gap-x-2 justify-center md:flex-row"
     >
-      <div class="flex-1 flex space-x-2 items-center justify-start">
-        <div v-if="!reviewPolicy.enforce" class="whitespace-nowrap">
-          <BBBadge
-            :text="$t('sql-review.disabled')"
-            :can-remove="false"
-            :badge-style="'DISABLED'"
-          />
-        </div>
-        <BBTextField
-          class="flex-1 !text-xl md:!text-2xl py-0.5 px-0.5 font-bold truncate"
-          :disabled="!hasPermission"
-          :required="true"
-          :focus-on-mount="false"
-          :ends-on-enter="true"
-          :bordered="state.editingTitle"
-          :value="reviewPolicy.name"
-          size="large"
-          @on-focus="state.editingTitle = true"
-          @end-editing="changeName"
-        />
-      </div>
+      <BBTextField
+        class="flex-1 !text-xl md:!text-2xl py-0.5 px-0.5 font-bold truncate"
+        :disabled="!hasPermission"
+        :required="true"
+        :focus-on-mount="false"
+        :ends-on-enter="true"
+        :bordered="state.editingTitle"
+        :value="reviewPolicy.name"
+        size="large"
+        @on-focus="state.editingTitle = true"
+        @end-editing="changeName"
+      />
       <div v-if="hasPermission" class="flex gap-x-2">
         <NButton
           v-if="reviewPolicy.enforce"
@@ -45,16 +38,27 @@
         <NButton v-else @click.prevent="state.showEnableModal = true">
           {{ $t("common.enable") }}
         </NButton>
+        <NButton
+          v-if="reviewPolicy.resources.length > 0"
+          @click.prevent="state.showResourcePanel = true"
+        >
+          {{ $t("sql-review.attach-resource.change-resources") }}
+        </NButton>
         <NButton type="primary" @click="onEdit">
           {{ $t("sql-review.create.configure-rule.change-template") }}
         </NButton>
       </div>
     </div>
     <div class="mt-4 space-y-4">
-      <BBAttention v-if="reviewPolicy.resources.length === 0" type="warning">
-        {{ $t("sql-review.no-linked-resources") }}
-      </BBAttention>
-      <div class="flex space-x-2 items-center">
+      <BBAttention
+        v-if="reviewPolicy.resources.length === 0"
+        type="warning"
+        :title="$t('sql-review.attach-resource.no-linked-resources')"
+        :description="$t('sql-review.attach-resource.label')"
+        :action-text="$t('sql-review.attach-resource.self')"
+        @click="state.showResourcePanel = true"
+      />
+      <div class="space-y-2 space-x-2">
         <BBBadge
           v-for="resource in reviewPolicy.resources"
           :key="resource"
@@ -131,13 +135,19 @@
     "
     @cancel="state.showEnableModal = false"
   />
+
+  <SQLReviewAttachResourcesPanel
+    :show="state.showResourcePanel"
+    :review="reviewPolicy"
+    @close="state.showResourcePanel = false"
+  />
 </template>
 
 <script lang="tsx" setup>
 import { useTitle } from "@vueuse/core";
 import { computed, reactive, watch, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { BBTextField } from "@/bbkit";
 import { rulesToTemplate } from "@/components/SQLReview/components/utils";
 import { WORKSPACE_ROUTE_SQL_REVIEW } from "@/router/dashboard/workspaceRoutes";
@@ -171,11 +181,13 @@ interface LocalState {
   rulesUpdated: boolean;
   updating: boolean;
   editingTitle: boolean;
+  showResourcePanel: boolean;
 }
 
 const { t } = useI18n();
 const store = useSQLReviewStore();
 const router = useRouter();
+const route = useRoute();
 const currentUserV1 = useCurrentUserV1();
 const subscriptionStore = useSubscriptionV1Store();
 
@@ -187,6 +199,7 @@ const state = reactive<LocalState>({
   rulesUpdated: false,
   updating: false,
   editingTitle: false,
+  showResourcePanel: false,
 });
 
 const hasPermission = computed(() => {
@@ -195,6 +208,9 @@ const hasPermission = computed(() => {
 
 watchEffect(async () => {
   await store.getOrFetchReviewPolicyByName(props.sqlReviewPolicySlug);
+  if (route.query.attachResourcePanel && hasPermission.value) {
+    state.showResourcePanel = true;
+  }
 });
 
 const reviewPolicy = computed(() => {
