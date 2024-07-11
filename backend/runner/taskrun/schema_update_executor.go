@@ -23,7 +23,7 @@ import (
 )
 
 // NewSchemaUpdateExecutor creates a schema update (DDL) task executor.
-func NewSchemaUpdateExecutor(store *store.Store, dbFactory *dbfactory.DBFactory, license enterprise.LicenseService, stateCfg *state.State, schemaSyncer *schemasync.Syncer, profile config.Profile) Executor {
+func NewSchemaUpdateExecutor(store *store.Store, dbFactory *dbfactory.DBFactory, license enterprise.LicenseService, stateCfg *state.State, schemaSyncer *schemasync.Syncer, profile *config.Profile) Executor {
 	return &SchemaUpdateExecutor{
 		store:        store,
 		dbFactory:    dbFactory,
@@ -41,7 +41,7 @@ type SchemaUpdateExecutor struct {
 	license      enterprise.LicenseService
 	stateCfg     *state.State
 	schemaSyncer *schemasync.Syncer
-	profile      config.Profile
+	profile      *config.Profile
 }
 
 // RunOnce will run the schema update (DDL) task executor once.
@@ -78,7 +78,7 @@ func (exec *SchemaUpdateExecutor) RunOnce(ctx context.Context, driverCtx context
 		Type:              storepb.TaskRunLog_DATABASE_SYNC_START,
 		DatabaseSyncStart: &storepb.TaskRunLog_DatabaseSyncStart{},
 	})
-	if err := exec.schemaSyncer.SyncDatabaseSchema(ctx, database, true /* force */); err != nil {
+	if err := exec.schemaSyncer.SyncDatabaseSchema(ctx, database, false /* force */); err != nil {
 		exec.store.CreateTaskRunLogS(ctx, taskRunUID, time.Now(), &storepb.TaskRunLog{
 			Type: storepb.TaskRunLog_DATABASE_SYNC_END,
 			DatabaseSyncEnd: &storepb.TaskRunLog_DatabaseSyncEnd{

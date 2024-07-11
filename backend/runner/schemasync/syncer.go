@@ -11,11 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/conc/pool"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/bytebase/bytebase/backend/common"
@@ -33,7 +31,7 @@ import (
 
 const (
 	instanceSyncInterval        = 15 * time.Minute
-	databaseSyncCheckerInterval = 5 * time.Second
+	databaseSyncCheckerInterval = 10 * time.Second
 	syncTimeout                 = 15 * time.Minute
 	// defaultSyncInterval means never sync.
 	defaultSyncInterval = 0 * time.Second
@@ -41,7 +39,7 @@ const (
 )
 
 // NewSyncer creates a schema syncer.
-func NewSyncer(stores *store.Store, dbFactory *dbfactory.DBFactory, stateCfg *state.State, profile config.Profile, licenseService enterprise.LicenseService) *Syncer {
+func NewSyncer(stores *store.Store, dbFactory *dbfactory.DBFactory, stateCfg *state.State, profile *config.Profile, licenseService enterprise.LicenseService) *Syncer {
 	return &Syncer{
 		store:          stores,
 		dbFactory:      dbFactory,
@@ -58,7 +56,7 @@ type Syncer struct {
 	store           *store.Store
 	dbFactory       *dbfactory.DBFactory
 	stateCfg        *state.State
-	profile         config.Profile
+	profile         *config.Profile
 	licenseService  enterprise.LicenseService
 	databaseSyncMap sync.Map // map[int]*store.DatabaseMessage
 }
@@ -89,6 +87,17 @@ func (s *Syncer) Run(ctx context.Context, wg *sync.WaitGroup) {
 		for {
 			select {
 			case <-ticker.C:
+				instances, err := s.store.ListInstancesV2(ctx, &store.FindInstanceMessage{})
+				if err != nil {
+					if err != nil {
+						slog.Error("Failed to list instance", log.BBError(err))
+						return
+					}
+				}
+				instanceMap := make(map[string]*store.InstanceMessage)
+				for _, instance := range instances {
+					instanceMap[instance.ResourceID] = instance
+				}
 				dbwp := pool.New().WithMaxGoroutines(MaximumOutstanding)
 				s.databaseSyncMap.Range(func(key, value any) bool {
 					database, ok := value.(*store.DatabaseMessage)
@@ -96,9 +105,9 @@ func (s *Syncer) Run(ctx context.Context, wg *sync.WaitGroup) {
 						return true
 					}
 
-					instance, err := s.store.GetInstanceV2(ctx, &store.FindInstanceMessage{ResourceID: &database.InstanceID})
-					if err != nil {
-						slog.Debug("Failed to get instance",
+					instance, ok := instanceMap[database.InstanceID]
+					if !ok {
+						slog.Debug("Instance not found",
 							slog.String("instance", database.InstanceID),
 							log.BBError(err))
 						return true
@@ -263,9 +272,6 @@ func (s *Syncer) SyncInstance(ctx context.Context, instance *store.InstanceMessa
 	if instanceMeta.Version != instance.EngineVersion {
 		updateInstance.EngineVersion = &instanceMeta.Version
 	}
-	if !equalInstanceMetadata(instanceMeta.Metadata, instance.Metadata) {
-		updateInstance.Metadata.MysqlLowerCaseTableNames = instanceMeta.Metadata.GetMysqlLowerCaseTableNames()
-	}
 	updatedInstance, err := s.store.UpdateInstanceV2(ctx, updateInstance, -1)
 	if err != nil {
 		return nil, err
@@ -413,29 +419,27 @@ func (s *Syncer) SyncDatabaseSchema(ctx context.Context, database *store.Databas
 		rawDump = dbSchema.GetSchema()
 	}
 
-	if force || !cmp.Equal(oldDatabaseMetadata, databaseMetadata, protocmp.Transform()) {
-		// Avoid updating dump everytime by dumping the schema only when the database metadata is changed.
-		// if oldDatabaseMetadata is nil and databaseMetadata is not, they are not equal resulting a sync.
-		if force || !equalDatabaseMetadata(oldDatabaseMetadata, databaseMetadata) {
-			var schemaBuf bytes.Buffer
-			if _, err := driver.Dump(ctx, &schemaBuf); err != nil {
-				return errors.Wrapf(err, "failed to dump database schema for database %q", database.DatabaseName)
-			}
-			rawDump = schemaBuf.Bytes()
+	// Avoid updating dump everytime by dumping the schema only when the database metadata is changed.
+	// if oldDatabaseMetadata is nil and databaseMetadata is not, they are not equal resulting a sync.
+	if force || !common.EqualDatabaseSchemaMetadataFast(oldDatabaseMetadata, databaseMetadata) {
+		var schemaBuf bytes.Buffer
+		if _, err := driver.Dump(ctx, &schemaBuf); err != nil {
+			return errors.Wrapf(err, "failed to dump database schema for database %q", database.DatabaseName)
 		}
+		rawDump = schemaBuf.Bytes()
+	}
 
-		if err := s.store.UpsertDBSchema(ctx,
-			database.UID,
-			model.NewDBSchema(databaseMetadata, rawDump, dbModelConfig.BuildDatabaseConfig()),
-			api.SystemBotID,
-		); err != nil {
-			if strings.Contains(err.Error(), "escape sequence") {
-				if metadataBytes, err := protojson.Marshal(databaseMetadata); err == nil {
-					slog.Error("unsupported Unicode escape sequence", slog.String("metadata", string(metadataBytes)), slog.String("raw_dump", string(rawDump)))
-				}
+	if err := s.store.UpsertDBSchema(ctx,
+		database.UID,
+		model.NewDBSchema(databaseMetadata, rawDump, dbModelConfig.BuildDatabaseConfig()),
+		api.SystemBotID,
+	); err != nil {
+		if strings.Contains(err.Error(), "escape sequence") {
+			if metadataBytes, err := protojson.Marshal(databaseMetadata); err == nil {
+				slog.Error("unsupported Unicode escape sequence", slog.String("metadata", string(metadataBytes)), slog.String("raw_dump", string(rawDump)))
 			}
-			return errors.Wrapf(err, "failed to upsert database schema for database %q", database.DatabaseName)
 		}
+		return errors.Wrapf(err, "failed to upsert database schema for database %q", database.DatabaseName)
 	}
 
 	// Check schema drift
@@ -584,16 +588,6 @@ func (s *Syncer) upsertDatabaseConnectionAnomaly(ctx context.Context, instance *
 			slog.String("type", string(api.AnomalyDatabaseConnection)),
 			log.BBError(err))
 	}
-}
-
-func equalInstanceMetadata(x, y *storepb.InstanceMetadata) bool {
-	return cmp.Equal(x, y, protocmp.Transform(), protocmp.IgnoreFields(&storepb.InstanceMetadata{}, "last_sync_time"))
-}
-
-func equalDatabaseMetadata(x, y *storepb.DatabaseSchemaMetadata) bool {
-	return cmp.Equal(x, y, protocmp.Transform(),
-		protocmp.IgnoreFields(&storepb.TableMetadata{}, "row_count", "data_size", "index_size", "data_free"),
-	)
 }
 
 func setClassificationAndUserCommentFromComment(dbSchema *storepb.DatabaseSchemaMetadata, databaseConfig *model.DatabaseConfig) {

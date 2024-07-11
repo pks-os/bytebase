@@ -3,7 +3,7 @@
     <div>
       <div class="flex items-center space-x-2">
         <NSwitch
-          :value="state.classification.classificationFromConfig"
+          :value="!state.classification.classificationFromConfig"
           :disabled="!allowEdit || !hasSensitiveDataFeature"
           @update:value="onClassificationConfigChange"
         />
@@ -145,17 +145,17 @@ const allowSave = computed(() => {
   );
 });
 
-const onClassificationConfigChange = (on: boolean) => {
+const onClassificationConfigChange = (fromComment: boolean) => {
   $dialog.warning({
     title: t("common.warning"),
-    content: on
+    content: fromComment
       ? t("database.classification.sync-from-comment-enable-warning")
       : t("database.classification.sync-from-comment-disable-warning"),
     style: "z-index: 100000",
     negativeText: t("common.cancel"),
     positiveText: t("common.confirm"),
     onPositiveClick: async () => {
-      state.classification.classificationFromConfig = on;
+      state.classification.classificationFromConfig = !fromComment;
       await upsertSetting();
     },
   });
@@ -292,21 +292,25 @@ const example: UploadClassificationConfig = {
       id: "1-1",
       title: "Basic",
       description: "",
+      levelId: "1",
     },
     {
       id: "1-2",
       title: "Assert",
       description: "",
+      levelId: "1",
     },
     {
       id: "1-3",
       title: "Contact",
       description: "",
+      levelId: "2",
     },
     {
       id: "1-4",
       title: "Health",
       description: "",
+      levelId: "2",
     },
     {
       id: "2",
@@ -317,11 +321,13 @@ const example: UploadClassificationConfig = {
       id: "2-1",
       title: "Social",
       description: "",
+      levelId: "1",
     },
     {
       id: "2-2",
       title: "Business",
       description: "",
+      levelId: "1",
     },
   ],
 };

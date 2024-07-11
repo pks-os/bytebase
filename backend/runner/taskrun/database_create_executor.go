@@ -27,7 +27,7 @@ import (
 )
 
 // NewDatabaseCreateExecutor creates a database create task executor.
-func NewDatabaseCreateExecutor(store *store.Store, dbFactory *dbfactory.DBFactory, schemaSyncer *schemasync.Syncer, stateCfg *state.State, profile config.Profile) Executor {
+func NewDatabaseCreateExecutor(store *store.Store, dbFactory *dbfactory.DBFactory, schemaSyncer *schemasync.Syncer, stateCfg *state.State, profile *config.Profile) Executor {
 	return &DatabaseCreateExecutor{
 		store:        store,
 		dbFactory:    dbFactory,
@@ -43,7 +43,7 @@ type DatabaseCreateExecutor struct {
 	dbFactory    *dbfactory.DBFactory
 	schemaSyncer *schemasync.Syncer
 	stateCfg     *state.State
-	profile      config.Profile
+	profile      *config.Profile
 }
 
 var cannotCreateDatabase = map[storepb.Engine]bool{
@@ -226,7 +226,7 @@ func (exec *DatabaseCreateExecutor) RunOnce(ctx context.Context, driverCtx conte
 
 	exec.reconcilePlan(ctx, project, database, peerDatabase)
 
-	if err := exec.schemaSyncer.SyncDatabaseSchema(ctx, database, true /* force */); err != nil {
+	if err := exec.schemaSyncer.SyncDatabaseSchema(ctx, database, false /* force */); err != nil {
 		slog.Error("failed to sync database schema",
 			slog.String("instanceName", instance.ResourceID),
 			slog.String("databaseName", database.DatabaseName),
