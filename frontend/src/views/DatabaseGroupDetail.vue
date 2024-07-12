@@ -23,7 +23,7 @@
                   <template #icon>
                     <TenantIcon />
                   </template>
-                  {{ $t("database-group.multitenancy") }}
+                  {{ $t("database-group.multitenancy.self") }}
                 </NTag>
               </div>
             </div>
@@ -245,7 +245,7 @@ const existMatchedUnactivateInstance = computed(() => {
     (database) =>
       !subscriptionV1Store.hasInstanceFeature(
         "bb.feature.database-grouping",
-        database.instanceEntity
+        database.instanceResource
       )
   );
 });

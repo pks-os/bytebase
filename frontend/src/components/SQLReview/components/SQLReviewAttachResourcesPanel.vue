@@ -22,10 +22,14 @@
               :environments="environments"
               :use-resource-id="true"
               :multiple="true"
+              :render-suffix="getResourceAttachedConfigName"
               @update:environments="onResourcesChange($event, projects)"
             />
           </div>
-          <NDivider />
+          <div class="flex items-center space-x-2">
+            <div class="textlabel w-10 capitalize">{{ $t("common.or") }}</div>
+            <NDivider />
+          </div>
           <div>
             <div class="textlabel mb-1">
               {{ $t("common.project") }}
@@ -40,6 +44,7 @@
               :projects="projects"
               :use-resource-id="true"
               :multiple="true"
+              :render-suffix="getResourceAttachedConfigName"
               @update:projects="onResourcesChange($event, environments)"
             />
           </div>
@@ -107,6 +112,7 @@ const environments = computed(() =>
     resource.startsWith(environmentNamePrefix)
   )
 );
+
 const projects = computed(() =>
   resources.value.filter((resource) => resource.startsWith(projectNamePrefix))
 );
@@ -130,5 +136,10 @@ const upsertReviewResource = async () => {
     title: t("sql-review.policy-updated"),
   });
   emit("close");
+};
+
+const getResourceAttachedConfigName = (resource: string) => {
+  const config = sqlReviewStore.getReviewPolicyByResouce(resource)?.name;
+  return config ? `(${config})` : "";
 };
 </script>

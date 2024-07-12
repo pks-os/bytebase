@@ -802,7 +802,8 @@ Used internally for obfuscating the page token.
 | title | [string](#string) |  | The advice title. |
 | content | [string](#string) |  | The advice content. |
 | detail | [string](#string) |  | The advice detail. |
-| start_position | [Position](#bytebase-store-Position) |  |  |
+| start_position | [Position](#bytebase-store-Position) |  | 1-based positions of the sql statment. |
+| end_position | [Position](#bytebase-store-Position) |  |  |
 
 
 
@@ -2552,7 +2553,7 @@ InstanceOptions is the option for instances.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| target | [string](#string) |  | The resource name of the target. Format: instances/{instance-id}/databases/{database-name}. Format: projects/{project}/databaseGroups/{databaseGroup}. Format: projects/{project}/deploymentConfigs/default. The plan should have a single step and single spec for the deployment configuration type. |
+| target | [string](#string) |  | The resource name of the target. Format: instances/{instance-id}/databases/{database-name}. Format: projects/{project}/databaseGroups/{databaseGroup}. |
 | sheet | [string](#string) |  | The resource name of the sheet. Format: projects/{project}/sheets/{sheet} |
 | type | [PlanConfig.ChangeDatabaseConfig.Type](#bytebase-store-PlanConfig-ChangeDatabaseConfig-Type) |  |  |
 | schema_version | [string](#string) |  | schema_version is parsed from VCS file name. It is automatically generated in the UI workflow. |

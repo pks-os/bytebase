@@ -1815,6 +1815,7 @@
     "transfer-database-from-to": "Transfer database from source project to target project",
     "classification": {
       "self": "Classification",
+      "description": "Use data classification to manage masking policy for many columns by controlling only a small number of classifications.",
       "sync-from-comment": "Sync classification from comment",
       "sync-from-comment-tip": "Once enabled, the classification will sync from the table/column comment. The comment should follow \"{format}\" format.",
       "sync-from-comment-enable-warning": "Classification will change with the DDL and sync from the original comment.",
@@ -2807,6 +2808,8 @@
     "policy-updated": "Successfully updated the review policy.",
     "policy-duplicated": "Successfully duplicated the review policy.",
     "rules": "Rules",
+    "add-rules": "Add rules",
+    "add-or-remove-rules": "Add or remove rules",
     "filter": "Filter",
     "no-permission": "Only DBA or Admin has permission to create or update review policy.",
     "disable": "Disable",
@@ -2820,7 +2823,7 @@
       "no-linked-resources": "No attached resources",
       "change-resources": "Change attached resources",
       "self": "Attach to resources",
-      "label": "Apply the review policy to the selected resource. One resource can only link one policy. The database will use the SQL review policy attached to the project, otherwise fallback to the environment policy.",
+      "label": "You can apply the review policy to environments or projects. One resource can only link one policy. The database will use the SQL review policy attached to the project, otherwise fallback to the environment policy.",
       "label-environment": "The SQL review policy will effect all databases belongs to the selected environment.",
       "label-project": "The SQL review policy will effect all databases belongs to the selected project. The SQL review policy for environment will be ignored."
     },

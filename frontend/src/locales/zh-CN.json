@@ -1815,6 +1815,7 @@
     "transfer-database-from-to": "将数据库从源项目转移到目标项目",
     "classification": {
       "self": "分类分级",
+      "description": "通过分类分级，来批量管理列的脱敏规则。",
       "sync-from-comment": "从注释中同步分类分级",
       "sync-from-comment-tip": "启用后，分类分级将从表或列的注释同步。注释应遵循“{format}”格式。",
       "sync-from-comment-enable-warning": "分类分级将随着 DDL 而改变，并与原始注释同步。",
@@ -2807,6 +2808,8 @@
     "policy-updated": "审核策略已更新",
     "policy-duplicated": "审核策略已复制",
     "rules": "规则",
+    "add-rules": "添加规则",
+    "add-or-remove-rules": "添加或删除规则",
     "filter": "筛选",
     "no-permission": "仅管理员或 DBA 有权限创建或更新审核策略。",
     "disable": "停用审核策略",
@@ -2820,7 +2823,7 @@
       "no-linked-resources": "没有绑定的资源",
       "change-resources": "更改绑定的资源",
       "self": "绑定到资源",
-      "label": "将审核策略应用于所选资源。一个资源只能关联一个策略。数据库将使用附加到项目的 SQL 审核策略，否则将回退到环境策略。",
+      "label": "将审核策略应用到环境或项目上。一个资源只能关联一个策略。数据库将使用附加到项目的 SQL 审核策略，否则将回退到环境策略。",
       "label-environment": "SQL 审查策略将影响属于所选环境的所有数据库。",
       "label-project": "SQL 审核策略将影响所选项目下的所有数据库。环境的 SQL 审核策略将被忽略。"
     },

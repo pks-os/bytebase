@@ -2503,6 +2503,13 @@ If `true`, other fields are available. </p></td>
                   <td>start_position</td>
                   <td><a href="#bytebase.store.Position">Position</a></td>
                   <td></td>
+                  <td><p>1-based positions of the sql statment. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>end_position</td>
+                  <td><a href="#bytebase.store.Position">Position</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
               
@@ -6704,9 +6711,7 @@ Format: users/{userUID}. </p></td>
                   <td></td>
                   <td><p>The resource name of the target.
 Format: instances/{instance-id}/databases/{database-name}.
-Format: projects/{project}/databaseGroups/{databaseGroup}.
-Format: projects/{project}/deploymentConfigs/default. The plan should
-have a single step and single spec for the deployment configuration type. </p></td>
+Format: projects/{project}/databaseGroups/{databaseGroup}. </p></td>
                 </tr>
               
                 <tr>
