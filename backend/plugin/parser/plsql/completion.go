@@ -101,7 +101,6 @@ func newPreferredRules() map[int]bool {
 		plsql.PlSqlParserRULE_rollback_segment_name:    true,
 		plsql.PlSqlParserRULE_table_var_name:           true,
 		plsql.PlSqlParserRULE_schema_name:              true,
-		plsql.PlSqlParserRULE_routine_name:             true,
 		plsql.PlSqlParserRULE_package_name:             true,
 		plsql.PlSqlParserRULE_implementation_type_name: true,
 		plsql.PlSqlParserRULE_parameter_name:           true,
@@ -127,7 +126,6 @@ func newPreferredRules() map[int]bool {
 		plsql.PlSqlParserRULE_char_set_name:            true,
 		plsql.PlSqlParserRULE_synonym_name:             true,
 		plsql.PlSqlParserRULE_dir_object_name:          true,
-		plsql.PlSqlParserRULE_user_object_name:         true,
 	}
 }
 
@@ -168,6 +166,7 @@ type Completer struct {
 	parser              *plsql.PlSqlParser
 	lexer               *plsql.PlSqlLexer
 	scanner             *base.Scanner
+	instanceID          string
 	getMetadata         base.GetDatabaseMetadataFunc
 	listDatabaseNames   base.ListDatabaseNamesFunc
 	defaultDatabase     string
@@ -203,6 +202,7 @@ func NewTrickyCompleter(ctx context.Context, cCtx base.CompletionContext, statem
 		parser:              parser,
 		lexer:               lexer,
 		scanner:             scanner,
+		instanceID:          cCtx.InstanceID,
 		getMetadata:         cCtx.Metadata,
 		listDatabaseNames:   cCtx.ListDatabaseNames,
 		defaultDatabase:     cCtx.DefaultDatabase,
@@ -231,6 +231,7 @@ func NewStandardCompleter(ctx context.Context, cCtx base.CompletionContext, stat
 		parser:              parser,
 		lexer:               lexer,
 		scanner:             scanner,
+		instanceID:          cCtx.InstanceID,
 		getMetadata:         cCtx.Metadata,
 		listDatabaseNames:   cCtx.ListDatabaseNames,
 		defaultDatabase:     cCtx.DefaultDatabase,
@@ -352,7 +353,7 @@ func (m CompletionMap) insertColumns(c *Completer, schemas, tables map[string]bo
 			continue
 		}
 		if _, exists := c.metadataCache[schema]; !exists {
-			_, metadata, err := c.getMetadata(c.ctx, schema)
+			_, metadata, err := c.getMetadata(c.ctx, c.instanceID, schema)
 			if err != nil || metadata == nil {
 				continue
 			}
@@ -386,7 +387,7 @@ func (c *Completer) listAllDatabases() []string {
 	if c.defaultDatabase != "" {
 		result = append(result, c.defaultDatabase)
 	}
-	list, err := c.listDatabaseNames(c.ctx)
+	list, err := c.listDatabaseNames(c.ctx, c.instanceID)
 	if err != nil {
 		return result
 	}
@@ -400,7 +401,7 @@ func (c *Completer) listAllDatabases() []string {
 
 func (c *Completer) listTables(schema string) []string {
 	if _, exists := c.metadataCache[schema]; !exists {
-		_, metadata, err := c.getMetadata(c.ctx, schema)
+		_, metadata, err := c.getMetadata(c.ctx, c.instanceID, schema)
 		if err != nil || metadata == nil {
 			return nil
 		}
@@ -412,7 +413,7 @@ func (c *Completer) listTables(schema string) []string {
 
 func (c *Completer) listViews(schema string) []string {
 	if _, exists := c.metadataCache[schema]; !exists {
-		_, metadata, err := c.getMetadata(c.ctx, schema)
+		_, metadata, err := c.getMetadata(c.ctx, c.instanceID, schema)
 		if err != nil || metadata == nil {
 			return nil
 		}
@@ -864,6 +865,7 @@ func (l *TableRefListener) ExitDml_table_expression_clause(ctx *plsql.Dml_table_
 		if span, err := base.GetQuerySpan(
 			l.context.ctx,
 			base.GetQuerySpanContext{
+				InstanceID:              l.context.instanceID,
 				GetDatabaseMetadataFunc: l.context.getMetadata,
 				ListDatabaseNamesFunc:   l.context.listDatabaseNames,
 			},
@@ -940,7 +942,7 @@ func notEmptySQLCount(list []base.SingleSQL) int {
 // caretLine is 1-based and caretOffset is 0-based.
 func skipHeadingSQLs(statement string, caretLine int, caretOffset int) (string, int, int) {
 	newCaretLine, newCaretOffset := caretLine, caretOffset
-	list, err := SplitSQLWithoutModify(statement)
+	list, err := SplitSQLForCompletion(statement)
 	if err != nil || notEmptySQLCount(list) <= 1 {
 		return statement, caretLine, caretOffset
 	}
