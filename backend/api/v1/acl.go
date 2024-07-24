@@ -3,10 +3,14 @@ package v1
 import (
 	"context"
 	"log/slog"
+	"strings"
 
+	annotationsproto "google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"github.com/pkg/errors"
@@ -57,7 +61,10 @@ func (in *ACLInterceptor) ACLInterceptor(ctx context.Context, request any, serve
 	authContextAny := ctx.Value(common.AuthContextKey)
 	authContext, ok := authContextAny.(*common.AuthContext)
 	if !ok {
-		return nil, status.Errorf(codes.Internal, "auth context not found2")
+		return nil, status.Errorf(codes.Internal, "auth context not found")
+	}
+	if err := in.populateRawResources(authContext, request, serverInfo.FullMethod); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to populate raw resources %s", err)
 	}
 
 	if auth.IsAuthenticationAllowed(serverInfo.FullMethod, authContext) {
@@ -96,7 +103,10 @@ func (in *ACLInterceptor) ACLStreamInterceptor(request any, ss grpc.ServerStream
 	authContextAny := ctx.Value(common.AuthContextKey)
 	authContext, ok := authContextAny.(*common.AuthContext)
 	if !ok {
-		return status.Errorf(codes.Internal, "auth context not found3")
+		return status.Errorf(codes.Internal, "auth context not found")
+	}
+	if err := in.populateRawResources(authContext, request, serverInfo.FullMethod); err != nil {
+		return status.Errorf(codes.Internal, "failed to populate raw resources %s", err)
 	}
 
 	if auth.IsAuthenticationAllowed(serverInfo.FullMethod, authContext) {
@@ -180,136 +190,11 @@ func (in *ACLInterceptor) checkIAMPermission(ctx context.Context, fullMethod str
 	return nil
 }
 
-func isSkippedMethod(fullMethod string, authContext *common.AuthContext) bool {
-	if auth.IsAuthenticationAllowed(fullMethod, authContext) {
-		return true
-	}
-
-	// Below are the skipped.
-	switch fullMethod {
-	// skip methods that are not considered to be resource-related.
-	case
-		v1pb.ActuatorService_GetResourcePackage_FullMethodName,
-		v1pb.ActuatorService_GetActuatorInfo_FullMethodName,
-		v1pb.ActuatorService_UpdateActuatorInfo_FullMethodName,
-		v1pb.ActuatorService_DeleteCache_FullMethodName,
-		v1pb.ActuatorService_ListDebugLog_FullMethodName,
-		v1pb.AnomalyService_SearchAnomalies_FullMethodName,
-		v1pb.AuthService_GetUser_FullMethodName,
-		v1pb.AuthService_ListUsers_FullMethodName,
-		v1pb.AuthService_CreateUser_FullMethodName,
-		v1pb.AuthService_UpdateUser_FullMethodName,
-		v1pb.AuthService_DeleteUser_FullMethodName,
-		v1pb.AuthService_UndeleteUser_FullMethodName,
-		v1pb.AuthService_Login_FullMethodName,
-		v1pb.AuthService_Logout_FullMethodName,
-		v1pb.CelService_BatchParse_FullMethodName,
-		v1pb.CelService_BatchDeparse_FullMethodName,
-		v1pb.SQLService_Query_FullMethodName,
-		// TODO(steven): maybe needs to add a permission to check.
-		v1pb.SQLService_Execute_FullMethodName,
-		v1pb.SQLService_SearchQueryHistories_FullMethodName,
-		v1pb.SQLService_Export_FullMethodName,
-		v1pb.SQLService_DifferPreview_FullMethodName,
-		v1pb.SQLService_Check_FullMethodName,
-		v1pb.SQLService_ParseMyBatisMapper_FullMethodName,
-		v1pb.SQLService_Pretty_FullMethodName,
-		v1pb.SQLService_StringifyMetadata_FullMethodName,
-		v1pb.SQLService_GenerateRestoreSQL_FullMethodName,
-		v1pb.SubscriptionService_GetSubscription_FullMethodName,
-		v1pb.SubscriptionService_GetFeatureMatrix_FullMethodName,
-		v1pb.SubscriptionService_UpdateSubscription_FullMethodName,
-		// TODO(p0ny): permission for review config service.
-		v1pb.ReviewConfigService_CreateReviewConfig_FullMethodName,
-		v1pb.ReviewConfigService_ListReviewConfigs_FullMethodName,
-		v1pb.ReviewConfigService_GetReviewConfig_FullMethodName,
-		v1pb.ReviewConfigService_UpdateReviewConfig_FullMethodName,
-		v1pb.ReviewConfigService_DeleteReviewConfig_FullMethodName:
-		return true
-	// skip checking for sheet service because we want to
-	// discriminate bytebase artifact sheets and user sheets first.
-	// TODO(p0ny): implement
-	case
-		v1pb.SheetService_CreateSheet_FullMethodName,
-		v1pb.SheetService_GetSheet_FullMethodName,
-		v1pb.SheetService_UpdateSheet_FullMethodName:
-		return true
-	// skip checking for sheet service because we want to
-	// discriminate bytebase artifact sheets and user sheets first.
-	// TODO(p0ny): implement
-	case
-		v1pb.WorksheetService_CreateWorksheet_FullMethodName,
-		v1pb.WorksheetService_GetWorksheet_FullMethodName,
-		v1pb.WorksheetService_SearchWorksheets_FullMethodName,
-		v1pb.WorksheetService_UpdateWorksheet_FullMethodName,
-		v1pb.WorksheetService_UpdateWorksheetOrganizer_FullMethodName,
-		v1pb.WorksheetService_DeleteWorksheet_FullMethodName:
-		return true
-	// handled in the method because we need to consider branch.Creator.
-	case
-		v1pb.BranchService_UpdateBranch_FullMethodName,
-		v1pb.BranchService_DeleteBranch_FullMethodName,
-		v1pb.BranchService_MergeBranch_FullMethodName,
-		v1pb.BranchService_RebaseBranch_FullMethodName:
-		return true
-	// handled in the method because we need to consider changelist.Creator.
-	case
-		v1pb.ChangelistService_UpdateChangelist_FullMethodName,
-		v1pb.ChangelistService_DeleteChangelist_FullMethodName:
-		return true
-	// handled in the method because we need to consider plan.Creator.
-	case
-		v1pb.PlanService_UpdatePlan_FullMethodName,
-		// TODO: maybe needs to add permission checks.
-		v1pb.PlanService_BatchCancelPlanCheckRuns_FullMethodName:
-		return true
-	// handled in the method because we need to consider issue.Creator and issue type.
-	// additional bb.plans.action and bb.rollouts.action permissions are required if the issue type is change database.
-	case
-		v1pb.IssueService_GetIssue_FullMethodName,
-		v1pb.IssueService_ListIssueComments_FullMethodName,
-		v1pb.IssueService_CreateIssue_FullMethodName,
-		v1pb.IssueService_CreateIssueComment_FullMethodName,
-		v1pb.IssueService_UpdateIssue_FullMethodName,
-		v1pb.IssueService_BatchUpdateIssuesStatus_FullMethodName,
-		v1pb.IssueService_UpdateIssueComment_FullMethodName:
-		return true
-	// skip checking for custom approval.
-	case
-		v1pb.IssueService_ApproveIssue_FullMethodName,
-		v1pb.IssueService_RejectIssue_FullMethodName,
-		v1pb.IssueService_RequestIssue_FullMethodName:
-		return true
-	// skip checking for the rollout-related.
-	// these are determined by the rollout policy.
-	case
-		v1pb.RolloutService_BatchCancelTaskRuns_FullMethodName,
-		v1pb.RolloutService_BatchSkipTasks_FullMethodName,
-		v1pb.RolloutService_BatchRunTasks_FullMethodName:
-		return true
-	// handled in the method because checking is complex.
-	case
-		v1pb.AuditLogService_SearchAuditLogs_FullMethodName,
-		v1pb.AuditLogService_ExportAuditLogs_FullMethodName,
-		v1pb.InstanceService_SearchInstances_FullMethodName,
-		v1pb.DatabaseService_ListSlowQueries_FullMethodName,
-		v1pb.DatabaseService_ListDatabases_FullMethodName,
-		v1pb.DatabaseService_SearchDatabases_FullMethodName,
-		v1pb.IssueService_ListIssues_FullMethodName,
-		v1pb.IssueService_SearchIssues_FullMethodName,
-
-		v1pb.ProjectService_SearchProjects_FullMethodName,
-		v1pb.PlanService_ListPlans_FullMethodName,
-		v1pb.PlanService_SearchPlans_FullMethodName,
-		v1pb.UserGroupService_DeleteUserGroup_FullMethodName,
-		v1pb.UserGroupService_UpdateUserGroup_FullMethodName:
-		return true
-	}
-	return false
-}
-
 func (in *ACLInterceptor) doIAMPermissionCheck(ctx context.Context, fullMethod string, req any, user *store.UserMessage, authContext *common.AuthContext) (bool, []string, error) {
-	if isSkippedMethod(fullMethod, authContext) {
+	if auth.IsAuthenticationAllowed(fullMethod, authContext) {
+		return true, nil, nil
+	}
+	if authContext.AuthMethod == common.AuthMethodCustom {
 		return true, nil, nil
 	}
 
@@ -365,4 +250,70 @@ func (in *ACLInterceptor) checkIAMPermissionInstancesGet(ctx context.Context, us
 		return false, errors.Wrapf(err, "failed to search databases")
 	}
 	return len(databases) > 0, nil
+}
+
+func (*ACLInterceptor) populateRawResources(authContext *common.AuthContext, request any, method string) error {
+	name := getResourceFromRequest(request, method)
+	if name != "" {
+		authContext.Resources = append(authContext.Resources, &common.Resource{
+			Name: name,
+		})
+	}
+	return nil
+}
+
+func getResourceFromRequest(request any, method string) string {
+	var resource string
+	pm, ok := request.(proto.Message)
+	if !ok {
+		return ""
+	}
+	mr := pm.ProtoReflect()
+
+	parentDesc := mr.Descriptor().Fields().ByName("parent")
+	if parentDesc != nil && proto.HasExtension(parentDesc.Options(), annotationsproto.E_ResourceReference) {
+		v := mr.Get(parentDesc)
+		return v.String()
+	}
+	nameDesc := mr.Descriptor().Fields().ByName("name")
+	if nameDesc != nil && proto.HasExtension(nameDesc.Options(), annotationsproto.E_ResourceReference) {
+		v := mr.Get(nameDesc)
+		return v.String()
+	}
+	// This is primarily used by Get/SetIAMPolicy().
+	resourceDesc := mr.Descriptor().Fields().ByName("resource")
+	if resourceDesc != nil && proto.HasExtension(resourceDesc.Options(), annotationsproto.E_ResourceReference) {
+		v := mr.Get(resourceDesc)
+		return v.String()
+	}
+	methodTokens := strings.Split(method, "/")
+	if len(methodTokens) != 3 {
+		return ""
+	}
+	if strings.HasPrefix(methodTokens[2], "Create") {
+		return ""
+	}
+
+	mr.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		if fd.Name() == "name" {
+			resource = v.String()
+			return false
+		}
+		fdm := fd.Message()
+		if fdm == nil {
+			return true
+		}
+		if !proto.HasExtension(fdm.Options(), annotationsproto.E_Resource) {
+			return true
+		}
+
+		nameDesc := fdm.Fields().ByName("name")
+		if nameDesc != nil {
+			rn := v.Message().Get(nameDesc)
+			resource = rn.String()
+			return false
+		}
+		return false
+	})
+	return resource
 }
