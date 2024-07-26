@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"math/big"
 	"strconv"
-	"strings"
 	"time"
 
 	// Import go-dm DM driver.
@@ -158,11 +157,6 @@ func (driver *Driver) Execute(ctx context.Context, statement string, opts db.Exe
 
 // QueryConn queries a SQL statement in a given connection.
 func (driver *Driver) QueryConn(ctx context.Context, conn *sql.Conn, statement string, queryContext *db.QueryContext) ([]*v1pb.QueryResult, error) {
-	// DM does not support transaction isolation level for read-only queries.(also like Oracle :)
-	if queryContext != nil {
-		queryContext.ReadOnly = false
-	}
-
 	singleSQLs, err := plsqlparser.SplitSQL(statement)
 	if err != nil {
 		return nil, err
@@ -188,8 +182,7 @@ func (driver *Driver) QueryConn(ctx context.Context, conn *sql.Conn, statement s
 }
 
 func (*Driver) querySingleSQL(ctx context.Context, conn *sql.Conn, singleSQL base.SingleSQL, queryContext *db.QueryContext) (*v1pb.QueryResult, error) {
-	statement := strings.TrimRight(singleSQL.Text, " \n\t;")
-
+	statement := singleSQL.Text
 	if queryContext != nil && queryContext.Explain {
 		startTime := time.Now()
 		randNum, err := rand.Int(rand.Reader, big.NewInt(999))
@@ -209,7 +202,7 @@ func (*Driver) querySingleSQL(ctx context.Context, conn *sql.Conn, singleSQL bas
 	}
 
 	startTime := time.Now()
-	result, err := util.Query(ctx, storepb.Engine_DM, conn, statement, queryContext)
+	result, err := util.Query(ctx, storepb.Engine_DM, conn, statement)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +212,7 @@ func (*Driver) querySingleSQL(ctx context.Context, conn *sql.Conn, singleSQL bas
 }
 
 func getStatementWithResultLimit(statement string, limit int) string {
-	return fmt.Sprintf("SELECT * FROM (%s) WHERE ROWNUM <= %d", statement, limit)
+	return fmt.Sprintf("SELECT * FROM (%s) WHERE ROWNUM <= %d", util.TrimStatement(statement), limit)
 }
 
 // RunStatement runs a SQL statement in a given connection.
