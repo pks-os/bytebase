@@ -485,7 +485,7 @@ type ActuatorInfo struct {
 	Debug bool `protobuf:"varint,15,opt,name=debug,proto3" json:"debug,omitempty"`
 	// lsp is the enablement of lsp in SQL Editor.
 	Lsp bool `protobuf:"varint,16,opt,name=lsp,proto3" json:"lsp,omitempty"`
-	// lsp is the enablement of data backup prior to data update.
+	// pre_update_backup is the enablement of data backup prior to data update.
 	PreUpdateBackup bool `protobuf:"varint,17,opt,name=pre_update_backup,json=preUpdateBackup,proto3" json:"pre_update_backup,omitempty"`
 	// iam_guard is the enablement of IAM checks.
 	IamGuard           bool     `protobuf:"varint,18,opt,name=iam_guard,json=iamGuard,proto3" json:"iam_guard,omitempty"`

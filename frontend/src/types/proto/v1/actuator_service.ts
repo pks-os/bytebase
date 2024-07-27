@@ -107,7 +107,7 @@ export interface ActuatorInfo {
   debug: boolean;
   /** lsp is the enablement of lsp in SQL Editor. */
   lsp: boolean;
-  /** lsp is the enablement of data backup prior to data update. */
+  /** pre_update_backup is the enablement of data backup prior to data update. */
   preUpdateBackup: boolean;
   /** iam_guard is the enablement of IAM checks. */
   iamGuard: boolean;

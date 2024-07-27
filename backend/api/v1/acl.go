@@ -206,6 +206,33 @@ func (in *ACLInterceptor) doIAMPermissionCheck(ctx context.Context, fullMethod s
 	if authContext.AuthMethod == common.AuthMethodCustom {
 		return true, nil, nil
 	}
+	if authContext.AuthMethod == common.AuthMethodIAM {
+		// Handle GetProject() error status.
+		if len(authContext.Resources) == 0 {
+			return false, nil, errors.Errorf("no resource found for IAM auth method")
+		}
+		for _, resource := range authContext.Resources {
+			slog.Debug("IAM auth method", slog.String("method", fullMethod), slog.String("permission", authContext.Permission), slog.String("project", resource.ProjectID), slog.Bool("workspace", resource.Workspace))
+			if resource.Workspace {
+				ok, err := in.iamManager.CheckPermission(ctx, authContext.Permission, user)
+				if err != nil {
+					return false, nil, err
+				}
+				if !ok {
+					return false, nil, nil
+				}
+			} else {
+				ok, err := in.iamManager.CheckPermission(ctx, authContext.Permission, user, resource.ProjectID)
+				if err != nil {
+					return false, []string{resource.ProjectID}, err
+				}
+				if !ok {
+					return false, []string{resource.ProjectID}, nil
+				}
+			}
+		}
+		return true, nil, nil
+	}
 
 	p := authContext.Permission
 	switch fullMethod {
@@ -269,10 +296,15 @@ func (in *ACLInterceptor) populateRawResources(ctx context.Context, authContext 
 	if resource != nil {
 		switch {
 		case strings.HasPrefix(resource.Name, "projects/"):
-			match := projectRegex.FindString(resource.Name)
-			if match != "" {
-				resource.Project = match
+			project := projectRegex.FindString(resource.Name)
+			if project == "" {
+				return errors.Errorf("invalid project resource %q", resource.Name)
 			}
+			projectID, err := common.GetProjectID(project)
+			if err != nil {
+				return err
+			}
+			resource.ProjectID = projectID
 		case strings.HasPrefix(resource.Name, "instances/") && strings.Contains(resource.Name, "/databases/"):
 			match := databaseRegex.FindString(resource.Name)
 			if match != "" {
@@ -280,7 +312,7 @@ func (in *ACLInterceptor) populateRawResources(ctx context.Context, authContext 
 				if err != nil {
 					return errors.Wrapf(err, "failed to get database %q", match)
 				}
-				resource.Project = database.ProjectID
+				resource.ProjectID = database.ProjectID
 			}
 		}
 		authContext.Resources = append(authContext.Resources, resource)
@@ -311,6 +343,12 @@ func getResourceFromRequest(request any, method string) *common.Resource {
 		v := mr.Get(resourceFieldDesc)
 		return &common.Resource{Name: v.String()}
 	}
+	// This is primarily used by AddWebhook().
+	projectFieldDesc := mr.Descriptor().Fields().ByName("project")
+	if projectFieldDesc != nil && proto.HasExtension(projectFieldDesc.Options(), annotationsproto.E_ResourceReference) {
+		v := mr.Get(projectFieldDesc)
+		return &common.Resource{Name: v.String()}
+	}
 
 	methodTokens := strings.Split(method, "/")
 	if len(methodTokens) != 3 {
@@ -324,7 +362,8 @@ func getResourceFromRequest(request any, method string) *common.Resource {
 
 	isCreate := strings.HasPrefix(methodTokens[2], "Create")
 	isUpdate := strings.HasPrefix(methodTokens[2], "Update")
-	if !isCreate && !isUpdate {
+	isRemove := strings.HasPrefix(methodTokens[2], "Remove")
+	if !isCreate && !isUpdate && !isRemove {
 		return nil
 	}
 	var resourceName string
@@ -333,6 +372,10 @@ func getResourceFromRequest(request any, method string) *common.Resource {
 	}
 	if isUpdate {
 		resourceName = strings.TrimPrefix(methodTokens[2], "Update")
+	}
+	// RemoveWebhook.
+	if isRemove {
+		resourceName = strings.TrimPrefix(methodTokens[2], "Remove")
 	}
 	resourceName = toSnakeCase(resourceName)
 	resourceDesc := mr.Descriptor().Fields().ByName(protoreflect.Name(resourceName))

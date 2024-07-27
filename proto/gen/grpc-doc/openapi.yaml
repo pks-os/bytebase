@@ -8330,7 +8330,7 @@ components:
                     description: lsp is the enablement of lsp in SQL Editor.
                 preUpdateBackup:
                     type: boolean
-                    description: lsp is the enablement of data backup prior to data update.
+                    description: pre_update_backup is the enablement of data backup prior to data update.
                 iamGuard:
                     type: boolean
                     description: iam_guard is the enablement of IAM checks.
@@ -9553,6 +9553,16 @@ components:
                 mountPath:
                     type: string
                     description: The path where the approle auth method is mounted.
+        DataSourceQueryPolicy:
+            type: object
+            properties:
+                adminDataSourceRestriction:
+                    enum:
+                        - RESTRICTION_UNSPECIFIED
+                        - FALLBACK
+                        - DISALLOW
+                    type: string
+                    format: enum
         DataSource_Address:
             type: object
             properties:
@@ -11863,6 +11873,8 @@ components:
                     $ref: '#/components/schemas/RestrictIssueCreationForSQLReviewPolicy'
                 tagPolicy:
                     $ref: '#/components/schemas/TagPolicy'
+                dataSourceQueryPolicy:
+                    $ref: '#/components/schemas/DataSourceQueryPolicy'
                 enforce:
                     type: boolean
                 resourceType:
@@ -13743,6 +13755,8 @@ components:
                         - PRIOR_BACKUP_END
                     type: string
                     format: enum
+                deployId:
+                    type: string
                 schemaDumpStart:
                     $ref: '#/components/schemas/TaskRunLog_SchemaDumpStart'
                 schemaDumpEnd:
