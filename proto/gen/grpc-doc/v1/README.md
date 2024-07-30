@@ -376,7 +376,7 @@
     - [TagPolicy.TagsEntry](#bytebase-v1-TagPolicy-TagsEntry)
     - [UpdatePolicyRequest](#bytebase-v1-UpdatePolicyRequest)
   
-    - [DataSourceQueryPolicy.Restricton](#bytebase-v1-DataSourceQueryPolicy-Restricton)
+    - [DataSourceQueryPolicy.Restriction](#bytebase-v1-DataSourceQueryPolicy-Restriction)
     - [MaskingExceptionPolicy.MaskingException.Action](#bytebase-v1-MaskingExceptionPolicy-MaskingException-Action)
     - [PolicyResourceType](#bytebase-v1-PolicyResourceType)
     - [PolicyType](#bytebase-v1-PolicyType)
@@ -5519,8 +5519,8 @@ The role&#39;s `name` and `instance` field is used to identify the role to updat
 | to_description | [string](#string) | optional |  |
 | from_status | [IssueStatus](#bytebase-v1-IssueStatus) | optional |  |
 | to_status | [IssueStatus](#bytebase-v1-IssueStatus) | optional |  |
-| from_assignee | [string](#string) | optional | TODO(d): deprecate from_assignee and to_assignee. Format: users/{email} |
-| to_assignee | [string](#string) | optional | Format: users/{email} |
+| from_labels | [string](#string) | repeated |  |
+| to_labels | [string](#string) | repeated |  |
 
 
 
@@ -5970,7 +5970,7 @@ ANY means approving any node will proceed.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| admin_data_source_restriction | [DataSourceQueryPolicy.Restricton](#bytebase-v1-DataSourceQueryPolicy-Restricton) |  |  |
+| admin_data_source_restriction | [DataSourceQueryPolicy.Restriction](#bytebase-v1-DataSourceQueryPolicy-Restriction) |  |  |
 
 
 
@@ -6310,9 +6310,9 @@ The policy&#39;s `name` field is used to identify the instance to update. Format
  
 
 
-<a name="bytebase-v1-DataSourceQueryPolicy-Restricton"></a>
+<a name="bytebase-v1-DataSourceQueryPolicy-Restriction"></a>
 
-### DataSourceQueryPolicy.Restricton
+### DataSourceQueryPolicy.Restriction
 
 
 | Name | Number | Description |
@@ -6368,6 +6368,7 @@ The policy&#39;s `name` field is used to identify the instance to update. Format
 | MASKING_EXCEPTION | 10 |  |
 | RESTRICT_ISSUE_CREATION_FOR_SQL_REVIEW | 12 |  |
 | TAG | 13 |  |
+| DATA_SOURCE_QUERY | 14 |  |
 
 
 
@@ -6422,7 +6423,7 @@ The policy&#39;s `name` field is used to identify the instance to update. Format
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | parent | [string](#string) |  | The name of the parent of the planChecks. Format: projects/{project}/plans/{plan} |
-| plan_check_runs | [string](#string) | repeated | The planCheckRuns to cancel. Format: projects/{project}/plans/{plan}/planCheckRuns/{planCheckRun} |
+| plan_check_runs | [string](#string) | repeated | TODO(d): update this API. The planCheckRuns to cancel. Format: projects/{project}/plans/{plan}/planCheckRuns/{planCheckRun} |
 
 
 
@@ -8232,7 +8233,7 @@ When paginating, all other parameters provided to `ListRoles` must match the cal
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| parent | [string](#string) |  | Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun} |
+| parent | [string](#string) |  | Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun} TODO(d): check the resource_reference. |
 
 
 

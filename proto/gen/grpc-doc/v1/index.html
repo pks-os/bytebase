@@ -1607,7 +1607,7 @@
               
               
                 <li>
-                  <a href="#bytebase.v1.DataSourceQueryPolicy.Restricton"><span class="badge">E</span>DataSourceQueryPolicy.Restricton</a>
+                  <a href="#bytebase.v1.DataSourceQueryPolicy.Restriction"><span class="badge">E</span>DataSourceQueryPolicy.Restriction</a>
                 </li>
               
                 <li>
@@ -15809,18 +15809,17 @@ Keys are the following:
                 </tr>
               
                 <tr>
-                  <td>from_assignee</td>
+                  <td>from_labels</td>
                   <td><a href="#string">string</a></td>
-                  <td>optional</td>
-                  <td><p>TODO(d): deprecate from_assignee and to_assignee.
-Format: users/{email} </p></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
                 </tr>
               
                 <tr>
-                  <td>to_assignee</td>
+                  <td>to_labels</td>
                   <td><a href="#string">string</a></td>
-                  <td>optional</td>
-                  <td><p>Format: users/{email} </p></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
                 </tr>
               
             </tbody>
@@ -17012,7 +17011,7 @@ Database resource name: instances/instance-id/databases/database-name. </p></td>
               
                 <tr>
                   <td>admin_data_source_restriction</td>
-                  <td><a href="#bytebase.v1.DataSourceQueryPolicy.Restricton">DataSourceQueryPolicy.Restricton</a></td>
+                  <td><a href="#bytebase.v1.DataSourceQueryPolicy.Restriction">DataSourceQueryPolicy.Restriction</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -17795,7 +17794,7 @@ In this situation, `update_mask` is ignored. </p></td>
       
 
       
-        <h3 id="bytebase.v1.DataSourceQueryPolicy.Restricton">DataSourceQueryPolicy.Restricton</h3>
+        <h3 id="bytebase.v1.DataSourceQueryPolicy.Restriction">DataSourceQueryPolicy.Restriction</h3>
         <p></p>
         <table class="enum-table">
           <thead>
@@ -17959,6 +17958,12 @@ In this situation, `update_mask` is ignored. </p></td>
               <tr>
                 <td>TAG</td>
                 <td>13</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>DATA_SOURCE_QUERY</td>
+                <td>14</td>
                 <td><p></p></td>
               </tr>
             
@@ -18289,7 +18294,8 @@ Format: projects/{project}/plans/{plan} </p></td>
                   <td>plan_check_runs</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p>The planCheckRuns to cancel.
+                  <td><p>TODO(d): update this API.
+The planCheckRuns to cancel.
 Format: projects/{project}/plans/{plan}/planCheckRuns/{planCheckRun} </p></td>
                 </tr>
               
@@ -22869,7 +22875,8 @@ Format: projects/{project}/rollouts/{rollout} </p></td>
                   <td>parent</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun} </p></td>
+                  <td><p>Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun}
+TODO(d): check the resource_reference. </p></td>
                 </tr>
               
             </tbody>
@@ -28897,13 +28904,6 @@ to retrieve the next page of history. </p></td>
                 <td>Execute</td>
                 <td>POST</td>
                 <td>/v1/{name=instances/*/databases/*}:execute</td>
-                <td>*</td>
-              </tr>
-              
-              <tr>
-                <td>Execute</td>
-                <td>POST</td>
-                <td>/v1/{name=instances/*}:execute</td>
                 <td>*</td>
               </tr>
               

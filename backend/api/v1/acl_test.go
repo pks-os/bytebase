@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"github.com/bytebase/bytebase/backend/common"
 	v1pb "github.com/bytebase/bytebase/proto/generated-go/v1"
@@ -123,6 +124,21 @@ func TestGetResourceFromRequest(t *testing.T) {
 			},
 		},
 		{
+			request: &v1pb.BatchUpdateDatabasesRequest{
+				Requests: []*v1pb.UpdateDatabaseRequest{
+					{Database: &v1pb.Database{Name: "instances/hello/databases/hello", Project: "projects/a"}, UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"project"}}},
+					{Database: &v1pb.Database{Name: "instances/world/databases/world", Project: "projects/b"}, UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"project"}}},
+				},
+			},
+			method: "/bytebase.v1.DatabaseService/BatchUpdateDatabases",
+			want: []*common.Resource{
+				{Name: "projects/a"},
+				{Name: "projects/b"},
+				{Name: "instances/hello/databases/hello"},
+				{Name: "instances/world/databases/world"},
+			},
+		},
+		{
 			request: &v1pb.SyncInstanceRequest{
 				Name: "instances/hello",
 			},
@@ -144,10 +160,19 @@ func TestGetResourceFromRequest(t *testing.T) {
 				{Name: "instances/world"},
 			},
 		},
+		{
+			request: &v1pb.BatchCancelPlanCheckRunsRequest{
+				Parent: "projects/hello/plans/world",
+			},
+			method: "/bytebase.v1.PlanService/BatchCancelPlanCheckRuns",
+			want: []*common.Resource{
+				{Name: "projects/hello/plans/world"},
+			},
+		},
 	}
 
 	for _, tt := range tests {
-		got := getResourceFromRequest(tt.request, tt.method)
+		got, _ := getResourceFromRequest(tt.request, tt.method)
 		require.Equal(t, tt.want, got, tt.method)
 	}
 }
