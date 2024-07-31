@@ -178,10 +178,11 @@ func (s *Service) RegisterWebhookRoutes(g *echo.Group) {
 			comment = getPullRequestComment(setting.ExternalUrl, issue.Name)
 			commentPrefix = commentPrefixBytebaseBot
 		case webhookActionSQLReview:
-			comment, err = s.sqlReviewWithPRInfo(childCtx, project, vcsConnector, prInfo)
+			comment, err = s.sqlReviewWithPRInfo(childCtx, project, vcsConnector, vcsProvider.Type, prInfo)
 			if err != nil {
 				return c.String(http.StatusOK, fmt.Sprintf("failed to exec sql review for pull request %s, error %v", prInfo.url, err))
 			}
+			comment = fmt.Sprintf("%s\n\n---\n\nClick [here](%s) to check the SQL review config", comment, fmt.Sprintf("%s/sql-review", setting.ExternalUrl))
 			commentPrefix = commentPrefixSQLReview
 		default:
 		}
@@ -195,6 +196,7 @@ func (s *Service) RegisterWebhookRoutes(g *echo.Group) {
 				fmt.Sprintf("%s\n\n%s", commentPrefix, comment),
 				func(content string) bool { return strings.HasPrefix(content, commentPrefix) },
 			); err != nil {
+				slog.Error("failed to upsert comment", slog.String("pr", prInfo.url), log.BBError(err))
 				return c.String(http.StatusOK, fmt.Sprintf("failed to create pull request comment, error %v", err))
 			}
 		}
@@ -219,13 +221,16 @@ func validateGitHubWebhookSignature256(signature, key string, body []byte) (bool
 	return subtle.ConstantTimeCompare([]byte(signature), []byte(got)) == 1, nil
 }
 
-func (s *Service) sqlReviewWithPRInfo(ctx context.Context, project *store.ProjectMessage, vcsConnector *store.VCSConnectorMessage, prInfo *pullRequestInfo) (string, error) {
+func (s *Service) sqlReviewWithPRInfo(ctx context.Context, project *store.ProjectMessage, vcsConnector *store.VCSConnectorMessage, vcsType storepb.VCSType, prInfo *pullRequestInfo) (string, error) {
 	instance, database, err := s.getDatabaseSample(ctx, project, vcsConnector)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to get database sample")
 	}
 
 	content := []string{}
+	errorCount := 0
+	warnCount := 0
+
 	for _, change := range prInfo.changes {
 		adviceStatus, advices, err := s.sqlService.SQLReviewCheck(
 			ctx,
@@ -243,10 +248,14 @@ func (s *Service) sqlReviewWithPRInfo(ctx context.Context, project *store.Projec
 			continue
 		}
 
-		// TODO(ed): better message format. Maybe add links for files?
 		adviceMessage := []string{}
 		for _, advice := range advices {
-			message := fmt.Sprintf("- [%d] %s (line: %d)", advice.Code, advice.Title, advice.Line)
+			if advice.Status == v1pb.Advice_ERROR {
+				errorCount++
+			} else if advice.Status == v1pb.Advice_WARNING {
+				warnCount++
+			}
+			message := fmt.Sprintf("- **[%s]** %s ([line%d](%s))", advice.Status.String(), advice.Title, advice.Line, getFileWebURLInPR(change.webURL, advice.Line, vcsType))
 			adviceMessage = append(adviceMessage, message)
 		}
 
@@ -254,12 +263,19 @@ func (s *Service) sqlReviewWithPRInfo(ctx context.Context, project *store.Projec
 			if len(content) > 0 {
 				content = append(content, "\n")
 			}
-			content = append(content, fmt.Sprintf("SQL review for %s", change.path))
-			content = append(content, strings.Join(adviceMessage, "\n"))
+			content = append(content, fmt.Sprintf("SQL review for [%s](%s)\n", change.path, change.webURL))
+			// We have to use at least 2 \n for Bitbucket.
+			// The API docs for Bitbucket sucks.
+			// https://community.atlassian.com/t5/Bitbucket-questions/How-to-post-html-comments-on-pull-request-via-2-0-api/qaq-p/1066809
+			content = append(content, strings.Join(adviceMessage, "\n\n"))
 		}
 	}
 
-	return strings.Join(content, "\n"), nil
+	if len(content) == 0 {
+		return "", nil
+	}
+
+	return fmt.Sprintf("\n%d errors, %d warnings\n\n---\n\n%s", errorCount, warnCount, strings.Join(content, "\n")), nil
 }
 
 func (s *Service) createIssueFromPRInfo(ctx context.Context, project *store.ProjectMessage, vcsProvider *store.VCSProviderMessage, vcsConnector *store.VCSConnectorMessage, prInfo *pullRequestInfo) (*v1pb.Issue, error) {
