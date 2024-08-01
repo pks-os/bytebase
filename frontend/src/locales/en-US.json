@@ -462,7 +462,6 @@
       "gitops": "GitOps",
       "subscription": "Subscription",
       "labels": "Labels",
-      "debug-log": "Debug Log",
       "sensitive-data": "Data Masking",
       "access-control": "Data Access Control",
       "audit-log": "Audit Log",
@@ -1551,7 +1550,12 @@
     "production-environment": "Production environment",
     "access-control": {
       "title": "Access control",
-      "disable-copy-data-from-sql-editor": "Restrict data copying in SQL Editor (Admins/DBAs allowed)"
+      "disable-copy-data-from-sql-editor": "Restrict data copying in SQL Editor (Admins/DBAs allowed)",
+      "restrict-admin-data-sources": {
+        "self": "Restrict admin data sources",
+        "disallow": "Disallow to query data from admin data source",
+        "fallback": "Fallback to admin data source if no read-only data source is available"
+      }
     }
   },
   "quick-start": {
@@ -2417,6 +2421,10 @@
         "description": "Auto Completion might be limited or disabled.",
         "disconnected": "WebSocket disconnected"
       }
+    },
+    "query-context": {
+      "admin-data-source-is-disallowed-to-query": "Admin data source is disallowed to query.",
+      "admin-data-source-is-disallowed-to-query-when-read-only-data-source-is-available": "Admin data source is disallowed to query when read-only data source is available."
     }
   },
   "schema-editor": {
@@ -2885,30 +2893,6 @@
     "rule-detail": "Rule detail",
     "view-definition": "View definition",
     "other-engines": "Other engines"
-  },
-  "debug-log": {
-    "title": "Debug Log",
-    "no-logs": "No debug logs",
-    "count-of-logs": "Fetched latest {count} log(s) from server.",
-    "debug-log-detail": "Debug Log Details",
-    "enabled": "Debug mode is enabled.",
-    "open-debug-mode": "Enable debug",
-    "table": {
-      "record-ts": "Time",
-      "method": "Method",
-      "request-path": "Request path",
-      "error": "Error",
-      "stack-trace": "Stack trace",
-      "empty": "<Empty>",
-      "operation": {
-        "operation": "Operation",
-        "view-details": "View Details",
-        "copy": "Copy",
-        "copy-all": "Copy All",
-        "copied": "Copied!",
-        "export": "Export"
-      }
-    }
   },
   "audit-log": {
     "no-logs": "No audit logs",

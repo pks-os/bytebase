@@ -462,7 +462,6 @@
       "gitops": "GitOps",
       "subscription": "Suscripción",
       "labels": "Etiquetas",
-      "debug-log": "Registro de Depuración",
       "sensitive-data": "Enmascaramiento de Datos",
       "access-control": "Control de Acceso a Datos",
       "audit-log": "Registro de auditoría",
@@ -1551,7 +1550,12 @@
     "production-environment": "Entorno de producción",
     "access-control": {
       "title": "Control de acceso",
-      "disable-copy-data-from-sql-editor": "Restringir la copia de datos en el editor SQL (permitido para administradores/DBA)"
+      "disable-copy-data-from-sql-editor": "Restringir la copia de datos en el editor SQL (permitido para administradores/DBA)",
+      "restrict-admin-data-sources": {
+        "self": "Restringir fuentes de datos de administrador",
+        "disallow": "No permitir consultar datos de la fuente de datos del administrador",
+        "fallback": "Recurrir a la fuente de datos del administrador si no hay ninguna fuente de datos de solo lectura disponible"
+      }
     }
   },
   "quick-start": {
@@ -2417,6 +2421,10 @@
         "description": "La finalización automática puede estar limitada o deshabilitada.",
         "disconnected": "WebSocket desconectado"
       }
+    },
+    "query-context": {
+      "admin-data-source-is-disallowed-to-query": "No se permite realizar consultas a la fuente de datos del administrador.",
+      "admin-data-source-is-disallowed-to-query-when-read-only-data-source-is-available": "No se permite realizar consultas a la fuente de datos del administrador cuando la fuente de datos de solo lectura está disponible."
     }
   },
   "schema-editor": {
@@ -2885,30 +2893,6 @@
     "rule-detail": "Detalle de la regla",
     "view-definition": "Ver definición",
     "other-engines": "Otros motores"
-  },
-  "debug-log": {
-    "title": "Registro de depuración",
-    "no-logs": "No hay registros de depuración",
-    "count-of-logs": "Se recuperaron los últimos {count} registro(s) del servidor.",
-    "debug-log-detail": "Detalles del registro de depuración",
-    "enabled": "El modo de depuración está habilitado.",
-    "open-debug-mode": "Habilitar depuración",
-    "table": {
-      "record-ts": "Hora",
-      "method": "Método",
-      "request-path": "Ruta de solicitud",
-      "error": "Error",
-      "stack-trace": "Rastreo de pila",
-      "empty": "<Vacío>",
-      "operation": {
-        "operation": "Operación",
-        "view-details": "Ver detalles",
-        "copy": "Copiar",
-        "copy-all": "Copiar todo",
-        "copied": "¡Copiado!",
-        "export": "Exportar"
-      }
-    }
   },
   "audit-log": {
     "no-logs": "Sin registros de auditoría",

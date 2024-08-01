@@ -1445,6 +1445,10 @@ export const AuthServiceDefinition = {
   name: "AuthService",
   fullName: "bytebase.v1.AuthService",
   methods: {
+    /**
+     * Get the user.
+     * Any authenticated user can get the user.
+     */
     getUser: {
       name: "GetUser",
       requestType: GetUserRequest,
@@ -1483,6 +1487,10 @@ export const AuthServiceDefinition = {
         },
       },
     },
+    /**
+     * List all users.
+     * Any authenticated user can list users.
+     */
     listUsers: {
       name: "ListUsers",
       requestType: ListUsersRequest,
@@ -1497,6 +1505,11 @@ export const AuthServiceDefinition = {
         },
       },
     },
+    /**
+     * Create a user.
+     * When Disallow Signup is enabled, only the caller with bb.users.create on the workspace can create a user.
+     * Otherwise, any unauthenticated user can create a user.
+     */
     createUser: {
       name: "CreateUser",
       requestType: CreateUserRequest,
@@ -1508,10 +1521,12 @@ export const AuthServiceDefinition = {
           8410: [new Uint8Array([4, 117, 115, 101, 114])],
           800000: [new Uint8Array([1])],
           800016: [new Uint8Array([2])],
+          800024: [new Uint8Array([1])],
           578365826: [new Uint8Array([17, 58, 4, 117, 115, 101, 114, 34, 9, 47, 118, 49, 47, 117, 115, 101, 114, 115])],
         },
       },
     },
+    /** Only the user itself and the user with bb.users.update permission on the workspace can update the user. */
     updateUser: {
       name: "UpdateUser",
       requestType: UpdateUserRequest,
@@ -1522,6 +1537,7 @@ export const AuthServiceDefinition = {
         _unknownFields: {
           8410: [new Uint8Array([16, 117, 115, 101, 114, 44, 117, 112, 100, 97, 116, 101, 95, 109, 97, 115, 107])],
           800016: [new Uint8Array([2])],
+          800024: [new Uint8Array([1])],
           578365826: [
             new Uint8Array([
               31,
@@ -1561,6 +1577,10 @@ export const AuthServiceDefinition = {
         },
       },
     },
+    /**
+     * Only the user with bb.users.delete permission on the workspace can delete the user.
+     * The last remaining workspace admin cannot be deleted.
+     */
     deleteUser: {
       name: "DeleteUser",
       requestType: DeleteUserRequest,
@@ -1599,6 +1619,7 @@ export const AuthServiceDefinition = {
         },
       },
     },
+    /** Only the user with bb.users.undelete permission on the workspace can undelete the user. */
     undeleteUser: {
       name: "UndeleteUser",
       requestType: UndeleteUserRequest,
@@ -1657,6 +1678,7 @@ export const AuthServiceDefinition = {
       options: {
         _unknownFields: {
           800000: [new Uint8Array([1])],
+          800024: [new Uint8Array([1])],
           578365826: [
             new Uint8Array([19, 58, 1, 42, 34, 14, 47, 118, 49, 47, 97, 117, 116, 104, 47, 108, 111, 103, 105, 110]),
           ],

@@ -462,7 +462,6 @@
       "gitops": "GitOps",
       "subscription": "サブスクリプション",
       "labels": "ラベル",
-      "debug-log": "デバッグログ",
       "sensitive-data": "データの非感作化",
       "access-control": "データアクセス制御",
       "audit-log": "監査ログ",
@@ -1551,7 +1550,12 @@
     "production-environment": "本番環境",
     "access-control": {
       "title": "アクセス制御",
-      "disable-copy-data-from-sql-editor": "SQL エディタにおけるデータコピーの制限 (管理者/DBA はコピー可能)"
+      "disable-copy-data-from-sql-editor": "SQL エディタにおけるデータコピーの制限 (管理者/DBA はコピー可能)",
+      "restrict-admin-data-sources": {
+        "self": "管理者データソースを制限する",
+        "disallow": "管理データソースからのデータのクエリを禁止する",
+        "fallback": "読み取り専用データソースが利用できない場合は、管理データソースにフォールバックします。"
+      }
     }
   },
   "quick-start": {
@@ -2417,6 +2421,10 @@
         "description": "オートコンプリートが制限されているか、無効になっている可能性があります。",
         "disconnected": "WebSocketが切断されました"
       }
+    },
+    "query-context": {
+      "admin-data-source-is-disallowed-to-query": "管理者データ ソースはクエリできません。",
+      "admin-data-source-is-disallowed-to-query-when-read-only-data-source-is-available": "読み取り専用データ ソースが使用可能な場合、管理データ ソースはクエリを実行できません。"
     }
   },
   "schema-editor": {
@@ -2885,30 +2893,6 @@
     "rule-detail": "ルールの詳細",
     "view-definition": "ビューの定義",
     "other-engines": "他の種類のデータベース"
-  },
-  "debug-log": {
-    "title": "デバッグログ",
-    "no-logs": "デバッグログはまだありません",
-    "count-of-logs": "サーバーから取得した最新の {count} ログ。",
-    "debug-log-detail": "ログの詳細",
-    "enabled": "デバッグモードがオンになっています",
-    "open-debug-mode": "デバッグモードをオンにする",
-    "table": {
-      "record-ts": "時間",
-      "method": "方法",
-      "request-path": "リクエストパス",
-      "error": "間違った情報",
-      "stack-trace": "コールスタック",
-      "empty": "<なし>",
-      "operation": {
-        "operation": "操作する",
-        "view-details": "詳細を確認する",
-        "copy": "コピー",
-        "copy-all": "すべてコピーする",
-        "copied": "コピーされました",
-        "export": "輸出"
-      }
-    }
   },
   "audit-log": {
     "no-logs": "監査ログはまだありません",

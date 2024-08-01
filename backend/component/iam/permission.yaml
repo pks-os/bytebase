@@ -1,6 +1,7 @@
 permissions:
   projectPermissions:
-    - bb.auditLogs.get
+    - bb.auditLogs.export
+    - bb.auditLogs.search
     - bb.branches.create
     - bb.branches.delete
     - bb.branches.get
@@ -22,6 +23,7 @@ permissions:
     - bb.databaseSecrets.list
     - bb.databaseSecrets.update
     - bb.databases.adviseIndex
+    - bb.databases.check
     - bb.databases.export
     - bb.databases.get
     - bb.databases.getSchema
@@ -51,6 +53,7 @@ permissions:
     - bb.rollouts.get
     - bb.rollouts.preview
     - bb.slowQueries.list
+    - bb.taskRuns.create
     - bb.taskRuns.list
   workspacePermissions:
     - bb.environments.create
@@ -101,6 +104,12 @@ permissions:
     - bb.userGroups.delete
     - bb.userGroups.list
     - bb.userGroups.get
+    - bb.users.create
+    - bb.users.update
+    - bb.users.delete
+    - bb.users.undelete
     - bb.settings.get
     - bb.settings.list
     - bb.settings.set
+    - bb.worksheets.manage
+    - bb.worksheets.get

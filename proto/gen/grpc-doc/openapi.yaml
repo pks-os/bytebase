@@ -10,6 +10,7 @@ paths:
         get:
             tags:
                 - ProjectService
+            description: Deprecated.
             operationId: ProjectService_BatchGetIamPolicy
             parameters:
                 - name: '*'
@@ -46,45 +47,6 @@ paths:
                 "200":
                     description: OK
                     content: {}
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
-    /v1/actuator/debug:
-        get:
-            tags:
-                - ActuatorService
-            operationId: ActuatorService_ListDebugLog
-            parameters:
-                - name: pageSize
-                  in: query
-                  description: |-
-                    The maximum number of logs to return. The service may return fewer than
-                     this value.
-                     If unspecified, at most 50 logs will be returned.
-                     The maximum value is 1000; values above 1000 will be coerced to 1000.
-                  schema:
-                    type: integer
-                    format: int32
-                - name: pageToken
-                  in: query
-                  description: |-
-                    A page token, received from a previous `ListDebugLog` call.
-                     Provide this to retrieve the subsequent page.
-
-                     When paginating, all other parameters provided to `ListDebugLog` must match
-                     the call that provided the page token.
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ListDebugLogResponse'
                 default:
                     description: Default error response
                     content:
@@ -212,12 +174,44 @@ paths:
             tags:
                 - AuditLogService
             operationId: AuditLogService_ExportAuditLogs
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/ExportAuditLogsRequest'
-                required: true
+            parameters:
+                - name: parent
+                  in: query
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: |-
+                    The filter of the log. It should be a valid CEL expression.
+                     For example:
+                      - filter = "method == '/bytebase.v1.SQLService/Query'"
+                      - filter = "method == '/bytebase.v1.SQLService/Query' && severity == 'ERROR'"
+                      - filter = "method == '/bytebase.v1.SQLService/Query' && severity == 'ERROR' && user == 'users/bb@bytebase.com'"
+                      - filter = "method == '/bytebase.v1.SQLService/Query' && severity == 'ERROR' && create_time <= '2021-01-01T00:00:00Z' && create_time >= '2020-01-01T00:00:00Z'"
+                  schema:
+                    type: string
+                - name: orderBy
+                  in: query
+                  description: |-
+                    The order by of the log.
+                     Only support order by create_time.
+                     For example:
+                      - order_by = "create_time asc"
+                      - order_by = "create_time desc"
+                  schema:
+                    type: string
+                - name: format
+                  in: query
+                  description: The export format.
+                  schema:
+                    enum:
+                        - FORMAT_UNSPECIFIED
+                        - CSV
+                        - JSON
+                        - SQL
+                        - XLSX
+                    type: string
+                    format: enum
             responses:
                 "200":
                     description: OK
@@ -237,6 +231,10 @@ paths:
                 - AuditLogService
             operationId: AuditLogService_SearchAuditLogs
             parameters:
+                - name: parent
+                  in: query
+                  schema:
+                    type: string
                 - name: filter
                   in: query
                   description: |-
@@ -3507,6 +3505,100 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/projects/{project}/auditLogs:export:
+        post:
+            tags:
+                - AuditLogService
+            operationId: AuditLogService_ExportAuditLogs
+            parameters:
+                - name: project
+                  in: path
+                  description: The project id.
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ExportAuditLogsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExportAuditLogsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/projects/{project}/auditLogs:search:
+        get:
+            tags:
+                - AuditLogService
+            operationId: AuditLogService_SearchAuditLogs
+            parameters:
+                - name: project
+                  in: path
+                  description: The project id.
+                  required: true
+                  schema:
+                    type: string
+                - name: filter
+                  in: query
+                  description: |-
+                    The filter of the log. It should be a valid CEL expression.
+                     For example:
+                      - filter = "method == '/bytebase.v1.SQLService/Query'"
+                      - filter = "method == '/bytebase.v1.SQLService/Query' && severity == 'ERROR'"
+                      - filter = "method == '/bytebase.v1.SQLService/Query' && severity == 'ERROR' && user == 'users/bb@bytebase.com'"
+                      - filter = "method == '/bytebase.v1.SQLService/Query' && severity == 'ERROR' && create_time <= '2021-01-01T00:00:00Z' && create_time >= '2020-01-01T00:00:00Z'"
+                  schema:
+                    type: string
+                - name: orderBy
+                  in: query
+                  description: |-
+                    The order by of the log.
+                     Only support order by create_time.
+                     For example:
+                      - order_by = "create_time asc"
+                      - order_by = "create_time desc"
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  description: |-
+                    The maximum number of logs to return.
+                     The service may return fewer than this value.
+                     If unspecified, at most 100 log entries will be returned.
+                     The maximum value is 1000; values above 1000 will be coerced to 1000.
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageToken
+                  in: query
+                  description: |-
+                    A page token, received from a previous `SearchLogs` call.
+                     Provide this to retrieve the subsequent page.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchAuditLogsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/projects/{project}/branch:
         post:
             tags:
@@ -4680,6 +4772,9 @@ paths:
         post:
             tags:
                 - IssueService
+            description: |-
+                ApproveIssue approves the issue.
+                 The access is based on approval flow.
             operationId: IssueService_ApproveIssue
             parameters:
                 - name: project
@@ -4833,6 +4928,9 @@ paths:
         post:
             tags:
                 - IssueService
+            description: |-
+                RejectIssue rejects the issue.
+                 The access is based on approval flow.
             operationId: IssueService_RejectIssue
             parameters:
                 - name: project
@@ -4870,6 +4968,9 @@ paths:
         post:
             tags:
                 - IssueService
+            description: |-
+                RequestIssue requests the issue.
+                 The access is based on approval flow.
             operationId: IssueService_RequestIssue
             parameters:
                 - name: project
@@ -5099,6 +5200,9 @@ paths:
         patch:
             tags:
                 - PlanService
+            description: |-
+                UpdatePlan updates the plan.
+                 The plan creator and the user with bb.plans.update permission on the project can update the plan.
             operationId: PlanService_UpdatePlan
             parameters:
                 - name: project
@@ -5267,6 +5371,7 @@ paths:
         get:
             tags:
                 - PlanService
+            description: Search for plans that the caller has the bb.plans.get permission on and also satisfy the specified filter & query.
             operationId: PlanService_SearchPlans
             parameters:
                 - name: project
@@ -5814,6 +5919,9 @@ paths:
         post:
             tags:
                 - RolloutService
+            description: |-
+                BatchSkipTasks cancels the specified task runs in batch.
+                 The access is the same as BatchRunTasks().
             operationId: RolloutService_BatchCancelTaskRuns
             parameters:
                 - name: project
@@ -5863,6 +5971,11 @@ paths:
         post:
             tags:
                 - RolloutService
+            description: |-
+                BatchRunTasks creates task runs for the specified tasks.
+                 DataExport issue only allows the creator to run the task.
+                 Users with "bb.taskRuns.create" permission can run the task, e.g. Workspace Admin and DBA.
+                 Follow role-based rollout policy for the environment.
             operationId: RolloutService_BatchRunTasks
             parameters:
                 - name: project
@@ -5906,6 +6019,9 @@ paths:
         post:
             tags:
                 - RolloutService
+            description: |-
+                BatchSkipTasks skips the specified tasks.
+                 The access is the same as BatchRunTasks().
             operationId: RolloutService_BatchSkipTasks
             parameters:
                 - name: project
@@ -6607,6 +6723,7 @@ paths:
         get:
             tags:
                 - SQLService
+            description: SearchQueryHistories searches query histories for the caller.
             operationId: SQLService_SearchQueryHistories
             parameters:
                 - name: pageSize
@@ -7345,6 +7462,9 @@ paths:
         get:
             tags:
                 - AuthService
+            description: |-
+                List all users.
+                 Any authenticated user can list users.
             operationId: AuthService_ListUsers
             parameters:
                 - name: pageSize
@@ -7388,6 +7508,10 @@ paths:
         post:
             tags:
                 - AuthService
+            description: |-
+                Create a user.
+                 When Disallow Signup is enabled, only the caller with bb.users.create on the workspace can create a user.
+                 Otherwise, any unauthenticated user can create a user.
             operationId: AuthService_CreateUser
             requestBody:
                 content:
@@ -7412,6 +7536,9 @@ paths:
         get:
             tags:
                 - AuthService
+            description: |-
+                Get the user.
+                 Any authenticated user can get the user.
             operationId: AuthService_GetUser
             parameters:
                 - name: user
@@ -7436,6 +7563,9 @@ paths:
         delete:
             tags:
                 - AuthService
+            description: |-
+                Only the user with bb.users.delete permission on the workspace can delete the user.
+                 The last remaining workspace admin cannot be deleted.
             operationId: AuthService_DeleteUser
             parameters:
                 - name: user
@@ -7457,6 +7587,7 @@ paths:
         patch:
             tags:
                 - AuthService
+            description: Only the user itself and the user with bb.users.update permission on the workspace can update the user.
             operationId: AuthService_UpdateUser
             parameters:
                 - name: user
@@ -7511,6 +7642,7 @@ paths:
         post:
             tags:
                 - AuthService
+            description: Only the user with bb.users.undelete permission on the workspace can undelete the user.
             operationId: AuthService_UndeleteUser
             parameters:
                 - name: user
@@ -7749,6 +7881,7 @@ paths:
         post:
             tags:
                 - WorksheetService
+            description: Create a personal worksheet used in SQL Editor.
             operationId: WorksheetService_CreateWorksheet
             requestBody:
                 content:
@@ -7773,6 +7906,12 @@ paths:
         get:
             tags:
                 - WorksheetService
+            description: |-
+                Get a worksheet by name.
+                 The users can access this method if,
+                 - they are the creator of the worksheet;
+                 - they have bb.worksheets.get permission on the workspace;
+                 - the sheet is shared with them with PROJECT_READ and PROJECT_WRITE visibility, and they have bb.projects.get permission on the project.
             operationId: WorksheetService_GetWorksheet
             parameters:
                 - name: worksheet
@@ -7797,6 +7936,9 @@ paths:
         delete:
             tags:
                 - WorksheetService
+            description: |-
+                Delete a worksheet.
+                 The access is the same as UpdateWorksheet method.
             operationId: WorksheetService_DeleteWorksheet
             parameters:
                 - name: worksheet
@@ -7818,6 +7960,12 @@ paths:
         patch:
             tags:
                 - WorksheetService
+            description: |-
+                Update a worksheet.
+                 The users can access this method if,
+                 - they are the creator of the worksheet;
+                 - they have bb.worksheets.manage permission on the workspace;
+                 - the sheet is shared with them with PROJECT_WRITE visibility, and they have bb.projects.get permission on the project.
             operationId: WorksheetService_UpdateWorksheet
             parameters:
                 - name: worksheet
@@ -7863,6 +8011,9 @@ paths:
         patch:
             tags:
                 - WorksheetService
+            description: |-
+                Update the organizer of a worksheet.
+                 The access is the same as UpdateWorksheet method.
             operationId: WorksheetService_UpdateWorksheetOrganizer
             parameters:
                 - name: worksheet
@@ -7904,6 +8055,10 @@ paths:
         get:
             tags:
                 - WorksheetService
+            description: |-
+                Search for worksheets.
+                 This is used for finding my worksheets or worksheets shared by other people.
+                 The sheet accessibility is the same as GetWorksheet().
             operationId: WorksheetService_SearchWorksheets
             parameters:
                 - name: filter
@@ -9058,16 +9213,16 @@ components:
             description: CheckConstraintMetadata is the metadata for check constraints.
         CheckRequest:
             required:
-                - database
+                - name
             type: object
             properties:
-                statement:
-                    type: string
-                database:
+                name:
                     type: string
                     description: |-
                         The database name to check against.
-                         Format: instances/{instance}/databases/{databaseName}
+                         Format: instances/{instance}/databases/{database}
+                statement:
+                    type: string
                 metadata:
                     allOf:
                         - $ref: '#/components/schemas/DatabaseMetadata'
@@ -9542,20 +9697,6 @@ components:
                     type: string
                     description: The schema dump from database.
             description: DatabaseSchema is the metadata for databases.
-        DebugLog:
-            type: object
-            properties:
-                recordTime:
-                    type: string
-                    format: date-time
-                requestPath:
-                    type: string
-                user:
-                    type: string
-                error:
-                    type: string
-                stackTrace:
-                    type: string
         DeploymentConfig:
             type: object
             properties:
@@ -9795,8 +9936,12 @@ components:
                     description: The column number, starting from 0.
                     format: int32
         ExportAuditLogsRequest:
+            required:
+                - parent
             type: object
             properties:
+                parent:
+                    type: string
                 filter:
                     type: string
                     description: |-
@@ -10828,19 +10973,6 @@ components:
                     items:
                         $ref: '#/components/schemas/Database'
                     description: The databases from the specified request.
-                nextPageToken:
-                    type: string
-                    description: |-
-                        A token, which can be sent as `page_token` to retrieve the next page.
-                         If this field is omitted, there are no subsequent pages.
-        ListDebugLogResponse:
-            type: object
-            properties:
-                logs:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/DebugLog'
-                    description: The logs from the specified request.
                 nextPageToken:
                     type: string
                     description: |-

@@ -1,7 +1,8 @@
 roles:
   - name: roles/workspaceAdmin
     permissions:
-      - bb.auditLogs.get
+      - bb.auditLogs.export
+      - bb.auditLogs.search
       - bb.branches.create
       - bb.branches.delete
       - bb.branches.get
@@ -23,6 +24,7 @@ roles:
       - bb.databaseSecrets.list
       - bb.databaseSecrets.update
       - bb.databases.adviseIndex
+      - bb.databases.check
       - bb.databases.export
       - bb.databases.get
       - bb.databases.getSchema
@@ -106,15 +108,23 @@ roles:
       - bb.settings.list
       - bb.settings.set
       - bb.slowQueries.list
+      - bb.taskRuns.create
       - bb.taskRuns.list
       - bb.userGroups.create
       - bb.userGroups.delete
       - bb.userGroups.get
       - bb.userGroups.list
       - bb.userGroups.update
+      - bb.users.create
+      - bb.users.update
+      - bb.users.delete
+      - bb.users.undelete
+      - bb.worksheets.manage
+      - bb.worksheets.get
   - name: roles/workspaceDBA
     permissions:
-      - bb.auditLogs.get
+      - bb.auditLogs.export
+      - bb.auditLogs.search
       - bb.branches.create
       - bb.branches.delete
       - bb.branches.get
@@ -136,6 +146,7 @@ roles:
       - bb.databaseSecrets.list
       - bb.databaseSecrets.update
       - bb.databases.adviseIndex
+      - bb.databases.check
       - bb.databases.export
       - bb.databases.get
       - bb.databases.getSchema
@@ -219,9 +230,12 @@ roles:
       - bb.settings.list
       - bb.settings.set
       - bb.slowQueries.list
+      - bb.taskRuns.create
       - bb.taskRuns.list
       - bb.userGroups.get
       - bb.userGroups.list
+      - bb.worksheets.manage
+      - bb.worksheets.get
   - name: roles/workspaceMember
     permissions:
       - bb.environments.get
@@ -235,12 +249,14 @@ roles:
       - bb.policies.list
       - bb.risks.list
       - bb.roles.list
+      - bb.settings.get
       - bb.settings.list
       - bb.userGroups.get
       - bb.userGroups.list
   - name: roles/projectOwner
     permissions:
-      - bb.auditLogs.get
+      - bb.auditLogs.export
+      - bb.auditLogs.search
       - bb.branches.create
       - bb.branches.delete
       - bb.branches.get
@@ -262,6 +278,7 @@ roles:
       - bb.databaseSecrets.list
       - bb.databaseSecrets.update
       - bb.databases.adviseIndex
+      - bb.databases.check
       - bb.databases.export
       - bb.databases.get
       - bb.databases.getSchema
@@ -307,6 +324,7 @@ roles:
       - bb.changelists.create
       - bb.changelists.get
       - bb.changelists.list
+      - bb.databases.check
       - bb.databases.get
       - bb.databases.getSchema
       - bb.databases.list
@@ -352,6 +370,7 @@ roles:
     permissions:
       - bb.branches.get
       - bb.changeHistories.get
+      - bb.databases.check
       - bb.databases.get
       - bb.databases.getSchema
       - bb.databases.list

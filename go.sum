@@ -778,8 +778,8 @@ github.com/bytebase/antlr/v4 v4.0.0-20240628084508-8a85f73b60b3 h1:TSzeWiRWr7T8h
 github.com/bytebase/antlr/v4 v4.0.0-20240628084508-8a85f73b60b3/go.mod h1:ykhjIPiv0IWpu3OGXCHdz2eUSe8UNGGD6baqjs8jSuU=
 github.com/bytebase/bq-parser v0.0.0-20240529032606-614a0230b8f7 h1:tDEAGOa3tSmTOfUshYBwsOqunGajGu7SBL8NMlM71bU=
 github.com/bytebase/bq-parser v0.0.0-20240529032606-614a0230b8f7/go.mod h1:uDDETOUNvOuKjha/g+oC8NdqhcGyGEl4NOeoKh2OhNE=
-github.com/bytebase/gh-ost2 v0.0.0-20240226091811-8bc079577744 h1:quO7ADa+58XcEOXBqAB0Ofd0RJbzal94TmXd60ezrx4=
-github.com/bytebase/gh-ost2 v0.0.0-20240226091811-8bc079577744/go.mod h1:VRPqaDM7UYxJbcCtQkjBcNkxW17p6LJJdkM/nYwQhqg=
+github.com/bytebase/gh-ost2 v0.0.0-20240731091141-e7a12a9401ab h1:hJ3tfjfm5D63QwCH+znK1ZQQzk9/rG4Jjz7CSxVtSrQ=
+github.com/bytebase/gh-ost2 v0.0.0-20240731091141-e7a12a9401ab/go.mod h1:VRPqaDM7UYxJbcCtQkjBcNkxW17p6LJJdkM/nYwQhqg=
 github.com/bytebase/go-lsp v0.0.0-20240130071507-c04b5c75010c h1:W832GNANCst4C6TgYbQnKKxbuMZKQxTD4++b3HOuzBo=
 github.com/bytebase/go-lsp v0.0.0-20240130071507-c04b5c75010c/go.mod h1:SULmZY7YNBsvNiQbrb/BEDdEJ84TGnfyUQxaHt8t8rY=
 github.com/bytebase/go-mssqldb v0.0.0-20240613094500-7f9ca9381f8f h1:hcjpjIaVVPuZOrHvkXiu7HDSow03aDdK+fXTZM6g93c=
@@ -2006,8 +2006,8 @@ golang.org/x/exp v0.0.0-20200207192155-f17229e696bd/go.mod h1:J/WKrq2StrnmMY6+EH
 golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6/go.mod h1:3jZMyOhIsHpP37uCMkUooju7aAi5cS1Q23tOzKc+0MU=
 golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5/go.mod h1:4M0jN8W1tt0AVLNr8HDosyJCDCDuyL9N9+3m7wDWgKw=
 golang.org/x/exp v0.0.0-20220827204233-334a2380cb91/go.mod h1:cyybsKvd6eL0RnXn6p/Grxp8F5bW7iYuBgsNCOHpMYE=
-golang.org/x/exp v0.0.0-20240707233637-46b078467d37 h1:uLDX+AfeFCct3a2C7uIWBKMJIR3CJMhcgfrUAqjRK6w=
-golang.org/x/exp v0.0.0-20240707233637-46b078467d37/go.mod h1:M4RDyNAINzryxdtnbRXRL/OHtkFuWGRjvuhBJpk2IlY=
+golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 h1:2dVuKD2vS7b0QIHQbpyTISPd0LeHDbnYEryqj5Q1ug8=
+golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56/go.mod h1:M4RDyNAINzryxdtnbRXRL/OHtkFuWGRjvuhBJpk2IlY=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20190802002840-cff245a6509b/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=

@@ -57,12 +57,19 @@ const (
 	PermissionUserGroupsGet              Permission = "bb.userGroups.get"
 	PermissionUserGroupsList             Permission = "bb.userGroups.list"
 	PermissionUserGroupsUpdate           Permission = "bb.userGroups.update"
+	PermissionUsersCreate                Permission = "bb.users.create"
+	PermissionUsersUpdate                Permission = "bb.users.update"
+	PermissionUsersDelete                Permission = "bb.users.delete"
+	PermissionUsersUndelete              Permission = "bb.users.undelete"
 	PermissionSettingsGet                Permission = "bb.settings.get"
 	PermissionSettingsList               Permission = "bb.settings.list"
 	PermissionSettingsSet                Permission = "bb.settings.set"
+	PermissionWorksheetsGet              Permission = "bb.worksheets.get"
+	PermissionWorksheetsManage           Permission = "bb.worksheets.manage"
 
 	// Project-level permissions.
-	PermissionAuditLogsGet          Permission = "bb.auditLogs.get"
+	PermissionAuditLogsExport       Permission = "bb.auditLogs.export"
+	PermissionAuditLogsSearch       Permission = "bb.auditLogs.search"
 	PermissionBranchesCreate        Permission = "bb.branches.create"
 	PermissionBranchesDelete        Permission = "bb.branches.delete"
 	PermissionBranchesGet           Permission = "bb.branches.get"
@@ -84,6 +91,7 @@ const (
 	PermissionDatabaseSecretsList   Permission = "bb.databaseSecrets.list"
 	PermissionDatabaseSecretsUpdate Permission = "bb.databaseSecrets.update"
 	PermissionDatabasesAdviseIndex  Permission = "bb.databases.adviseIndex"
+	PermissionDatabasesCheck        Permission = "bb.databases.check"
 	PermissionDatabasesExport       Permission = "bb.databases.export"
 	PermissionDatabasesGet          Permission = "bb.databases.get"
 	PermissionDatabasesGetSchema    Permission = "bb.databases.getSchema"
@@ -116,6 +124,7 @@ const (
 	PermissionRolloutsGet           Permission = "bb.rollouts.get"
 	PermissionRolloutsPreview       Permission = "bb.rollouts.preview"
 	PermissionSlowQueriesList       Permission = "bb.slowQueries.list"
+	PermissionTaskRunsCreate        Permission = "bb.taskRuns.create"
 	PermissionTaskRunsList          Permission = "bb.taskRuns.list"
 )
 
@@ -173,12 +182,19 @@ var allWorkspacePermissions = []Permission{
 	PermissionUserGroupsGet,
 	PermissionUserGroupsList,
 	PermissionUserGroupsUpdate,
+	PermissionUsersCreate,
+	PermissionUsersUpdate,
+	PermissionUsersDelete,
+	PermissionUsersUndelete,
 	PermissionSettingsGet,
 	PermissionSettingsList,
 	PermissionSettingsSet,
+	PermissionWorksheetsManage,
+	PermissionWorksheetsGet,
 }
 var allProjectPermissions = []Permission{
-	PermissionAuditLogsGet,
+	PermissionAuditLogsExport,
+	PermissionAuditLogsSearch,
 	PermissionBranchesCreate,
 	PermissionBranchesDelete,
 	PermissionBranchesGet,
@@ -200,6 +216,7 @@ var allProjectPermissions = []Permission{
 	PermissionDatabaseSecretsList,
 	PermissionDatabaseSecretsUpdate,
 	PermissionDatabasesAdviseIndex,
+	PermissionDatabasesCheck,
 	PermissionDatabasesExport,
 	PermissionDatabasesGet,
 	PermissionDatabasesGetSchema,
@@ -232,6 +249,7 @@ var allProjectPermissions = []Permission{
 	PermissionRolloutsGet,
 	PermissionRolloutsPreview,
 	PermissionSlowQueriesList,
+	PermissionTaskRunsCreate,
 	PermissionTaskRunsList,
 }
 
