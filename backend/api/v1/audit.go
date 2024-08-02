@@ -104,13 +104,7 @@ func (in *AuditInterceptor) AuditInterceptor(ctx context.Context, request any, s
 
 	response, rerr := handler(ctx, request)
 
-	authCtx, ok := common.GetAuthContextFromContext(ctx)
-	if !ok {
-		slog.Warn("audit interceptor: failed to get auth context")
-		return response, rerr
-	}
-
-	if authCtx.Audit {
+	if needAudit(ctx) {
 		if err := createAuditLog(ctx, request, response, serverInfo.FullMethod, in.store, serviceData, rerr); err != nil {
 			slog.Warn("audit interceptor: failed to create audit log", log.BBError(err))
 		}
@@ -164,7 +158,7 @@ func (in *AuditInterceptor) AuditStreamInterceptor(srv any, ss grpc.ServerStream
 
 	auditStream := &auditStream{
 		ServerStream: overrideStream,
-		needAudit:    isStreamAuditMethod(info.FullMethod),
+		needAudit:    needAudit(overrideStream.childCtx),
 		ctx:          overrideStream.childCtx,
 		method:       info.FullMethod,
 		storage:      in.store,
@@ -183,6 +177,8 @@ func getRequestResource(request any) string {
 	switch r := request.(type) {
 	case *v1pb.QueryRequest:
 		return r.Name
+	case *v1pb.ExecuteRequest:
+		return r.Name
 	case *v1pb.AdminExecuteRequest:
 		return r.Name
 	case *v1pb.ExportRequest:
@@ -191,6 +187,12 @@ func getRequestResource(request any) string {
 		return r.Database.Name
 	case *v1pb.BatchUpdateDatabasesRequest:
 		return r.Parent
+	case *v1pb.UpdateDatabaseMetadataRequest:
+		return r.GetDatabaseMetadata().GetName()
+	case *v1pb.UpdateSecretRequest:
+		return r.GetSecret().GetName()
+	case *v1pb.DeleteSecretRequest:
+		return r.GetName()
 	case *v1pb.SetIamPolicyRequest:
 		return r.Resource
 	case *v1pb.CreateUserRequest:
@@ -213,6 +215,20 @@ func getRequestResource(request any) string {
 		return r.Name
 	case *v1pb.UndeleteEnvironmentRequest:
 		return r.Name
+	case *v1pb.CreateInstanceRequest:
+		return r.GetInstance().GetName()
+	case *v1pb.UpdateInstanceRequest:
+		return r.GetInstance().GetName()
+	case *v1pb.DeleteInstanceRequest:
+		return r.GetName()
+	case *v1pb.UndeleteInstanceRequest:
+		return r.GetName()
+	case *v1pb.AddDataSourceRequest:
+		return r.GetName()
+	case *v1pb.RemoveDataSourceRequest:
+		return r.GetName()
+	case *v1pb.UpdateDataSourceRequest:
+		return r.GetName()
 	case *v1pb.UpdateSettingRequest:
 		return r.GetSetting().GetName()
 	default:
@@ -229,7 +245,7 @@ func getRequestString(request any) (string, error) {
 		case *v1pb.ExportRequest:
 			//nolint:revive
 			r = proto.Clone(r).(*v1pb.ExportRequest)
-			r.Password = ""
+			r.Password = maskedString
 			return r
 		case *v1pb.CreateUserRequest:
 			return redactCreateUserRequest(r)
@@ -240,6 +256,24 @@ func getRequestString(request any) (string, error) {
 				return redactLoginRequest(r)
 			}
 			return nil
+		case *v1pb.CreateInstanceRequest:
+			r.Instance = redactInstance(r.Instance)
+			return r
+		case *v1pb.UpdateInstanceRequest:
+			r.Instance = redactInstance(r.Instance)
+			return r
+		case *v1pb.AddDataSourceRequest:
+			r.DataSource = redactDataSource(r.DataSource)
+			return r
+		case *v1pb.UpdateDataSourceRequest:
+			r.DataSource = redactDataSource(r.DataSource)
+			return r
+		case *v1pb.RemoveDataSourceRequest:
+			r.DataSource = redactDataSource(r.DataSource)
+			return r
+		case *v1pb.UpdateSecretRequest:
+			r.Secret = redactSecret(r.Secret)
+			return r
 		default:
 			if p, ok := r.(protoreflect.ProtoMessage); ok {
 				return p
@@ -273,6 +307,10 @@ func getResponseString(response any) (string, error) {
 			return nil
 		case *v1pb.User:
 			return redactUser(r)
+		case *v1pb.Instance:
+			return redactInstance(r)
+		case *v1pb.Secret:
+			return redactSecret(r)
 		default:
 			if p, ok := r.(protoreflect.ProtoMessage); ok {
 				return p
@@ -348,6 +386,55 @@ func redactUser(r *v1pb.User) *v1pb.User {
 	}
 }
 
+func redactInstance(i *v1pb.Instance) *v1pb.Instance {
+	if i == nil {
+		return nil
+	}
+	var dataSources []*v1pb.DataSource
+	for _, d := range i.DataSources {
+		dataSources = append(dataSources, redactDataSource(d))
+	}
+	i.DataSources = dataSources
+	return i
+}
+
+func redactDataSource(d *v1pb.DataSource) *v1pb.DataSource {
+	if d.Password != "" {
+		d.Password = maskedString
+	}
+	if d.SslCa != "" {
+		d.SslCa = maskedString
+	}
+	if d.SslCert != "" {
+		d.SslCert = maskedString
+	}
+	if d.SslKey != "" {
+		d.SslKey = maskedString
+	}
+	if d.SshPassword != "" {
+		d.SshPassword = maskedString
+	}
+	if d.SshPrivateKey != "" {
+		d.SshPrivateKey = maskedString
+	}
+	if d.AuthenticationPrivateKey != "" {
+		d.AuthenticationPrivateKey = maskedString
+	}
+	if d.ExternalSecret != nil {
+		d.ExternalSecret = new(v1pb.DataSourceExternalSecret)
+	}
+	if d.SaslConfig != nil {
+		if krbConf := d.SaslConfig.GetKrbConfig(); krbConf != nil {
+			krbConf.Keytab = []byte(maskedString)
+			d.SaslConfig.Mechanism = &v1pb.SASLConfig_KrbConfig{KrbConfig: krbConf}
+		}
+	}
+	if d.MasterPassword != "" {
+		d.MasterPassword = maskedString
+	}
+	return d
+}
+
 func redactAdminExecuteResponse(r *v1pb.AdminExecuteResponse) *v1pb.AdminExecuteResponse {
 	if r == nil {
 		return nil
@@ -399,11 +486,16 @@ func redactQueryResponse(r *v1pb.QueryResponse) *v1pb.QueryResponse {
 	return n
 }
 
-func isStreamAuditMethod(method string) bool {
-	switch method {
-	case v1pb.SQLService_AdminExecute_FullMethodName:
-		return true
-	default:
+func redactSecret(s *v1pb.Secret) *v1pb.Secret {
+	s.Value = maskedString
+	return s
+}
+
+func needAudit(ctx context.Context) bool {
+	authCtx, ok := common.GetAuthContextFromContext(ctx)
+	if !ok {
+		slog.Warn("audit interceptor: failed to get auth context")
 		return false
 	}
+	return authCtx.Audit
 }
