@@ -1,7 +1,6 @@
 import { startCase } from "lodash-es";
 import {
   Database,
-  GitBranch,
   CircleDot,
   Users,
   Link,
@@ -13,10 +12,7 @@ import {
   SquareGanttChartIcon,
 } from "lucide-vue-next";
 import { computed, h, unref } from "vue";
-import type {
-  RouteLocationNormalizedLoaded,
-  RouteRecordRaw,
-} from "vue-router";
+import type { RouteLocationNormalizedLoaded, RouteRecordRaw } from "vue-router";
 import { useRoute } from "vue-router";
 import type { SidebarItem } from "@/components/CommonSidebar.vue";
 import { t } from "@/plugins/i18n";
@@ -32,7 +28,6 @@ import projectV1Routes, {
   PROJECT_V1_ROUTE_MEMBERS,
   PROJECT_V1_ROUTE_SETTINGS,
   PROJECT_V1_ROUTE_WEBHOOKS,
-  PROJECT_V1_ROUTE_BRANCHES,
   PROJECT_V1_ROUTE_CHANGELISTS,
   PROJECT_V1_ROUTE_DATABASE_GROUPS,
   PROJECT_V1_ROUTE_DEPLOYMENT_CONFIG,
@@ -41,9 +36,8 @@ import projectV1Routes, {
   PROJECT_V1_ROUTE_REVIEW_CENTER,
 } from "@/router/dashboard/projectV1";
 import { useCurrentUserV1 } from "@/store";
-import type { ComposedProject, MaybeRef } from "@/types";
+import type { ComposedProject, MaybeRef, Permission } from "@/types";
 import { DEFAULT_PROJECT_NAME } from "@/types";
-import type { ProjectPermission } from "@/types";
 import { hasProjectPermissionV2 } from "@/utils";
 
 interface ProjectSidebarItem extends SidebarItem {
@@ -66,10 +60,10 @@ export const useProjectSidebar = (
 
   const getFlattenProjectV1Routes = (
     routes: RouteRecordRaw[],
-    permissions: ProjectPermission[] = []
+    permissions: Permission[] = []
   ): {
     name: string;
-    permissions: ProjectPermission[];
+    permissions: Permission[];
   }[] => {
     return routes.reduce(
       (list, projectV1Route) => {
@@ -98,7 +92,7 @@ export const useProjectSidebar = (
         }
         return list;
       },
-      [] as { name: string; permissions: ProjectPermission[] }[]
+      [] as { name: string; permissions: Permission[] }[]
     );
   };
 
@@ -177,13 +171,6 @@ export const useProjectSidebar = (
         title: t("export-center.self"),
         icon: () => h(DownloadIcon),
         path: PROJECT_V1_ROUTE_EXPORT_CENTER,
-        type: "div",
-        hide: isDefaultProject.value,
-      },
-      {
-        title: t("common.branches"),
-        path: PROJECT_V1_ROUTE_BRANCHES,
-        icon: () => h(GitBranch),
         type: "div",
         hide: isDefaultProject.value,
       },
