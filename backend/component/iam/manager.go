@@ -3,6 +3,7 @@ package iam
 import (
 	"context"
 	_ "embed"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -28,6 +29,7 @@ type acl struct {
 type Manager struct {
 	// rolePermissions is a map from role to permissions. Key is "roles/{role}".
 	rolePermissions map[string]map[Permission]bool
+	groupMembers    map[string]map[string]bool
 	PredefinedRoles []*store.RoleMessage
 	store           *store.Store
 	licenseService  enterprise.LicenseService
@@ -47,8 +49,8 @@ func NewManager(store *store.Store, licenseService enterprise.LicenseService) (*
 	return m, nil
 }
 
-// Check if the user or `allUsers` or the user group has the permission p
-// or has the permission p in every project.
+// Check if the user has permission on the resource hierarchy.
+// When multiple projects are specified, the user should have permission on every projects.
 func (m *Manager) CheckPermission(ctx context.Context, p Permission, user *store.UserMessage, projectIDs ...string) (bool, error) {
 	if m.licenseService.IsFeatureEnabled(api.FeatureRBAC) != nil {
 		// nolint
@@ -59,7 +61,7 @@ func (m *Manager) CheckPermission(ctx context.Context, p Permission, user *store
 	if err != nil {
 		return false, err
 	}
-	if ok := check(user.ID, p, policyMessage.Policy, m.rolePermissions); ok {
+	if ok := check(user.ID, p, policyMessage.Policy, m.rolePermissions, m.groupMembers); ok {
 		return true, nil
 	}
 
@@ -80,7 +82,7 @@ func (m *Manager) CheckPermission(ctx context.Context, p Permission, user *store
 			if err != nil {
 				return false, err
 			}
-			if ok := check(user.ID, p, policyMessage.Policy, m.rolePermissions); !ok {
+			if ok := check(user.ID, p, policyMessage.Policy, m.rolePermissions, m.groupMembers); !ok {
 				allOK = false
 				break
 			}
@@ -102,6 +104,21 @@ func (m *Manager) ReloadCache(ctx context.Context) error {
 		rolePermissions[common.FormatRole(role.ResourceID)] = role.Permissions
 	}
 	m.rolePermissions = rolePermissions
+
+	groups, err := m.store.ListGroups(ctx, &store.FindGroupMessage{})
+	if err != nil {
+		return err
+	}
+	groupMembers := make(map[string]map[string]bool)
+	for _, group := range groups {
+		usersSet := make(map[string]bool)
+		for _, m := range group.Payload.GetMembers() {
+			usersSet[m.Member] = true
+		}
+		groupName := common.FormatGroupEmail(group.Email)
+		groupMembers[groupName] = usersSet
+	}
+	m.groupMembers = groupMembers
 	return nil
 }
 
@@ -115,7 +132,8 @@ func (m *Manager) GetPermissions(role string) (map[Permission]bool, error) {
 	return permissions, nil
 }
 
-func check(userID int, p Permission, policy *storepb.IamPolicy, rolePermissions map[string]map[Permission]bool) bool {
+func check(userID int, p Permission, policy *storepb.IamPolicy, rolePermissions map[string]map[Permission]bool, groupMembers map[string]map[string]bool) bool {
+	userName := common.FormatUserUID(userID)
 	for _, binding := range policy.GetBindings() {
 		permissions, ok := rolePermissions[binding.GetRole()]
 		if !ok {
@@ -125,11 +143,18 @@ func check(userID int, p Permission, policy *storepb.IamPolicy, rolePermissions 
 			continue
 		}
 		for _, member := range binding.GetMembers() {
-			if member == common.FormatUserUID(userID) {
-				return true
-			}
 			if member == api.AllUsers {
 				return true
+			}
+			if member == userName {
+				return true
+			}
+			if strings.HasPrefix(member, common.GroupPrefix) {
+				if groupMembers, ok := groupMembers[member]; ok {
+					if groupMembers[userName] {
+						return true
+					}
+				}
 			}
 		}
 	}
