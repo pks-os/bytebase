@@ -279,7 +279,8 @@
     "options": "オプション",
     "reset": "リセット",
     "refresh": "リフレッシュ",
-    "rollback": "ロールバック"
+    "rollback": "ロールバック",
+    "blocking-task": "タスクをブロック中"
   },
   "error-page": {
     "go-back-home": "ホームページに戻る"
@@ -411,7 +412,9 @@
       "executing-sql": "SQLを実行しています。",
       "executing-sql-detail": "SQL {current}/{total} を ({startLine}, {startColumn}) から ({endLine}, {endColumn}) まで実行しています。",
       "dumping-schema-after-executing-sql": "SQL の実行が完了し、スキーマがエクスポートされています。",
-      "failed-sql-detail": "({startLine}、{startColumn}) から ({endLine}、{endColumn}) までの実行が失敗しました: {message}。"
+      "failed-sql-detail": "({startLine}、{startColumn}) から ({endLine}、{endColumn}) までの実行が失敗しました: {message}。",
+      "waiting-connection": "利用可能なインスタンス接続を待機しています。インスタンスの接続数が制限に達しました。",
+      "waiting-task": "別のタスクが完了するのを待っています。"
     }
   },
   "banner": {
@@ -811,7 +814,8 @@
         "override-desc": "既存のアルゴリズムは上書きされるため、セマンティック タイプに合わせてアルゴリズムを再構成する必要があります。",
         "override-confirm": "インポートを続行する",
         "default": "デフォルト",
-        "default-desc": "*** を使用してデータをマスクする",
+        "default-with-semantic-type": "デフォルト（セマンティックタイプに従う）",
+        "default-desc": "* を使用して、感度解除のレベルに応じてデータのすべてまたは一部をブロックします。",
         "table": {
           "title": "名前",
           "description": "説明する",
