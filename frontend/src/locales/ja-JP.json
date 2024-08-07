@@ -97,6 +97,7 @@
     "stage": "ステージ",
     "task": "タスク",
     "tasks": "タスク",
+    "blocking-task": "タスクをブロック中",
     "sql": "SQL",
     "unassigned": "割り当てられていない",
     "new": "作成する",
@@ -280,7 +281,10 @@
     "reset": "リセット",
     "refresh": "リフレッシュ",
     "rollback": "ロールバック",
-    "blocking-task": "タスクをブロック中"
+    "rows": {
+      "self": "行",
+      "n-rows": "{n} 行"
+    }
   },
   "error-page": {
     "go-back-home": "ホームページに戻る"
@@ -1617,6 +1621,10 @@
     },
     "activate": {
       "title": "{type} アカウントをアクティブ化します"
+    },
+    "login-as-another": {
+      "title": "別のユーザーとしてログインしています",
+      "content": "ホームページへリダイレクトさせていただきます。"
     }
   },
   "policy": {
