@@ -1028,6 +1028,14 @@ func filterDatabaseMetadataByEngine(metadata *storepb.DatabaseSchemaMetadata, en
 				}
 				filteredSchema.Procedures = append(filteredSchema.Procedures, filteredProcedure)
 			}
+			for _, view := range schema.Views {
+				filteredView := &storepb.ViewMetadata{
+					Name:       view.Name,
+					Comment:    view.Comment,
+					Definition: view.Definition,
+				}
+				filteredSchema.Views = append(filteredSchema.Views, filteredView)
+			}
 		}
 		filteredDatabase.Schemas = append(filteredDatabase.Schemas, filteredSchema)
 	}
@@ -1055,6 +1063,21 @@ func trimDatabaseMetadata(sourceMetadata *storepb.DatabaseSchemaMetadata, target
 
 			if !common.EqualTable(table, tt.GetProto()) {
 				trimSchema.Tables = append(trimSchema.Tables, table)
+				continue
+			}
+		}
+		for _, view := range schema.GetViews() {
+			tv := ts.GetView(view.GetName())
+			if tv == nil {
+				trimSchema.Views = append(trimSchema.Views, view)
+				continue
+			}
+			if view.GetComment() != tv.GetProto().GetComment() {
+				trimSchema.Views = append(trimSchema.Views, view)
+				continue
+			}
+			if view.GetDefinition() != tv.Definition {
+				trimSchema.Views = append(trimSchema.Views, view)
 				continue
 			}
 		}
@@ -1160,6 +1183,11 @@ func reconcileMetadata(metadata *storepb.DatabaseSchemaMetadata, engine storepb.
 						}
 					}
 				}
+			}
+		}
+		for _, view := range schema.Views {
+			if engine == storepb.Engine_MYSQL || engine == storepb.Engine_TIDB {
+				view.Definition = formatViewDef(view.Definition)
 			}
 		}
 	}
@@ -1761,4 +1789,8 @@ func alignDatabaseConfig(metadata *storepb.DatabaseSchemaMetadata, config *store
 		schemaConfig.FunctionConfigs = append(schemaConfig.FunctionConfigs, newFunctionConfigs...)
 	}
 	config.SchemaConfigs = append(config.SchemaConfigs, newSchemaConfigs...)
+}
+
+func formatViewDef(def string) string {
+	return strings.TrimRight(def, "; \n\r\t")
 }
