@@ -9,6 +9,9 @@ export type AppFeatures = {
   "bb.feature.hide-help": boolean;
   "bb.feature.hide-quick-start": boolean;
   "bb.feature.hide-release-remind": boolean;
+  "bb.feature.members.hide-groups": boolean;
+  "bb.feature.members.hide-project-roles": boolean;
+  "bb.feature.members.hide-service-account": boolean;
   "bb.feature.console.hide-sidebar": boolean;
   "bb.feature.console.hide-header": boolean;
   "bb.feature.console.hide-quick-action": boolean;
@@ -33,6 +36,7 @@ export type AppFeatures = {
   "bb.feature.sql-editor.disallow-export-query-data": boolean;
   "bb.feature.sql-editor.disallow-request-query": boolean;
   "bb.feature.sql-editor.disallow-sync-schema": boolean;
+  "bb.feature.sql-editor.disallow-edit-schema": boolean;
   "bb.feature.sql-editor.hide-bytebase-logo": boolean;
   "bb.feature.sql-editor.hide-profile": boolean;
   "bb.feature.sql-editor.hide-readonly-datasource-hint": boolean;
@@ -58,6 +62,9 @@ export const defaultAppProfile = (): AppProfile => ({
     "bb.feature.hide-help": false,
     "bb.feature.hide-quick-start": false,
     "bb.feature.hide-release-remind": false,
+    "bb.feature.members.hide-groups": false,
+    "bb.feature.members.hide-project-roles": false,
+    "bb.feature.members.hide-service-account": false,
     "bb.feature.console.hide-sidebar": false,
     "bb.feature.console.hide-header": false,
     "bb.feature.console.hide-quick-action": false,
@@ -82,6 +89,7 @@ export const defaultAppProfile = (): AppProfile => ({
     "bb.feature.sql-editor.disallow-export-query-data": false,
     "bb.feature.sql-editor.disallow-request-query": false,
     "bb.feature.sql-editor.disallow-sync-schema": false,
+    "bb.feature.sql-editor.disallow-edit-schema": false,
     "bb.feature.sql-editor.hide-bytebase-logo": false,
     "bb.feature.sql-editor.hide-profile": false,
     "bb.feature.sql-editor.hide-readonly-datasource-hint": false,
