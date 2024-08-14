@@ -182,8 +182,6 @@
     - [ProcedureMetadata](#bytebase-v1-ProcedureMetadata)
     - [SchemaConfig](#bytebase-v1-SchemaConfig)
     - [SchemaMetadata](#bytebase-v1-SchemaMetadata)
-    - [SearchDatabasesRequest](#bytebase-v1-SearchDatabasesRequest)
-    - [SearchDatabasesResponse](#bytebase-v1-SearchDatabasesResponse)
     - [Secret](#bytebase-v1-Secret)
     - [SlowQueryDetails](#bytebase-v1-SlowQueryDetails)
     - [SlowQueryLog](#bytebase-v1-SlowQueryLog)
@@ -2074,7 +2072,6 @@ This value should be 4-63 characters, and valid characters are /[a-z][0-9]-/. |
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of the instance. Format: instances/{instance} |
-| uid | [string](#string) |  | The system-assigned, unique identifier for a resource. |
 | state | [State](#bytebase-v1-State) |  |  |
 | title | [string](#string) |  |  |
 | engine | [Engine](#bytebase-v1-Engine) |  |  |
@@ -3352,41 +3349,6 @@ This is the concept of schema in Postgres, but it&#39;s a no-op for MySQL.
 
 
 
-<a name="bytebase-v1-SearchDatabasesRequest"></a>
-
-### SearchDatabasesRequest
-Deprecated.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| page_size | [int32](#int32) |  | The maximum number of databases to return. The service may return fewer than this value. If unspecified, at most 50 databases will be returned. The maximum value is 1000; values above 1000 will be coerced to 1000. |
-| page_token | [string](#string) |  | A page token, received from a previous `ListDatabases` call. Provide this to retrieve the subsequent page.
-
-When paginating, all other parameters provided to `ListDatabases` must match the call that provided the page token. |
-| filter | [string](#string) |  | Filter is used to filter databases returned in the list. follow the [ebnf](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) syntax. The field only support in filter: - project with &#34;=&#34; operator, for example: - project = &#34;projects/sample-project&#34; - project = &#34;projects/-&#34; - instance with &#34;=&#34; operator, for example: - instance = &#34;instances/mysql&#34; - instance = &#34;instances/-&#34; for example, we can use project = &#34;projects/sample&#34; &amp;&amp; instance = &#34;instances/-&#34; to list all databases in the sample project. |
-
-
-
-
-
-
-<a name="bytebase-v1-SearchDatabasesResponse"></a>
-
-### SearchDatabasesResponse
-Deprecated.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| databases | [Database](#bytebase-v1-Database) | repeated | The databases from the specified request. |
-| next_page_token | [string](#string) |  | A token, which can be sent as `page_token` to retrieve the next page. If this field is omitted, there are no subsequent pages. |
-
-
-
-
-
-
 <a name="bytebase-v1-Secret"></a>
 
 ### Secret
@@ -3861,7 +3823,6 @@ PostgreSQL: RANGE, LIST, HASH (https://www.postgresql.org/docs/current/ddl-parti
 | GetDatabase | [GetDatabaseRequest](#bytebase-v1-GetDatabaseRequest) | [Database](#bytebase-v1-Database) |  |
 | ListInstanceDatabases | [ListInstanceDatabasesRequest](#bytebase-v1-ListInstanceDatabasesRequest) | [ListInstanceDatabasesResponse](#bytebase-v1-ListInstanceDatabasesResponse) |  |
 | ListDatabases | [ListDatabasesRequest](#bytebase-v1-ListDatabasesRequest) | [ListDatabasesResponse](#bytebase-v1-ListDatabasesResponse) |  |
-| SearchDatabases | [SearchDatabasesRequest](#bytebase-v1-SearchDatabasesRequest) | [SearchDatabasesResponse](#bytebase-v1-SearchDatabasesResponse) | Deprecated. This will be removed in the next release. Search for databases that the caller has the bb.databases.get permission on, and also satisfy the specified query. |
 | UpdateDatabase | [UpdateDatabaseRequest](#bytebase-v1-UpdateDatabaseRequest) | [Database](#bytebase-v1-Database) |  |
 | BatchUpdateDatabases | [BatchUpdateDatabasesRequest](#bytebase-v1-BatchUpdateDatabasesRequest) | [BatchUpdateDatabasesResponse](#bytebase-v1-BatchUpdateDatabasesResponse) |  |
 | SyncDatabase | [SyncDatabaseRequest](#bytebase-v1-SyncDatabaseRequest) | [SyncDatabaseResponse](#bytebase-v1-SyncDatabaseResponse) |  |
@@ -4668,7 +4629,6 @@ This value should be 4-63 characters, and valid characters are /[a-z][0-9]-/. |
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of the environment. Format: environments/{environment} |
-| uid | [string](#string) |  | The system-assigned, unique identifier for a resource. |
 | state | [State](#bytebase-v1-State) |  |  |
 | title | [string](#string) |  |  |
 | order | [int32](#int32) |  |  |
@@ -5066,7 +5026,6 @@ reference: https://docs.github.com/en/rest/users/users?apiVersion=2022-11-28#get
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of the identity provider. Format: idps/{idp} |
-| uid | [string](#string) |  | The system-assigned, unique identifier for a resource. |
 | state | [State](#bytebase-v1-State) |  |  |
 | title | [string](#string) |  |  |
 | domain | [string](#string) |  |  |
@@ -6280,7 +6239,6 @@ MaskingExceptionPolicy is the allowlist of users who can access sensitive data.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of the policy. Format: {resource name}/policies/{policy type} Workspace resource name: &#34;&#34;. Environment resource name: environments/environment-id. Instance resource name: instances/instance-id. Database resource name: instances/instance-id/databases/database-name. |
-| uid | [string](#string) |  | The system-assigned, unique identifier for a resource. |
 | inherit_from_parent | [bool](#bool) |  |  |
 | type | [PolicyType](#bytebase-v1-PolicyType) |  |  |
 | rollout_policy | [RolloutPolicy](#bytebase-v1-RolloutPolicy) |  |  |
@@ -7926,7 +7884,6 @@ When paginating, all other parameters provided to `LiskRisks` must match the cal
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | Format: risks/{risk} |
-| uid | [string](#string) |  | system-generated unique identifier. |
 | source | [Risk.Source](#bytebase-v1-Risk-Source) |  |  |
 | title | [string](#string) |  |  |
 | level | [int32](#int32) |  |  |
@@ -10606,6 +10563,7 @@ Type of the SheetPayload.
 | DDL | 1 |  |
 | DDL_GHOST | 2 |  |
 | DML | 3 |  |
+| SQL_EDITOR | 4 |  |
 
 
 

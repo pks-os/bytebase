@@ -33,7 +33,7 @@ func TestTryMerge(t *testing.T) {
 
 	a := require.New(t)
 
-	testFilepath := "testdata/schema_design_merge/try_merge.yaml"
+	testFilepath := "testdata/branch_merge/try_merge.yaml"
 	content, err := os.ReadFile(testFilepath)
 	a.NoError(err)
 	var testCases []testCase
@@ -95,6 +95,10 @@ func TestNormalizeMySQLViewDefinition(t *testing.T) {
 		{
 			query: "select 12 AS `12`;   ",
 			want:  "select 12;",
+		},
+		{
+			query: "select `t1`.`id` AS `id` from `t1`;",
+			want:  "select `id` from `t1`;",
 		},
 	} {
 		got := normalizeMySQLViewDefinition(test.query)

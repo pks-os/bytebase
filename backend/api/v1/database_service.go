@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"sort"
 	"strings"
@@ -54,6 +55,8 @@ const (
 	orderByKeyMaximumRowsSent     = "maximum_rows_sent"
 	orderByKeyAverageRowsExamined = "average_rows_examined"
 	orderByKeyMaximumRowsExamined = "maximum_rows_examined"
+
+	backupDatabaseName = "bbdataarchive"
 )
 
 // DatabaseService implements the database service.
@@ -109,55 +112,6 @@ func (s *DatabaseService) GetDatabase(ctx context.Context, request *v1pb.GetData
 		return nil, status.Errorf(codes.Internal, "failed to convert database, error: %v", err)
 	}
 	return database, nil
-}
-
-// Deprecated.
-func (s *DatabaseService) SearchDatabases(ctx context.Context, request *v1pb.SearchDatabasesRequest) (*v1pb.SearchDatabasesResponse, error) {
-	find, err := getDatabaseFind(request.Filter)
-	if err != nil {
-		return nil, err
-	}
-
-	limit, offset, err := parseLimitAndOffset(request.PageToken, int(request.PageSize))
-	if err != nil {
-		return nil, err
-	}
-	limitPlusOne := limit + 1
-	find.Limit = &limitPlusOne
-	find.Offset = &offset
-
-	databases, err := s.store.ListDatabases(ctx, find)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-
-	nextPageToken := ""
-	if len(databases) == limitPlusOne {
-		databases = databases[:limit]
-		if nextPageToken, err = marshalPageToken(&storepb.PageToken{
-			Limit:  int32(limit),
-			Offset: int32(limit + offset),
-		}); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to marshal next page token, error: %v", err)
-		}
-	}
-
-	databaseMessages, err := filterDatabasesV2(ctx, s.iamManager, databases)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to filter databases, error: %v", err)
-	}
-
-	response := &v1pb.SearchDatabasesResponse{
-		NextPageToken: nextPageToken,
-	}
-	for _, databaseMessage := range databaseMessages {
-		database, err := s.convertToDatabase(ctx, databaseMessage)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to convert database, error: %v", err)
-		}
-		response.Databases = append(response.Databases, database)
-	}
-	return response, nil
 }
 
 // ListInstanceDatabases lists all databases for an instance.
@@ -278,74 +232,6 @@ func (s *DatabaseService) ListDatabases(ctx context.Context, request *v1pb.ListD
 		response.Databases = append(response.Databases, database)
 	}
 	return response, nil
-}
-
-func getDatabaseFind(filter string) (*store.FindDatabaseMessage, error) {
-	filters, err := parseFilter(filter)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
-	}
-
-	find := &store.FindDatabaseMessage{}
-
-	for _, spec := range filters {
-		if spec.operator != comparatorTypeEqual {
-			return nil, status.Errorf(codes.InvalidArgument, `only support "=" operation for filter`)
-		}
-		switch spec.key {
-		case "instance":
-			instanceID, err := common.GetInstanceID(spec.value)
-			if err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, err.Error())
-			}
-			if instanceID != "-" {
-				find.InstanceID = &instanceID
-			}
-		case "project":
-			projectID, err := common.GetProjectID(spec.value)
-			if err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, err.Error())
-			}
-			if projectID != "-" {
-				find.ProjectID = &projectID
-			}
-		default:
-			return nil, status.Errorf(codes.InvalidArgument, "invalid filter key %q", spec.key)
-		}
-	}
-
-	return find, nil
-}
-
-func filterDatabasesV2(ctx context.Context, iamManager *iam.Manager, databases []*store.DatabaseMessage) ([]*store.DatabaseMessage, error) {
-	user, ok := ctx.Value(common.UserContextKey).(*store.UserMessage)
-	if !ok {
-		return nil, status.Errorf(codes.Internal, "user not found")
-	}
-
-	ok, err := iamManager.CheckPermission(ctx, iam.PermissionDatabasesGet, user)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check permissions")
-	}
-	if ok {
-		return databases, nil
-	}
-
-	projectDatabases := make(map[string][]*store.DatabaseMessage)
-	for _, database := range databases {
-		projectDatabases[database.ProjectID] = append(projectDatabases[database.ProjectID], database)
-	}
-	var filteredDatabases []*store.DatabaseMessage
-	for projectID, dbs := range projectDatabases {
-		ok, err := iamManager.CheckPermission(ctx, iam.PermissionDatabasesGet, user, projectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to check permissions")
-		}
-		if ok {
-			filteredDatabases = append(filteredDatabases, dbs...)
-		}
-	}
-	return filteredDatabases, nil
 }
 
 // UpdateDatabase updates a database.
@@ -1804,7 +1690,39 @@ func (s *DatabaseService) convertToDatabase(ctx context.Context, database *store
 		SchemaVersion:        database.SchemaVersion.Version,
 		Labels:               database.Metadata.Labels,
 		InstanceResource:     instanceResource,
+		BackupAvailable:      s.isBackupAvailable(ctx, instance, database),
 	}, nil
+}
+
+func (s *DatabaseService) isBackupAvailable(ctx context.Context, instance *store.InstanceMessage, database *store.DatabaseMessage) bool {
+	switch instance.Engine {
+	case storepb.Engine_POSTGRES:
+		dbSchema, err := s.store.GetDBSchema(ctx, database.UID)
+		if err != nil {
+			slog.Debug("Failed to get db schema for checking backup availability", "err", err)
+			return false
+		}
+		if dbSchema == nil {
+			return false
+		}
+		for _, schema := range dbSchema.GetMetadata().GetSchemas() {
+			if schema.GetName() == backupDatabaseName {
+				return true
+			}
+		}
+	case storepb.Engine_MYSQL, storepb.Engine_ORACLE, storepb.Engine_MSSQL, storepb.Engine_TIDB:
+		dbName := backupDatabaseName
+		backupDB, err := s.store.GetDatabaseV2(ctx, &store.FindDatabaseMessage{
+			InstanceID:   &instance.ResourceID,
+			DatabaseName: &dbName,
+		})
+		if err != nil {
+			slog.Debug("Failed to get backup database", "err", err)
+			return false
+		}
+		return backupDB != nil
+	}
+	return false
 }
 
 type metadataFilter struct {
