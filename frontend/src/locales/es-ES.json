@@ -151,6 +151,7 @@
     "roletype": "Tipo de Rol",
     "readonly": "Solo lectura",
     "user": "Usuario",
+    "users": "Usuarios",
     "added-time": "Hora agregado",
     "data-source": "Fuente de datos",
     "grant": "Conceder",
@@ -465,7 +466,8 @@
       "security-and-policy": "Seguridad y Política",
       "integration": "Integración",
       "general": "General",
-      "members-and-groups": "Miembros y grupos",
+      "members": "Miembros",
+      "users-and-groups": "Usuarios y grupos",
       "im-integration": "Integración de IM",
       "sso": "SSO",
       "gitops": "GitOps",
@@ -559,11 +561,20 @@
         "title": "¿Estás seguro de revocarte @.lower:role.workspace-admin.self?",
         "description": "Asegúrese de que los @.lower:role.workspace-admin.self restantes puedan iniciar sesión; de lo contrario, nadie podrá administrar los usuarios."
       },
-      "view-by-principals": "Ver por responsables",
       "view-by-roles": "Ver por roles",
       "add-member": "Agregar miembro",
-      "update-member": "Actualizar miembro",
-      "workspace-role-at-least-one": "El espacio de trabajo debe tener al menos un administrador"
+      "add-user": "Agregar usuario",
+      "update-user": "Actualizar usuario",
+      "workspace-role-at-least-one": "El espacio de trabajo debe tener al menos un administrador",
+      "search-member": "Buscar miembro",
+      "revoked": "Revocado",
+      "view-by-members": "Ver por miembros",
+      "revoke-access": "Revocar acceso",
+      "grant-access": "Conceder acceso",
+      "select-users": "Seleccionar usuarios",
+      "select-groups": "Seleccionar grupos",
+      "assign-role": "Asignar rol",
+      "assign-roles": "Asignar roles"
     },
     "im-integration": {
       "description": "Envíe mensajes directos a los usuarios para eventos de problemas específicos. Funciona con el webhook del proyecto."
@@ -684,19 +695,18 @@
           }
         },
         "config-updated": "La configuración se ha actualizado.",
-        "plugin": {
-          "openai": {
-            "ai-augmentation": "Mejora IA",
-            "openai-key": {
-              "self": "Clave de API de OpenAI",
-              "description": "Proporcione una clave de API de OpenAI para habilitar la capacidad ChatSQL en el Editor de SQL. {viewDoc}",
-              "find-my-key": "Encuentra mi llave",
-              "placeholder": "Una clave de API de OpenAI generalmente comienza con sk-*****"
-            },
-            "openai-endpoint": {
-              "self": "Punto de conexión de API de OpenAI",
-              "description": "Proporcione una implementación privada del Punto de conexión de API de OpenAI."
-            }
+        "ai-assistant": {
+          "self": "Asistente de AI",
+          "description": "Utilice OpenAPI para ayudar en las tareas de desarrollo de bases de datos.",
+          "openai-key": {
+            "self": "Clave de API de OpenAI",
+            "description": "Proporcione una clave de API de OpenAI para habilitar la capacidad Text2SQL en el Editor de SQL. {viewDoc}",
+            "find-my-key": "Encuentra mi llave",
+            "placeholder": "Una clave de API de OpenAI generalmente comienza con sk-*****"
+          },
+          "openai-endpoint": {
+            "self": "Punto de conexión de API de OpenAI",
+            "description": "Proporcione una implementación privada del Punto de conexión de API de OpenAI."
           }
         },
         "announcement": {
@@ -2075,10 +2085,6 @@
     },
     "members": {
       "description": "Los miembros del proyecto determinan el permiso para operar la base de datos y los problemas dentro del proyecto. El propietario del proyecto, el administrador del espacio de trabajo y el DBA del espacio de trabajo tienen permisos completos para el proyecto.",
-      "add-member": "Agregar miembro",
-      "revoke-member": "Revocar miembro",
-      "revoke-access": "Revocar acceso",
-      "grant-access": "Conceder acceso",
       "edit": "Editar miembro - {member}",
       "view-by-members": "Ver por miembros",
       "view-by-roles": "Ver por roles",
@@ -2086,9 +2092,6 @@
       "revoke-role-from-user": "Revocar '{role}' de '{user}'",
       "inactive-members": "Miembros inactivos",
       "show-inactive": "Mostrar miembros inactivos",
-      "select-users": "Seleccionar usuarios",
-      "select-groups": "Seleccionar grupos",
-      "assign-role": "Asignar rol",
       "assign-reason": "(Opcional) Razón",
       "never-expires": "Nunca caduca",
       "expired": "Caducada",
@@ -2099,8 +2102,6 @@
       "condition-name": "Nombre de la condición",
       "users": "Usuarios",
       "roles": "Roles",
-      "search-member": "Buscar miembro",
-      "revoke-members": "Revocar miembros",
       "clean-up-expired-roles": "Limpiar roles caducados",
       "workspace-level-roles": "Roles a nivel de espacio de trabajo",
       "project-level-roles": "Roles a nivel de proyecto"
@@ -3094,7 +3095,7 @@
     "ai": {
       "examples": "Ejemplos",
       "text-to-sql-placeholder": "Utilice lenguaje natural y Bytebase lo convertirá en SQL",
-      "text-to-sql-disabled-placeholder": "Habilite la capacidad de ChatSQL suministrando una clave de API de OpenAI.",
+      "text-to-sql-disabled-placeholder": "Habilite la capacidad de Text2SQL suministrando una clave de API de OpenAI.",
       "run-automatically": "Ejecutar automáticamente",
       "conversation": {
         "conversations": "Conversaciones",
@@ -3120,9 +3121,9 @@
       },
       "statement-copied": "Declaración copiada al portapapeles",
       "dont-show-again": "No mostrar de nuevo",
-      "chat-sql": "ChatSQL",
-      "disable-chat-sql": "Deshabilitar ChatSQL",
-      "enable-chat-sql": "Habilitar ChatSQL"
+      "text2sql": "Text2SQL",
+      "disable-text2sql": "Deshabilitar Text2SQL",
+      "enable-text2sql": "Habilitar Text2SQL"
     }
   },
   "custom-approval": {

@@ -2,7 +2,11 @@ import { cloneDeep } from "lodash-es";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { workspaceServiceClient } from "@/grpcweb";
+import { groupBindingPrefix } from "@/types";
 import { IamPolicy, Binding } from "@/types/proto/v1/iam_policy";
+import { roleListInIAM } from "@/utils";
+import { extractUserEmail } from "../user";
+import { extractGroupEmail } from "./group";
 
 export const useWorkspaceV1Store = defineStore("workspace_v1", () => {
   const workspaceIamPolicy = ref<IamPolicy>(IamPolicy.fromPartial({}));
@@ -14,15 +18,17 @@ export const useWorkspaceV1Store = defineStore("workspace_v1", () => {
     workspaceIamPolicy.value = policy;
   };
 
-  const patchIamPolicy = async ({
+  const mergeBinding = ({
     member,
     roles,
+    policy,
   }: {
     member: string;
     roles: string[];
+    policy: IamPolicy;
   }) => {
     const newRolesSet = new Set(roles);
-    const workspacePolicy = cloneDeep(workspaceIamPolicy.value);
+    const workspacePolicy = cloneDeep(policy);
 
     for (const binding of workspacePolicy.bindings) {
       const index = binding.members.findIndex((m) => m === member);
@@ -48,6 +54,26 @@ export const useWorkspaceV1Store = defineStore("workspace_v1", () => {
       );
     }
 
+    return workspacePolicy;
+  };
+
+  const patchIamPolicy = async (
+    batchPatch: {
+      member: string;
+      roles: string[];
+    }[]
+  ) => {
+    if (batchPatch.length === 0) {
+      return;
+    }
+    let workspacePolicy = cloneDeep(workspaceIamPolicy.value);
+    for (const patch of batchPatch) {
+      workspacePolicy = mergeBinding({
+        ...patch,
+        policy: workspacePolicy,
+      });
+    }
+
     const policy = await workspaceServiceClient.setIamPolicy({
       resource: "workspaces/-",
       policy: workspacePolicy,
@@ -56,9 +82,20 @@ export const useWorkspaceV1Store = defineStore("workspace_v1", () => {
     workspaceIamPolicy.value = policy;
   };
 
+  const findRolesByMember = (member: string): string[] => {
+    let email = member;
+    if (member.startsWith(groupBindingPrefix)) {
+      email = extractGroupEmail(member);
+    } else {
+      email = extractUserEmail(member);
+    }
+    return roleListInIAM(workspaceIamPolicy.value, email);
+  };
+
   return {
     workspaceIamPolicy,
     fetchIamPolicy,
     patchIamPolicy,
+    findRolesByMember,
   };
 });

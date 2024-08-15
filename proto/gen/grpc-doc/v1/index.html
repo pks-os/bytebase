@@ -20444,13 +20444,6 @@ Format: projects/{project} </p></td>
                 </tr>
               
                 <tr>
-                  <td>uid</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>The system-assigned, unique identifier for a resource. </p></td>
-                </tr>
-              
-                <tr>
                   <td>state</td>
                   <td><a href="#bytebase.v1.State">State</a></td>
                   <td></td>
@@ -23465,14 +23458,14 @@ Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory
                   <td>execution_status</td>
                   <td><a href="#bytebase.v1.TaskRun.ExecutionStatus">TaskRun.ExecutionStatus</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p><strong>Deprecated.</strong>  </p></td>
                 </tr>
               
                 <tr>
                   <td>execution_detail</td>
                   <td><a href="#bytebase.v1.TaskRun.ExecutionDetail">TaskRun.ExecutionDetail</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p><strong>Deprecated.</strong>  </p></td>
                 </tr>
               
                 <tr>
@@ -23506,6 +23499,32 @@ Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory
             </tbody>
           </table>
 
+          
+            
+            
+            <h4>Fields with deprecated option</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Option</td>
+                </tr>
+              </thead>
+              <tbody>
+              
+                <tr>
+                  <td>execution_status</td>
+                  <td><p>true</p></td>
+                </tr>
+              
+                <tr>
+                  <td>execution_detail</td>
+                  <td><p>true</p></td>
+                </tr>
+              
+              </tbody>
+            </table>
+            
           
 
         
@@ -27492,13 +27511,6 @@ Format: instances/{instance}/databases/{databaseName} </p></td>
                 </tr>
               
                 <tr>
-                  <td>connection_database</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p><strong>Deprecated.</strong>  </p></td>
-                </tr>
-              
-                <tr>
                   <td>statement</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -27522,27 +27534,6 @@ Format: instances/{instance}/databases/{databaseName} </p></td>
             </tbody>
           </table>
 
-          
-            
-            
-            <h4>Fields with deprecated option</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Name</td>
-                  <td>Option</td>
-                </tr>
-              </thead>
-              <tbody>
-              
-                <tr>
-                  <td>connection_database</td>
-                  <td><p>true</p></td>
-                </tr>
-              
-              </tbody>
-            </table>
-            
           
 
         
@@ -27882,13 +27873,6 @@ Format: projects/{project}/issues/{issue} for data export issue. </p></td>
                 </tr>
               
                 <tr>
-                  <td>connection_database</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p><strong>Deprecated.</strong>  </p></td>
-                </tr>
-              
-                <tr>
                   <td>statement</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -27927,27 +27911,6 @@ The exported data is not masked. </p></td>
             </tbody>
           </table>
 
-          
-            
-            
-            <h4>Fields with deprecated option</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Name</td>
-                  <td>Option</td>
-                </tr>
-              </thead>
-              <tbody>
-              
-                <tr>
-                  <td>connection_database</td>
-                  <td><p>true</p></td>
-                </tr>
-              
-              </tbody>
-            </table>
-            
           
 
         
@@ -28261,13 +28224,6 @@ Format: instances/{instance}/databases/{databaseName} </p></td>
                 </tr>
               
                 <tr>
-                  <td>connection_database</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p><strong>Deprecated.</strong>  </p></td>
-                </tr>
-              
-                <tr>
                   <td>statement</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -28307,27 +28263,6 @@ Or it can be used to query a specific read-only data source. </p></td>
             </tbody>
           </table>
 
-          
-            
-            
-            <h4>Fields with deprecated option</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Name</td>
-                  <td>Option</td>
-                </tr>
-              </thead>
-              <tbody>
-              
-                <tr>
-                  <td>connection_database</td>
-                  <td><p>true</p></td>
-                </tr>
-              
-              </tbody>
-            </table>
-            
           
 
         
