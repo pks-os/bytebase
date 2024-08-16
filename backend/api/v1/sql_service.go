@@ -104,7 +104,7 @@ func (s *SQLService) AdminExecute(server v1pb.SQLService_AdminExecuteServer) err
 			return status.Errorf(codes.Internal, "failed to receive request: %v", err)
 		}
 
-		instance, database, user, err := s.preAdminExecute(ctx, request)
+		user, instance, database, err := s.prepareRelatedMessage(ctx, request.Name)
 		if err != nil {
 			return err
 		}
@@ -125,10 +125,14 @@ func (s *SQLService) AdminExecute(server v1pb.SQLService_AdminExecuteServer) err
 			}
 		}
 
-		result, durationNs, queryErr := s.doAdminExecute(ctx, driver, conn, request)
+		timeout := defaultTimeout
+		if request.Timeout != nil {
+			timeout = request.Timeout.AsDuration()
+		}
+		result, durationNs, queryErr := s.doExecute(ctx, driver, conn, request.Statement, timeout)
 		sanitizeResults(result)
 
-		if err := s.postQuery(ctx, database, request.Statement, user.ID, durationNs, queryErr); err != nil {
+		if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, durationNs, queryErr); err != nil {
 			slog.Error("failed to post admin execute activity", log.BBError(err))
 		}
 
@@ -149,132 +153,55 @@ func (s *SQLService) AdminExecute(server v1pb.SQLService_AdminExecuteServer) err
 	}
 }
 
-func (*SQLService) doAdminExecute(ctx context.Context, driver db.Driver, conn *sql.Conn, request *v1pb.AdminExecuteRequest) ([]*v1pb.QueryResult, int64, error) {
-	start := time.Now().UnixNano()
-	timeout := defaultTimeout
-	if request.Timeout != nil {
-		timeout = request.Timeout.AsDuration()
-	}
-	ctx, cancelCtx := context.WithTimeout(ctx, timeout)
-	defer cancelCtx()
-	result, err := driver.QueryConn(ctx, conn, request.Statement, db.QueryContext{AdminSession: true})
-	select {
-	case <-ctx.Done():
-		// canceled or timed out
-		return nil, time.Now().UnixNano() - start, errors.Errorf("timeout reached: %v", timeout)
-	default:
-		// So the select will not block
-	}
-	return result, time.Now().UnixNano() - start, err
-}
-
-func (s *SQLService) preAdminExecute(ctx context.Context, request *v1pb.AdminExecuteRequest) (*store.InstanceMessage, *store.DatabaseMessage, *store.UserMessage, error) {
-	user, instance, database, err := s.prepareRelatedMessage(ctx, request.Name)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return instance, database, user, nil
-}
-
 // Execute executes the SQL statement.
 func (s *SQLService) Execute(ctx context.Context, request *v1pb.ExecuteRequest) (*v1pb.ExecuteResponse, error) {
-	instance, database, err := s.preExecute(ctx, request)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to prepare execute: %v", err)
-	}
-
-	statement := request.Statement
-	// Run SQL review.
-	adviceStatus, advices, err := s.SQLReviewCheck(ctx, statement, v1pb.CheckRequest_SQL_EDITOR, instance, database, nil /* Override Metadata */)
+	// Prepare related message.
+	user, instance, database, err := s.prepareRelatedMessage(ctx, request.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []*v1pb.QueryResult
-	if adviceStatus != storepb.Advice_ERROR {
-		var queryErr error
-		results, _, queryErr = s.doExecute(ctx, instance, database, request)
-		if queryErr != nil {
-			return nil, status.Errorf(codes.Internal, queryErr.Error())
-		}
-		sanitizeResults(results)
-	}
-
-	response := &v1pb.ExecuteResponse{
-		Results: results,
-		Advices: advices,
-	}
-	return response, nil
-}
-
-func (s *SQLService) preExecute(ctx context.Context, request *v1pb.ExecuteRequest) (*store.InstanceMessage, *store.DatabaseMessage, error) {
-	hasDatabase := strings.Contains(request.Name, "/databases/")
-	var err error
-	var instanceID, databaseName string
-	if hasDatabase {
-		instanceID, databaseName, err = common.GetInstanceDatabaseID(request.Name)
-		if err != nil {
-			return nil, nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-	} else {
-		instanceID, err = common.GetInstanceID(request.Name)
-		if err != nil {
-			return nil, nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-	}
-
-	find := &store.FindInstanceMessage{
-		ResourceID: &instanceID,
-	}
-	instance, err := s.store.GetInstanceV2(ctx, find)
-	if err != nil {
-		return nil, nil, status.Errorf(codes.Internal, err.Error())
-	}
-	if instance == nil {
-		return nil, nil, status.Errorf(codes.NotFound, "instance %q not found", instanceID)
-	}
-
-	var database *store.DatabaseMessage
-	if hasDatabase {
-		database, err = s.store.GetDatabaseV2(ctx, &store.FindDatabaseMessage{
-			InstanceID:          &instance.ResourceID,
-			DatabaseName:        &databaseName,
-			IgnoreCaseSensitive: store.IgnoreDatabaseAndTableCaseSensitive(instance),
-		})
-		if err != nil {
-			return nil, nil, status.Errorf(codes.Internal, "failed to fetch database: %v", err)
-		}
-		if database == nil {
-			return nil, nil, status.Errorf(codes.NotFound, "database %q not found", databaseName)
-		}
-	}
-
-	return instance, database, nil
-}
-
-func (s *SQLService) doExecute(ctx context.Context, instance *store.InstanceMessage, database *store.DatabaseMessage, request *v1pb.ExecuteRequest) ([]*v1pb.QueryResult, int64, error) {
 	driver, err := s.dbFactory.GetAdminDatabaseDriver(ctx, instance, database, db.ConnectionContext{})
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to get database driver")
+		return nil, status.Errorf(codes.Internal, "failed to get database driver: %v", err)
 	}
+	defer driver.Close(ctx)
 
 	var conn *sql.Conn
 	sqlDB := driver.GetDB()
 	if sqlDB != nil {
 		conn, err = sqlDB.Conn(ctx)
 		if err != nil {
-			return nil, 0, errors.Wrap(err, "failed to get database connection")
+			return nil, status.Errorf(codes.Internal, "failed to get database connection: %v", err)
 		}
+		defer conn.Close()
 	}
 
-	start := time.Now().UnixNano()
-	timeout := defaultTimeout
-	if request.Timeout != nil {
-		timeout = request.Timeout.AsDuration()
+	results, durationNs, queryErr := s.doExecute(ctx, driver, conn, request.Name, defaultTimeout)
+	sanitizeResults(results)
+
+	if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, durationNs, queryErr); err != nil {
+		slog.Error("failed to post admin execute activity", log.BBError(err))
 	}
+
+	response := &v1pb.ExecuteResponse{}
+	if queryErr != nil {
+		response.Results = []*v1pb.QueryResult{
+			{
+				Error: queryErr.Error(),
+			},
+		}
+	} else {
+		response.Results = results
+	}
+	return response, nil
+}
+
+func (*SQLService) doExecute(ctx context.Context, driver db.Driver, conn *sql.Conn, statement string, timeout time.Duration) ([]*v1pb.QueryResult, int64, error) {
+	start := time.Now().UnixNano()
 	ctx, cancelCtx := context.WithTimeout(ctx, timeout)
 	defer cancelCtx()
-	result, err := driver.QueryConn(ctx, conn, request.Statement, db.QueryContext{})
+	result, err := driver.QueryConn(ctx, conn, statement, db.QueryContext{AdminSession: true})
 	select {
 	case <-ctx.Done():
 		// canceled or timed out
@@ -283,6 +210,190 @@ func (s *SQLService) doExecute(ctx context.Context, instance *store.InstanceMess
 		// So the select will not block
 	}
 	return result, time.Now().UnixNano() - start, err
+}
+
+func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1pb.QueryResponse, error) {
+	// Prepare related message.
+	user, instance, database, err := s.prepareRelatedMessage(ctx, request.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	dataSourceID := request.DataSourceId
+	if dataSourceID == "" {
+		dataSources, err := s.store.ListDataSourcesV2(ctx, &store.FindDataSourceMessage{
+			InstanceID: &database.InstanceID,
+		})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to list data sources: %v", err)
+		}
+		if len(dataSources) == 0 {
+			return nil, status.Errorf(codes.NotFound, "no data source found")
+		}
+		readOnlyDataSources := make([]*store.DataSourceMessage, 0)
+		for _, dataSource := range dataSources {
+			if dataSource.Type == api.RO {
+				readOnlyDataSources = append(readOnlyDataSources, dataSource)
+			}
+		}
+		// First try to use read-only data source if available.
+		if len(readOnlyDataSources) > 0 {
+			dataSourceID = readOnlyDataSources[0].ID
+		} else {
+			dataSourceID = dataSources[0].ID
+		}
+	}
+
+	dataSource, err := s.store.GetDataSource(ctx, &store.FindDataSourceMessage{
+		InstanceID: &database.InstanceID,
+		Name:       &dataSourceID,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get data source: %v", err)
+	}
+	if dataSource == nil {
+		return nil, status.Errorf(codes.NotFound, "data source %q not found", request.DataSourceId)
+	}
+	ok, err := s.checkDataSourceQueriable(ctx, database, dataSource)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to check data source queriable: %v", err)
+	}
+	if !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "data source %q is not queriable", dataSource.Username)
+	}
+
+	statement := request.Statement
+	// In Redshift datashare, Rewrite query used for parser.
+	if database.DataShare {
+		statement = strings.ReplaceAll(statement, fmt.Sprintf("%s.", database.DatabaseName), "")
+	}
+
+	// Validate the request.
+	if !request.Explain {
+		if err := validateQueryRequest(instance, statement); err != nil {
+			return nil, err
+		}
+	}
+
+	// Get query span.
+	spans, err := base.GetQuerySpan(
+		ctx,
+		base.GetQuerySpanContext{
+			InstanceID:                    instance.ResourceID,
+			GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(s.store),
+			ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(s.store),
+			GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(s.store, instance.Engine),
+		},
+		instance.Engine,
+		statement,
+		database.DatabaseName,
+		"",
+		store.IgnoreDatabaseAndTableCaseSensitive(instance),
+	)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get query span: %v", err.Error())
+	}
+
+	if s.licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
+		if err := s.accessCheck(ctx, instance, user, spans, request.Limit, false /* isAdmin */, false /* isExport */); err != nil {
+			return nil, err
+		}
+	}
+
+	results, durationNs, queryErr := s.doQuery(ctx, request, instance, database)
+	if queryErr == nil && s.licenseService.IsFeatureEnabledForInstance(api.FeatureSensitiveData, instance) == nil && !request.Explain {
+		masker := NewQueryResultMasker(s.store)
+		if err := masker.MaskResults(ctx, spans, results, instance, storepb.MaskingExceptionPolicy_MaskingException_QUERY); err != nil {
+			return nil, status.Errorf(codes.Internal, err.Error())
+		}
+	}
+
+	// Update activity.
+	if err = s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, statement, user.ID, durationNs, queryErr); err != nil {
+		return nil, err
+	}
+	if queryErr != nil {
+		return nil, status.Errorf(codes.Internal, queryErr.Error())
+	}
+
+	allowExport := true
+	// AllowExport is a validate only check.
+	if s.licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
+		err := s.accessCheck(ctx, instance, user, spans, request.Limit, false /* isAdmin */, true /* isExport */)
+		allowExport = (err == nil)
+	}
+
+	response := &v1pb.QueryResponse{
+		Results:     results,
+		AllowExport: allowExport,
+	}
+
+	return response, nil
+}
+
+func (s *SQLService) doQuery(ctx context.Context, request *v1pb.QueryRequest, instance *store.InstanceMessage, database *store.DatabaseMessage) ([]*v1pb.QueryResult, int64, error) {
+	driver, err := s.dbFactory.GetReadOnlyDatabaseDriver(ctx, instance, database, request.DataSourceId)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer driver.Close(ctx)
+
+	sqlDB := driver.GetDB()
+	var conn *sql.Conn
+	if sqlDB != nil {
+		conn, err = sqlDB.Conn(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+		defer conn.Close()
+	}
+
+	timeout := defaultTimeout
+	if request.Timeout != nil {
+		timeout = request.Timeout.AsDuration()
+	}
+	ctx, cancelCtx := context.WithTimeout(ctx, timeout)
+	defer cancelCtx()
+
+	start := time.Now().UnixNano()
+	results, err := driver.QueryConn(ctx, conn, request.Statement, db.QueryContext{
+		Limit:   int(request.Limit),
+		Explain: request.Explain,
+	})
+	select {
+	case <-ctx.Done():
+		// canceled or timed out
+		return nil, time.Now().UnixNano() - start, errors.Errorf("timeout reached: %v", timeout)
+	default:
+		// So the select will not block
+	}
+
+	sanitizeResults(results)
+
+	return results, time.Now().UnixNano() - start, err
+}
+
+func (s *SQLService) createQueryHistory(ctx context.Context, database *store.DatabaseMessage, queryType store.QueryHistoryType, statement string, userUID int, durationNs int64, queryErr error) error {
+	qh := &store.QueryHistoryMessage{
+		CreatorUID: userUID,
+		ProjectID:  database.ProjectID,
+		Database:   common.FormatDatabase(database.InstanceID, database.DatabaseName),
+		Statement:  statement,
+		Type:       queryType,
+		Payload: &storepb.QueryHistoryPayload{
+			Error:    nil,
+			Duration: durationpb.New(time.Duration(durationNs)),
+		},
+	}
+	if queryErr != nil {
+		queryErrString := queryErr.Error()
+		qh.Payload.Error = &queryErrString
+	}
+
+	if _, err := s.store.CreateQueryHistory(ctx, qh); err != nil {
+		return status.Errorf(codes.Internal, "Failed to create export history with error: %v", err)
+	}
+	return nil
 }
 
 // Export exports the SQL query result.
@@ -332,14 +443,9 @@ func (s *SQLService) Export(ctx context.Context, request *v1pb.ExportRequest) (*
 		}
 	}
 
-	// Run SQL review.
-	if _, _, err = s.SQLReviewCheck(ctx, statement, v1pb.CheckRequest_SQL_EDITOR, instance, database, nil /* Override Metadata */); err != nil {
-		return nil, err
-	}
-
 	bytes, durationNs, exportErr := DoExport(ctx, s.store, s.dbFactory, s.licenseService, request, instance, database, spans)
 
-	if err := s.postExport(ctx, database, statement, user.ID, durationNs, exportErr); err != nil {
+	if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeExport, statement, user.ID, durationNs, exportErr); err != nil {
 		return nil, err
 	}
 
@@ -347,13 +453,8 @@ func (s *SQLService) Export(ctx context.Context, request *v1pb.ExportRequest) (*
 		return nil, status.Errorf(codes.Internal, exportErr.Error())
 	}
 
-	content, err := DoEncrypt(bytes, request)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-
 	return &v1pb.ExportResponse{
-		Content: content,
+		Content: bytes,
 	}, nil
 }
 
@@ -460,11 +561,13 @@ func DoExport(ctx context.Context, storeInstance *store.Store, dbFactory *dbfact
 	var content []byte
 	switch request.Format {
 	case v1pb.ExportFormat_CSV:
-		if content, err = exportCSV(result[0]); err != nil {
+		content, err = exportCSV(result[0])
+		if err != nil {
 			return nil, durationNs, err
 		}
 	case v1pb.ExportFormat_JSON:
-		if content, err = exportJSON(result[0]); err != nil {
+		content, err = exportJSON(result[0])
+		if err != nil {
 			return nil, durationNs, err
 		}
 	case v1pb.ExportFormat_SQL:
@@ -476,43 +579,27 @@ func DoExport(ctx context.Context, storeInstance *store.Store, dbFactory *dbfact
 		if err != nil {
 			return nil, 0, err
 		}
-		if content, err = exportSQL(instance.Engine, statementPrefix, result[0]); err != nil {
+		content, err = exportSQL(instance.Engine, statementPrefix, result[0])
+		if err != nil {
 			return nil, durationNs, err
 		}
 	case v1pb.ExportFormat_XLSX:
-		if content, err = exportXLSX(result[0]); err != nil {
+		content, err = exportXLSX(result[0])
+		if err != nil {
 			return nil, durationNs, err
 		}
 	default:
 		return nil, durationNs, status.Errorf(codes.InvalidArgument, "unsupported export format: %s", request.Format.String())
 	}
-	return content, durationNs, nil
+
+	encryptedBytes, err := doEncrypt(content, request)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to encrypt data")
+	}
+	return encryptedBytes, durationNs, nil
 }
 
-func (s *SQLService) postExport(ctx context.Context, database *store.DatabaseMessage, statement string, userUID int, durationNs int64, queryErr error) error {
-	qh := &store.QueryHistoryMessage{
-		CreatorUID: userUID,
-		ProjectID:  database.ProjectID,
-		Database:   common.FormatDatabase(database.InstanceID, database.DatabaseName),
-		Statement:  statement,
-		Type:       store.QueryHistoryTypeExport,
-		Payload: &storepb.QueryHistoryPayload{
-			Error:    nil,
-			Duration: durationpb.New(time.Duration(durationNs)),
-		},
-	}
-	if queryErr != nil {
-		queryErrString := queryErr.Error()
-		qh.Payload.Error = &queryErrString
-	}
-
-	if _, err := s.store.CreateQueryHistory(ctx, qh); err != nil {
-		return status.Errorf(codes.Internal, "Failed to create export history with error: %v", err)
-	}
-	return nil
-}
-
-func DoEncrypt(data []byte, request *v1pb.ExportRequest) ([]byte, error) {
+func doEncrypt(data []byte, request *v1pb.ExportRequest) ([]byte, error) {
 	if request.Password == "" {
 		return data, nil
 	}
@@ -654,208 +741,6 @@ func (s *SQLService) convertToV1QueryHistory(ctx context.Context, history *store
 		Duration:   history.Payload.Duration,
 		Type:       historyType,
 	}, nil
-}
-
-// Query executes a SQL query.
-// We have the following stages:
-//  1. pre-query
-//  2. do query
-//  3. post-query
-func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1pb.QueryResponse, error) {
-	// Prepare related message.
-	user, instance, database, err := s.prepareRelatedMessage(ctx, request.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	dataSourceID := request.DataSourceId
-	if dataSourceID == "" {
-		dataSources, err := s.store.ListDataSourcesV2(ctx, &store.FindDataSourceMessage{
-			InstanceID: &database.InstanceID,
-		})
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to list data sources: %v", err)
-		}
-		if len(dataSources) == 0 {
-			return nil, status.Errorf(codes.NotFound, "no data source found")
-		}
-		readOnlyDataSources := make([]*store.DataSourceMessage, 0)
-		for _, dataSource := range dataSources {
-			if dataSource.Type == api.RO {
-				readOnlyDataSources = append(readOnlyDataSources, dataSource)
-			}
-		}
-		// First try to use read-only data source if available.
-		if len(readOnlyDataSources) > 0 {
-			dataSourceID = readOnlyDataSources[0].ID
-		} else {
-			dataSourceID = dataSources[0].ID
-		}
-	}
-
-	dataSource, err := s.store.GetDataSource(ctx, &store.FindDataSourceMessage{
-		InstanceID: &database.InstanceID,
-		Name:       &dataSourceID,
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get data source: %v", err)
-	}
-	if dataSource == nil {
-		return nil, status.Errorf(codes.NotFound, "data source %q not found", request.DataSourceId)
-	}
-	ok, err := s.checkDataSourceQueriable(ctx, database, dataSource)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to check data source queriable: %v", err)
-	}
-	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "data source %q is not queriable", dataSource.Username)
-	}
-
-	statement := request.Statement
-	// In Redshift datashare, Rewrite query used for parser.
-	if database.DataShare {
-		statement = strings.ReplaceAll(statement, fmt.Sprintf("%s.", database.DatabaseName), "")
-	}
-
-	// Validate the request.
-	if !request.Explain {
-		if err := validateQueryRequest(instance, statement); err != nil {
-			return nil, err
-		}
-	}
-
-	// Get query span.
-	spans, err := base.GetQuerySpan(
-		ctx,
-		base.GetQuerySpanContext{
-			InstanceID:                    instance.ResourceID,
-			GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(s.store),
-			ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(s.store),
-			GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(s.store, instance.Engine),
-		},
-		instance.Engine,
-		statement,
-		database.DatabaseName,
-		"",
-		store.IgnoreDatabaseAndTableCaseSensitive(instance),
-	)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get query span: %v", err.Error())
-	}
-
-	if s.licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
-		if err := s.accessCheck(ctx, instance, user, spans, request.Limit, false /* isAdmin */, false /* isExport */); err != nil {
-			return nil, err
-		}
-	}
-
-	// Run SQL review.
-	adviceStatus, advices, err := s.SQLReviewCheck(ctx, statement, v1pb.CheckRequest_SQL_EDITOR, instance, database, nil /* Override Metadata */)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []*v1pb.QueryResult
-	var queryErr error
-	var durationNs int64
-	if adviceStatus != storepb.Advice_ERROR {
-		results, durationNs, queryErr = s.doQuery(ctx, request, instance, database)
-		if queryErr == nil && s.licenseService.IsFeatureEnabledForInstance(api.FeatureSensitiveData, instance) == nil && !request.Explain {
-			masker := NewQueryResultMasker(s.store)
-			if err := masker.MaskResults(ctx, spans, results, instance, storepb.MaskingExceptionPolicy_MaskingException_QUERY); err != nil {
-				return nil, status.Errorf(codes.Internal, err.Error())
-			}
-		}
-	}
-
-	// Update activity.
-	if err = s.postQuery(ctx, database, statement, user.ID, durationNs, queryErr); err != nil {
-		return nil, err
-	}
-	if queryErr != nil {
-		return nil, status.Errorf(codes.Internal, queryErr.Error())
-	}
-
-	allowExport := true
-	// AllowExport is a validate only check.
-	if s.licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
-		err := s.accessCheck(ctx, instance, user, spans, request.Limit, false /* isAdmin */, true /* isExport */)
-		allowExport = (err == nil)
-	}
-
-	response := &v1pb.QueryResponse{
-		Results:     results,
-		Advices:     advices,
-		AllowExport: allowExport,
-	}
-
-	return response, nil
-}
-
-// doQuery does query.
-func (s *SQLService) doQuery(ctx context.Context, request *v1pb.QueryRequest, instance *store.InstanceMessage, database *store.DatabaseMessage) ([]*v1pb.QueryResult, int64, error) {
-	driver, err := s.dbFactory.GetReadOnlyDatabaseDriver(ctx, instance, database, request.DataSourceId)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer driver.Close(ctx)
-
-	sqlDB := driver.GetDB()
-	var conn *sql.Conn
-	if sqlDB != nil {
-		conn, err = sqlDB.Conn(ctx)
-		if err != nil {
-			return nil, 0, err
-		}
-		defer conn.Close()
-	}
-
-	timeout := defaultTimeout
-	if request.Timeout != nil {
-		timeout = request.Timeout.AsDuration()
-	}
-	ctx, cancelCtx := context.WithTimeout(ctx, timeout)
-	defer cancelCtx()
-
-	start := time.Now().UnixNano()
-	results, err := driver.QueryConn(ctx, conn, request.Statement, db.QueryContext{
-		Limit:   int(request.Limit),
-		Explain: request.Explain,
-	})
-	select {
-	case <-ctx.Done():
-		// canceled or timed out
-		return nil, time.Now().UnixNano() - start, errors.Errorf("timeout reached: %v", timeout)
-	default:
-		// So the select will not block
-	}
-
-	sanitizeResults(results)
-
-	return results, time.Now().UnixNano() - start, err
-}
-
-func (s *SQLService) postQuery(ctx context.Context, database *store.DatabaseMessage, statement string, userUID int, durationNs int64, queryErr error) error {
-	qh := &store.QueryHistoryMessage{
-		CreatorUID: userUID,
-		ProjectID:  database.ProjectID,
-		Database:   common.FormatDatabase(database.InstanceID, database.DatabaseName),
-		Statement:  statement,
-		Type:       store.QueryHistoryTypeQuery,
-		Payload: &storepb.QueryHistoryPayload{
-			Error:    nil,
-			Duration: durationpb.New(time.Duration(durationNs)),
-		},
-	}
-	if queryErr != nil {
-		queryErrString := queryErr.Error()
-		qh.Payload.Error = &queryErrString
-	}
-
-	if _, err := s.store.CreateQueryHistory(ctx, qh); err != nil {
-		return status.Errorf(codes.Internal, "Failed to create export history with error: %v", err)
-	}
-	return nil
 }
 
 func BuildGetLinkedDatabaseMetadataFunc(storeInstance *store.Store, engine storepb.Engine) base.GetLinkedDatabaseMetadataFunc {
@@ -1237,11 +1122,23 @@ func (s *SQLService) SQLReviewCheck(
 
 	dbMetadata := overrideMetadata
 	if dbMetadata == nil {
-		metadata, err := getDatabaseMetadata(ctx, s.store, s.schemaSyncer, database)
+		dbSchema, err := s.store.GetDBSchema(ctx, database.UID)
 		if err != nil {
-			return storepb.Advice_ERROR, nil, status.Errorf(codes.Internal, err.Error())
+			return storepb.Advice_ERROR, nil, errors.Wrapf(err, "failed to fetch database schema for database %v", database.UID)
 		}
-		dbMetadata = metadata
+		if dbSchema == nil {
+			if err := s.schemaSyncer.SyncDatabaseSchema(ctx, database, true /* force */); err != nil {
+				return storepb.Advice_ERROR, nil, errors.Wrapf(err, "failed to sync database schema for database %v", database.UID)
+			}
+			dbSchema, err = s.store.GetDBSchema(ctx, database.UID)
+			if err != nil {
+				return storepb.Advice_ERROR, nil, errors.Wrapf(err, "failed to fetch database schema for database %v", database.UID)
+			}
+			if dbSchema == nil {
+				return storepb.Advice_ERROR, nil, errors.Wrapf(err, "cannot found schema for database %v", database.UID)
+			}
+		}
+		dbMetadata = dbSchema.GetMetadata()
 	}
 
 	catalog, err := catalog.NewCatalog(ctx, s.store, database.UID, instance.Engine, store.IgnoreDatabaseAndTableCaseSensitive(instance), overrideMetadata)
@@ -1268,32 +1165,39 @@ func (s *SQLService) SQLReviewCheck(
 		CurrentDatabase: database.DatabaseName,
 	}
 
-	return s.sqlCheck(
-		ctx,
-		statement,
-		database,
-		context,
-	)
-}
-
-func getDatabaseMetadata(ctx context.Context, stores *store.Store, schemaSyncer *schemasync.Syncer, database *store.DatabaseMessage) (*storepb.DatabaseSchemaMetadata, error) {
-	dbSchema, err := stores.GetDBSchema(ctx, database.UID)
+	reviewConfig, err := s.store.GetReviewConfigForDatabase(ctx, database)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch database schema for database %v", database.UID)
-	}
-	if dbSchema == nil {
-		if err := schemaSyncer.SyncDatabaseSchema(ctx, database, true /* force */); err != nil {
-			return nil, errors.Wrapf(err, "failed to sync database schema for database %v", database.UID)
-		}
-		dbSchema, err = stores.GetDBSchema(ctx, database.UID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to fetch database schema for database %v", database.UID)
-		}
-		if dbSchema == nil {
-			return nil, errors.Wrapf(err, "cannot found schema for database %v", database.UID)
+		if e, ok := err.(*common.Error); ok && e.Code == common.NotFound {
+			// Continue to check the builtin rules.
+			reviewConfig = &storepb.ReviewConfigPayload{}
+		} else {
+			return storepb.Advice_ERROR, nil, status.Errorf(codes.Internal, "failed to get SQL review policy with error: %v", err)
 		}
 	}
-	return dbSchema.GetMetadata(), nil
+
+	res, err := advisor.SQLReviewCheck(s.sheetManager, statement, reviewConfig.SqlReviewRules, context)
+	if err != nil {
+		return storepb.Advice_ERROR, nil, status.Errorf(codes.Internal, "failed to exec SQL review with error: %v", err)
+	}
+
+	adviceLevel := storepb.Advice_SUCCESS
+	var advices []*v1pb.Advice
+	for _, advice := range res {
+		switch advice.Status {
+		case storepb.Advice_WARNING:
+			if adviceLevel != storepb.Advice_ERROR {
+				adviceLevel = storepb.Advice_WARNING
+			}
+		case storepb.Advice_ERROR:
+			adviceLevel = storepb.Advice_ERROR
+		case storepb.Advice_SUCCESS, storepb.Advice_STATUS_UNSPECIFIED:
+			continue
+		}
+
+		advices = append(advices, convertToV1Advice(advice))
+	}
+
+	return adviceLevel, advices, nil
 }
 
 func convertToV1Advice(advice *storepb.Advice) *v1pb.Advice {
@@ -1321,47 +1225,6 @@ func convertAdviceStatus(status storepb.Advice_Status) v1pb.Advice_Status {
 	default:
 		return v1pb.Advice_STATUS_UNSPECIFIED
 	}
-}
-
-func (s *SQLService) sqlCheck(
-	ctx context.Context,
-	statement string,
-	database *store.DatabaseMessage,
-	context advisor.SQLReviewCheckContext,
-) (storepb.Advice_Status, []*v1pb.Advice, error) {
-	var adviceList []*v1pb.Advice
-	reviewConfig, err := s.store.GetReviewConfigForDatabase(ctx, database)
-	if err != nil {
-		if e, ok := err.(*common.Error); ok && e.Code == common.NotFound {
-			// Continue to check the builtin rules.
-			reviewConfig = &storepb.ReviewConfigPayload{}
-		} else {
-			return storepb.Advice_ERROR, nil, status.Errorf(codes.Internal, "failed to get SQL review policy with error: %v", err)
-		}
-	}
-
-	res, err := advisor.SQLReviewCheck(s.sheetManager, statement, reviewConfig.SqlReviewRules, context)
-	if err != nil {
-		return storepb.Advice_ERROR, nil, status.Errorf(codes.Internal, "failed to exec SQL review with error: %v", err)
-	}
-
-	adviceLevel := storepb.Advice_SUCCESS
-	for _, advice := range res {
-		switch advice.Status {
-		case storepb.Advice_WARNING:
-			if adviceLevel != storepb.Advice_ERROR {
-				adviceLevel = storepb.Advice_WARNING
-			}
-		case storepb.Advice_ERROR:
-			adviceLevel = storepb.Advice_ERROR
-		case storepb.Advice_SUCCESS, storepb.Advice_STATUS_UNSPECIFIED:
-			continue
-		}
-
-		adviceList = append(adviceList, convertToV1Advice(advice))
-	}
-
-	return adviceLevel, adviceList, nil
 }
 
 // ParseMyBatisMapper parses a MyBatis mapper XML file and returns the multi-SQL statements.
