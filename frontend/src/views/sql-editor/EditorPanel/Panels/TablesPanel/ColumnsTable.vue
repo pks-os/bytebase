@@ -6,7 +6,7 @@
       size="small"
       :row-key="(column) => column.name"
       :columns="columns"
-      :data="layoutReady ? shownColumnList : []"
+      :data="layoutReady ? filteredColumns : []"
       :max-height="tableBodyHeight"
       :virtual-scroll="true"
       :striped="true"
@@ -19,7 +19,7 @@
 <script lang="ts" setup>
 import type { DataTableColumn, DataTableInst } from "naive-ui";
 import { NCheckbox, NDataTable } from "naive-ui";
-import { computed, h, ref } from "vue";
+import { computed, h, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   DefaultValueCell,
@@ -33,25 +33,37 @@ import type {
   SchemaMetadata,
   TableMetadata,
 } from "@/types/proto/v1/database_service";
+import { getHighlightHTMLByRegExp } from "@/utils";
 import { useAutoHeightDataTable } from "../../common";
+import { useEditorPanelContext } from "../../context";
 
-const props = withDefaults(
-  defineProps<{
-    db: ComposedDatabase;
-    database: DatabaseMetadata;
-    schema: SchemaMetadata;
-    table: TableMetadata;
-    filterColumn?: (column: ColumnMetadata) => boolean;
-  }>(),
-  {
-    filterColumn: (_: ColumnMetadata) => true,
-  }
-);
+const props = defineProps<{
+  db: ComposedDatabase;
+  database: DatabaseMetadata;
+  schema: SchemaMetadata;
+  table: TableMetadata;
+  keyword?: string;
+}>();
 
+const { viewState } = useEditorPanelContext();
 const { containerElRef, tableBodyHeight, layoutReady } =
   useAutoHeightDataTable();
 const dataTableRef = ref<DataTableInst>();
+const vlRef = computed(() => {
+  return (dataTableRef.value as any)?.$refs?.mainTableInstRef?.bodyInstRef
+    ?.virtualListRef;
+});
 const { t } = useI18n();
+
+const filteredColumns = computed(() => {
+  const keyword = props.keyword?.trim().toLowerCase();
+  if (keyword) {
+    return props.table.columns.filter((column) =>
+      column.name.includes(keyword)
+    );
+  }
+  return props.table.columns;
+});
 
 const primaryKey = computed(() => {
   return props.table.indexes.find((idx) => idx.primary);
@@ -66,7 +78,11 @@ const columns = computed(() => {
       resizable: true,
       minWidth: 140,
       className: "truncate",
-      render: (col) => col.name.repeat(10),
+      render: (column) => {
+        return h("span", {
+          innerHTML: getHighlightHTMLByRegExp(column.name, props.keyword ?? ""),
+        });
+      },
     },
     {
       key: "type",
@@ -161,15 +177,23 @@ const columns = computed(() => {
   return columns.filter((header) => !header.hide);
 });
 
-const shownColumnList = computed(() => {
-  return props.table.columns.filter(props.filterColumn);
-});
-
 const isColumnPrimaryKey = (column: ColumnMetadata): boolean => {
   const pk = primaryKey.value;
   if (!pk) return false;
   return pk.expressions.includes(column.name);
 };
+
+watch(
+  [() => viewState.value?.detail.column, vlRef],
+  ([column, vl]) => {
+    if (column && vl) {
+      requestAnimationFrame(() => {
+        vl.scrollTo({ key: column });
+      });
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="postcss" scoped>

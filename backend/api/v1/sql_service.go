@@ -115,7 +115,6 @@ func (s *SQLService) AdminExecute(server v1pb.SQLService_AdminExecuteServer) err
 			if err != nil {
 				return status.Errorf(codes.Internal, "failed to get database driver: %v", err)
 			}
-
 			sqlDB := driver.GetDB()
 			if sqlDB != nil {
 				conn, err = sqlDB.Conn(ctx)
@@ -125,14 +124,9 @@ func (s *SQLService) AdminExecute(server v1pb.SQLService_AdminExecuteServer) err
 			}
 		}
 
-		timeout := defaultTimeout
-		if request.Timeout != nil {
-			timeout = request.Timeout.AsDuration()
-		}
-		result, durationNs, queryErr := s.doExecute(ctx, driver, conn, request.Statement, timeout)
-		sanitizeResults(result)
+		result, duration, queryErr := executeWithTimeout(ctx, driver, conn, request.Statement, request.Timeout, db.QueryContext{})
 
-		if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, durationNs, queryErr); err != nil {
+		if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, duration, queryErr); err != nil {
 			slog.Error("failed to post admin execute activity", log.BBError(err))
 		}
 
@@ -166,7 +160,6 @@ func (s *SQLService) Execute(ctx context.Context, request *v1pb.ExecuteRequest) 
 		return nil, status.Errorf(codes.Internal, "failed to get database driver: %v", err)
 	}
 	defer driver.Close(ctx)
-
 	var conn *sql.Conn
 	sqlDB := driver.GetDB()
 	if sqlDB != nil {
@@ -177,10 +170,9 @@ func (s *SQLService) Execute(ctx context.Context, request *v1pb.ExecuteRequest) 
 		defer conn.Close()
 	}
 
-	results, durationNs, queryErr := s.doExecute(ctx, driver, conn, request.Name, defaultTimeout)
-	sanitizeResults(results)
+	results, duration, queryErr := executeWithTimeout(ctx, driver, conn, request.Name, request.Timeout, db.QueryContext{})
 
-	if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, durationNs, queryErr); err != nil {
+	if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, duration, queryErr); err != nil {
 		slog.Error("failed to post admin execute activity", log.BBError(err))
 	}
 
@@ -197,69 +189,11 @@ func (s *SQLService) Execute(ctx context.Context, request *v1pb.ExecuteRequest) 
 	return response, nil
 }
 
-func (*SQLService) doExecute(ctx context.Context, driver db.Driver, conn *sql.Conn, statement string, timeout time.Duration) ([]*v1pb.QueryResult, int64, error) {
-	start := time.Now().UnixNano()
-	ctx, cancelCtx := context.WithTimeout(ctx, timeout)
-	defer cancelCtx()
-	result, err := driver.QueryConn(ctx, conn, statement, db.QueryContext{AdminSession: true})
-	select {
-	case <-ctx.Done():
-		// canceled or timed out
-		return nil, time.Now().UnixNano() - start, errors.Errorf("timeout reached: %v", timeout)
-	default:
-		// So the select will not block
-	}
-	return result, time.Now().UnixNano() - start, err
-}
-
 func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1pb.QueryResponse, error) {
 	// Prepare related message.
 	user, instance, database, err := s.prepareRelatedMessage(ctx, request.Name)
 	if err != nil {
 		return nil, err
-	}
-
-	dataSourceID := request.DataSourceId
-	if dataSourceID == "" {
-		dataSources, err := s.store.ListDataSourcesV2(ctx, &store.FindDataSourceMessage{
-			InstanceID: &database.InstanceID,
-		})
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to list data sources: %v", err)
-		}
-		if len(dataSources) == 0 {
-			return nil, status.Errorf(codes.NotFound, "no data source found")
-		}
-		readOnlyDataSources := make([]*store.DataSourceMessage, 0)
-		for _, dataSource := range dataSources {
-			if dataSource.Type == api.RO {
-				readOnlyDataSources = append(readOnlyDataSources, dataSource)
-			}
-		}
-		// First try to use read-only data source if available.
-		if len(readOnlyDataSources) > 0 {
-			dataSourceID = readOnlyDataSources[0].ID
-		} else {
-			dataSourceID = dataSources[0].ID
-		}
-	}
-
-	dataSource, err := s.store.GetDataSource(ctx, &store.FindDataSourceMessage{
-		InstanceID: &database.InstanceID,
-		Name:       &dataSourceID,
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get data source: %v", err)
-	}
-	if dataSource == nil {
-		return nil, status.Errorf(codes.NotFound, "data source %q not found", request.DataSourceId)
-	}
-	ok, err := s.checkDataSourceQueriable(ctx, database, dataSource)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to check data source queriable: %v", err)
-	}
-	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "data source %q is not queriable", dataSource.Username)
 	}
 
 	statement := request.Statement
@@ -275,41 +209,29 @@ func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1
 		}
 	}
 
-	// Get query span.
-	spans, err := base.GetQuerySpan(
-		ctx,
-		base.GetQuerySpanContext{
-			InstanceID:                    instance.ResourceID,
-			GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(s.store),
-			ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(s.store),
-			GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(s.store, instance.Engine),
-		},
-		instance.Engine,
-		statement,
-		database.DatabaseName,
-		"",
-		store.IgnoreDatabaseAndTableCaseSensitive(instance),
-	)
+	dataSource, err := checkAndGetDataSourceQueriable(ctx, s.store, database, request.DataSourceId)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get query span: %v", err.Error())
+		return nil, err
 	}
+	driver, err := s.dbFactory.GetDataSourceDriver(ctx, instance, dataSource, database.DatabaseName, database.DataShare, true /* readOnly */, db.ConnectionContext{})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get database driver: %v", err)
+	}
+	defer driver.Close(ctx)
 
-	if s.licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
-		if err := s.accessCheck(ctx, instance, user, spans, request.Limit, false /* isAdmin */, false /* isExport */); err != nil {
-			return nil, err
+	sqlDB := driver.GetDB()
+	var conn *sql.Conn
+	if sqlDB != nil {
+		conn, err = sqlDB.Conn(ctx)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to get database connection: %v", err)
 		}
+		defer conn.Close()
 	}
-
-	results, durationNs, queryErr := s.doQuery(ctx, request, instance, database)
-	if queryErr == nil && s.licenseService.IsFeatureEnabledForInstance(api.FeatureSensitiveData, instance) == nil && !request.Explain {
-		masker := NewQueryResultMasker(s.store)
-		if err := masker.MaskResults(ctx, spans, results, instance, storepb.MaskingExceptionPolicy_MaskingException_QUERY); err != nil {
-			return nil, status.Errorf(codes.Internal, err.Error())
-		}
-	}
+	results, spans, duration, queryErr := queryRetry(ctx, s.store, user, instance, database, driver, conn, statement, request.Timeout, db.QueryContext{Explain: request.Explain}, false, s.licenseService, s.accessCheck, s.schemaSyncer)
 
 	// Update activity.
-	if err = s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, statement, user.ID, durationNs, queryErr); err != nil {
+	if err = s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, statement, user.ID, duration, queryErr); err != nil {
 		return nil, err
 	}
 	if queryErr != nil {
@@ -319,7 +241,7 @@ func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1
 	allowExport := true
 	// AllowExport is a validate only check.
 	if s.licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
-		err := s.accessCheck(ctx, instance, user, spans, request.Limit, false /* isAdmin */, true /* isExport */)
+		err := s.accessCheck(ctx, instance, user, spans, true /* isExport */)
 		allowExport = (err == nil)
 	}
 
@@ -331,69 +253,131 @@ func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1
 	return response, nil
 }
 
-func (s *SQLService) doQuery(ctx context.Context, request *v1pb.QueryRequest, instance *store.InstanceMessage, database *store.DatabaseMessage) ([]*v1pb.QueryResult, int64, error) {
-	driver, err := s.dbFactory.GetReadOnlyDatabaseDriver(ctx, instance, database, request.DataSourceId)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer driver.Close(ctx)
+type accessCheckFunc func(context.Context, *store.InstanceMessage, *store.UserMessage, []*base.QuerySpan, bool) error
 
-	sqlDB := driver.GetDB()
-	var conn *sql.Conn
-	if sqlDB != nil {
-		conn, err = sqlDB.Conn(ctx)
-		if err != nil {
-			return nil, 0, err
+func queryRetry(
+	ctx context.Context,
+	stores *store.Store,
+	user *store.UserMessage,
+	instance *store.InstanceMessage,
+	database *store.DatabaseMessage,
+	driver db.Driver,
+	conn *sql.Conn,
+	statement string,
+	timeout *durationpb.Duration,
+	queryContext db.QueryContext,
+	isExport bool,
+	licenseService enterprise.LicenseService,
+	optionalAccessCheck accessCheckFunc,
+	schemaSyncer *schemasync.Syncer,
+) ([]*v1pb.QueryResult, []*base.QuerySpan, time.Duration, error) {
+	spans, firstSpanErr := base.GetQuerySpan(
+		ctx,
+		base.GetQuerySpanContext{
+			InstanceID:                    instance.ResourceID,
+			GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(stores),
+			ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(stores),
+			GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(stores, instance.Engine),
+		},
+		instance.Engine,
+		statement,
+		database.DatabaseName,
+		"",
+		store.IgnoreDatabaseAndTableCaseSensitive(instance),
+	)
+	if firstSpanErr == nil {
+		if licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil && optionalAccessCheck != nil {
+			if err := optionalAccessCheck(ctx, instance, user, spans, isExport); err != nil {
+				return nil, nil, time.Duration(0), err
+			}
 		}
-		defer conn.Close()
 	}
 
-	timeout := defaultTimeout
-	if request.Timeout != nil {
-		timeout = request.Timeout.AsDuration()
+	results, duration, queryErr := executeWithTimeout(ctx, driver, conn, statement, timeout, queryContext)
+	if queryErr != nil {
+		return nil, nil, duration, queryErr
 	}
-	ctx, cancelCtx := context.WithTimeout(ctx, timeout)
+	hasOK := false
+	databaseMap := make(map[string]bool)
+	for i, r := range results {
+		if r.Error == "" {
+			hasOK = true
+			if i < len(spans) {
+				for k := range spans[i].SourceColumns {
+					databaseMap[k.Database] = true
+				}
+			}
+		}
+	}
+	if !hasOK {
+		return results, nil, duration, nil
+	}
+	// Sync database metadata.
+	if firstSpanErr != nil {
+		for accessDatabaseName := range databaseMap {
+			d, err := stores.GetDatabaseV2(ctx, &store.FindDatabaseMessage{InstanceID: &instance.ResourceID, DatabaseName: &accessDatabaseName})
+			if err != nil {
+				return nil, nil, duration, err
+			}
+			if err := schemaSyncer.SyncDatabaseSchema(ctx, d, true /* force */); err != nil {
+				return nil, nil, duration, errors.Wrapf(err, "failed to sync database schema for database %q", accessDatabaseName)
+			}
+		}
+	}
+
+	// Retry getting query span.
+	spans, spanErr := base.GetQuerySpan(
+		ctx,
+		base.GetQuerySpanContext{
+			InstanceID:                    instance.ResourceID,
+			GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(stores),
+			ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(stores),
+			GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(stores, instance.Engine),
+		},
+		instance.Engine,
+		statement,
+		database.DatabaseName,
+		"",
+		store.IgnoreDatabaseAndTableCaseSensitive(instance),
+	)
+	if spanErr != nil {
+		return nil, nil, duration, status.Errorf(codes.Internal, "failed to get query span: %v", spanErr.Error())
+	}
+
+	if firstSpanErr != nil {
+		if licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
+			if err := optionalAccessCheck(ctx, instance, user, spans, isExport); err != nil {
+				return nil, nil, duration, err
+			}
+		}
+	}
+	if licenseService.IsFeatureEnabledForInstance(api.FeatureSensitiveData, instance) == nil && !queryContext.Explain {
+		masker := NewQueryResultMasker(stores)
+		if err := masker.MaskResults(ctx, spans, results, instance, storepb.MaskingExceptionPolicy_MaskingException_QUERY); err != nil {
+			return nil, nil, duration, status.Errorf(codes.Internal, err.Error())
+		}
+	}
+	return results, spans, duration, nil
+}
+
+func executeWithTimeout(ctx context.Context, driver db.Driver, conn *sql.Conn, statement string, timeout *durationpb.Duration, queryContext db.QueryContext) ([]*v1pb.QueryResult, time.Duration, error) {
+	ctxTimeout := defaultTimeout
+	if timeout != nil {
+		ctxTimeout = timeout.AsDuration()
+	}
+	start := time.Now()
+	ctx, cancelCtx := context.WithTimeout(ctx, ctxTimeout)
 	defer cancelCtx()
-
-	start := time.Now().UnixNano()
-	results, err := driver.QueryConn(ctx, conn, request.Statement, db.QueryContext{
-		Limit:   int(request.Limit),
-		Explain: request.Explain,
-	})
+	result, err := driver.QueryConn(ctx, conn, statement, queryContext)
 	select {
 	case <-ctx.Done():
 		// canceled or timed out
-		return nil, time.Now().UnixNano() - start, errors.Errorf("timeout reached: %v", timeout)
+		return nil, time.Since(start), errors.Errorf("timeout reached: %v", timeout)
 	default:
 		// So the select will not block
 	}
-
-	sanitizeResults(results)
-
-	return results, time.Now().UnixNano() - start, err
-}
-
-func (s *SQLService) createQueryHistory(ctx context.Context, database *store.DatabaseMessage, queryType store.QueryHistoryType, statement string, userUID int, durationNs int64, queryErr error) error {
-	qh := &store.QueryHistoryMessage{
-		CreatorUID: userUID,
-		ProjectID:  database.ProjectID,
-		Database:   common.FormatDatabase(database.InstanceID, database.DatabaseName),
-		Statement:  statement,
-		Type:       queryType,
-		Payload: &storepb.QueryHistoryPayload{
-			Error:    nil,
-			Duration: durationpb.New(time.Duration(durationNs)),
-		},
-	}
-	if queryErr != nil {
-		queryErrString := queryErr.Error()
-		qh.Payload.Error = &queryErrString
-	}
-
-	if _, err := s.store.CreateQueryHistory(ctx, qh); err != nil {
-		return status.Errorf(codes.Internal, "Failed to create export history with error: %v", err)
-	}
-	return nil
+	sanitizeResults(result)
+	return result, time.Since(start), err
 }
 
 // Export exports the SQL query result.
@@ -419,33 +403,9 @@ func (s *SQLService) Export(ctx context.Context, request *v1pb.ExportRequest) (*
 		return nil, err
 	}
 
-	spans, err := base.GetQuerySpan(
-		ctx,
-		base.GetQuerySpanContext{
-			InstanceID:                    instance.ResourceID,
-			GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(s.store),
-			ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(s.store),
-			GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(s.store, instance.Engine),
-		},
-		instance.Engine,
-		statement,
-		database.DatabaseName,
-		"",
-		store.IgnoreDatabaseAndTableCaseSensitive(instance),
-	)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get query span: %v", err.Error())
-	}
+	bytes, duration, exportErr := DoExport(ctx, s.store, s.dbFactory, s.licenseService, request, user, instance, database, s.accessCheck, s.schemaSyncer)
 
-	if s.licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil {
-		if err := s.accessCheck(ctx, instance, user, spans, request.Limit, false /* isAdmin */, true /* isExport */); err != nil {
-			return nil, err
-		}
-	}
-
-	bytes, durationNs, exportErr := DoExport(ctx, s.store, s.dbFactory, s.licenseService, request, instance, database, spans)
-
-	if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeExport, statement, user.ID, durationNs, exportErr); err != nil {
+	if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeExport, statement, user.ID, duration, exportErr); err != nil {
 		return nil, err
 	}
 
@@ -518,10 +478,25 @@ func (s *SQLService) doExportFromIssue(ctx context.Context, issueName string) (*
 }
 
 // DoExport does the export.
-func DoExport(ctx context.Context, storeInstance *store.Store, dbFactory *dbfactory.DBFactory, licenseService enterprise.LicenseService, request *v1pb.ExportRequest, instance *store.InstanceMessage, database *store.DatabaseMessage, spans []*base.QuerySpan) ([]byte, int64, error) {
-	driver, err := dbFactory.GetReadOnlyDatabaseDriver(ctx, instance, database, "" /* dataSourceID */)
+func DoExport(
+	ctx context.Context,
+	storeInstance *store.Store,
+	dbFactory *dbfactory.DBFactory,
+	licenseService enterprise.LicenseService,
+	request *v1pb.ExportRequest,
+	user *store.UserMessage,
+	instance *store.InstanceMessage,
+	database *store.DatabaseMessage,
+	optionalAccessCheck accessCheckFunc,
+	schemaSyncer *schemasync.Syncer,
+) ([]byte, time.Duration, error) {
+	dataSource, err := checkAndGetDataSourceQueriable(ctx, storeInstance, database, request.DataSourceId)
 	if err != nil {
 		return nil, 0, err
+	}
+	driver, err := dbFactory.GetDataSourceDriver(ctx, instance, dataSource, database.DatabaseName, database.DataShare, true /* readOnly */, db.ConnectionContext{})
+	if err != nil {
+		return nil, 0, status.Errorf(codes.Internal, "failed to get database driver: %v", err)
 	}
 	defer driver.Close(ctx)
 
@@ -534,69 +509,65 @@ func DoExport(ctx context.Context, storeInstance *store.Store, dbFactory *dbfact
 		}
 		defer conn.Close()
 	}
-
-	start := time.Now().UnixNano()
-	result, err := driver.QueryConn(ctx, conn, request.Statement, db.QueryContext{
-		Limit: int(request.Limit),
-	})
-	durationNs := time.Now().UnixNano() - start
-	if err != nil {
-		return nil, durationNs, err
+	results, spans, duration, queryErr := queryRetry(ctx, storeInstance, user, instance, database, driver, conn, request.Statement, nil /* timeDuration */, db.QueryContext{}, true, licenseService, optionalAccessCheck, schemaSyncer)
+	if queryErr != nil {
+		return nil, duration, err
 	}
 	// only return the last result
-	if len(result) > 1 {
-		result = result[len(result)-1:]
+	if len(results) > 1 {
+		results = results[len(results)-1:]
 	}
-	if result[0].GetError() != "" {
-		return nil, durationNs, errors.Errorf(result[0].GetError())
+	if results[0].GetError() != "" {
+		return nil, duration, errors.Errorf(results[0].GetError())
 	}
 
 	if licenseService.IsFeatureEnabledForInstance(api.FeatureSensitiveData, instance) == nil {
 		masker := NewQueryResultMasker(storeInstance)
-		if err := masker.MaskResults(ctx, spans, result, instance, storepb.MaskingExceptionPolicy_MaskingException_EXPORT); err != nil {
-			return nil, durationNs, err
+		if err := masker.MaskResults(ctx, spans, results, instance, storepb.MaskingExceptionPolicy_MaskingException_EXPORT); err != nil {
+			return nil, duration, err
 		}
 	}
 
+	result := results[0]
 	var content []byte
 	switch request.Format {
 	case v1pb.ExportFormat_CSV:
-		content, err = exportCSV(result[0])
+		content, err = exportCSV(result)
 		if err != nil {
-			return nil, durationNs, err
+			return nil, duration, err
 		}
 	case v1pb.ExportFormat_JSON:
-		content, err = exportJSON(result[0])
+		content, err = exportJSON(result)
 		if err != nil {
-			return nil, durationNs, err
+			return nil, duration, err
 		}
 	case v1pb.ExportFormat_SQL:
 		resourceList, err := extractResourceList(ctx, storeInstance, instance.Engine, database.DatabaseName, request.Statement, instance)
 		if err != nil {
 			return nil, 0, status.Errorf(codes.InvalidArgument, "failed to extract resource list: %v", err)
 		}
-		statementPrefix, err := getSQLStatementPrefix(instance.Engine, resourceList, result[0].ColumnNames)
+		statementPrefix, err := getSQLStatementPrefix(instance.Engine, resourceList, result.ColumnNames)
 		if err != nil {
 			return nil, 0, err
 		}
-		content, err = exportSQL(instance.Engine, statementPrefix, result[0])
+		content, err = exportSQL(instance.Engine, statementPrefix, result)
 		if err != nil {
-			return nil, durationNs, err
+			return nil, duration, err
 		}
 	case v1pb.ExportFormat_XLSX:
-		content, err = exportXLSX(result[0])
+		content, err = exportXLSX(result)
 		if err != nil {
-			return nil, durationNs, err
+			return nil, duration, err
 		}
 	default:
-		return nil, durationNs, status.Errorf(codes.InvalidArgument, "unsupported export format: %s", request.Format.String())
+		return nil, duration, status.Errorf(codes.InvalidArgument, "unsupported export format: %s", request.Format.String())
 	}
 
 	encryptedBytes, err := doEncrypt(content, request)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to encrypt data")
 	}
-	return encryptedBytes, durationNs, nil
+	return encryptedBytes, duration, nil
 }
 
 func doEncrypt(data []byte, request *v1pb.ExportRequest) ([]byte, error) {
@@ -636,6 +607,29 @@ func timeToMsDosTime(t time.Time) (uint16, uint16) {
 	fDate := uint16(t.Day() + int(t.Month())<<5 + (t.Year()-1980)<<9)
 	fTime := uint16(t.Second()/2 + t.Minute()<<5 + t.Hour()<<11)
 	return fDate, fTime
+}
+
+func (s *SQLService) createQueryHistory(ctx context.Context, database *store.DatabaseMessage, queryType store.QueryHistoryType, statement string, userUID int, duration time.Duration, queryErr error) error {
+	qh := &store.QueryHistoryMessage{
+		CreatorUID: userUID,
+		ProjectID:  database.ProjectID,
+		Database:   common.FormatDatabase(database.InstanceID, database.DatabaseName),
+		Statement:  statement,
+		Type:       queryType,
+		Payload: &storepb.QueryHistoryPayload{
+			Error:    nil,
+			Duration: durationpb.New(duration),
+		},
+	}
+	if queryErr != nil {
+		queryErrString := queryErr.Error()
+		qh.Payload.Error = &queryErrString
+	}
+
+	if _, err := s.store.CreateQueryHistory(ctx, qh); err != nil {
+		return status.Errorf(codes.Internal, "Failed to create export history with error: %v", err)
+	}
+	return nil
 }
 
 // SearchQueryHistories lists query histories.
@@ -857,43 +851,35 @@ func (s *SQLService) accessCheck(
 	instance *store.InstanceMessage,
 	user *store.UserMessage,
 	spans []*base.QuerySpan,
-	limit int32,
-	isAdmin,
 	isExport bool) error {
-	if isExport {
-		ok, err := s.iamManager.CheckPermission(ctx, iam.PermissionDatabasesExport, user)
-		if err != nil {
-			return err
-		}
-		if isAdmin && !ok {
-			return status.Errorf(codes.PermissionDenied, "only users with %s permission on the workspace can export data using admin mode", iam.PermissionDatabasesExport)
-		}
-	}
-
 	for _, span := range spans {
 		for column := range span.SourceColumns {
-			databaseResourceURL := common.FormatDatabase(instance.ResourceID, column.Database)
 			attributes := map[string]any{
 				"request.time":      time.Now(),
-				"resource.database": databaseResourceURL,
+				"resource.database": common.FormatDatabase(instance.ResourceID, column.Database),
 				"resource.schema":   column.Schema,
 				"resource.table":    column.Table,
-				"request.row_limit": limit,
 			}
 
-			project, database, err := s.getProjectAndDatabaseMessage(ctx, instance, column.Database)
+			databaseMessage, err := s.store.GetDatabaseV2(ctx, &store.FindDatabaseMessage{
+				InstanceID:          &instance.ResourceID,
+				DatabaseName:        &column.Database,
+				IgnoreCaseSensitive: store.IgnoreDatabaseAndTableCaseSensitive(instance),
+			})
 			if err != nil {
-				return status.Errorf(codes.Internal, err.Error())
+				return err
 			}
-			if project == nil && database == nil {
-				// If database not found, skip.
-				// TODO(d): re-evaluate this case.
-				continue
+			if databaseMessage == nil {
+				return status.Errorf(codes.InvalidArgument, "database %q not found", column.Database)
+			}
+			project, err := s.store.GetProjectV2(ctx, &store.FindProjectMessage{ResourceID: &databaseMessage.ProjectID})
+			if err != nil {
+				return err
 			}
 			if project == nil {
-				// Never happen
-				return status.Errorf(codes.Internal, "project not found for database: %s", column.Database)
+				return status.Errorf(codes.InvalidArgument, "project %q not found", databaseMessage.ProjectID)
 			}
+
 			// Allow query databases across different projects.
 			projectPolicy, err := s.store.GetProjectIamPolicy(ctx, project.UID)
 			if err != nil {
@@ -1024,26 +1010,6 @@ func (s *SQLService) hasDatabaseAccessRights(ctx context.Context, user *store.Us
 		}
 	}
 	return false, nil
-}
-
-func (s *SQLService) getProjectAndDatabaseMessage(ctx context.Context, instance *store.InstanceMessage, database string) (*store.ProjectMessage, *store.DatabaseMessage, error) {
-	databaseMessage, err := s.store.GetDatabaseV2(ctx, &store.FindDatabaseMessage{
-		InstanceID:          &instance.ResourceID,
-		DatabaseName:        &database,
-		IgnoreCaseSensitive: store.IgnoreDatabaseAndTableCaseSensitive(instance),
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	if databaseMessage == nil {
-		return nil, nil, nil
-	}
-
-	project, err := s.store.GetProjectV2(ctx, &store.FindProjectMessage{ResourceID: &databaseMessage.ProjectID})
-	if err != nil {
-		return nil, nil, err
-	}
-	return project, databaseMessage, nil
 }
 
 func (*SQLService) getUser(ctx context.Context) (*store.UserMessage, error) {
@@ -1491,79 +1457,103 @@ func getOffsetAndOriginTable(backupTable string) (int, string, error) {
 	return offset, strings.Join(parts[3:], "_"), nil
 }
 
-func (s *SQLService) checkDataSourceQueriable(ctx context.Context, database *store.DatabaseMessage, dataSource *store.DataSourceMessage) (bool, error) {
+func checkAndGetDataSourceQueriable(ctx context.Context, storeInstance *store.Store, database *store.DatabaseMessage, dataSourceID string) (*store.DataSourceMessage, error) {
+	if dataSourceID == "" {
+		readOnlyDataSources, err := storeInstance.ListDataSourcesV2(ctx, &store.FindDataSourceMessage{
+			InstanceID: &database.InstanceID,
+		})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to list data sources: %v", err)
+		}
+		if len(readOnlyDataSources) == 0 {
+			return nil, status.Errorf(codes.NotFound, "no data source found")
+		}
+		return readOnlyDataSources[0], nil
+	}
+
+	dataSource, err := storeInstance.GetDataSource(ctx, &store.FindDataSourceMessage{
+		InstanceID: &database.InstanceID,
+		Name:       &dataSourceID,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get data source: %v", err)
+	}
+	if dataSource == nil {
+		return nil, status.Errorf(codes.NotFound, "data source %q not found", dataSourceID)
+	}
+
 	// Always allow non-admin data source.
 	if dataSource.Type != api.Admin {
-		return true, nil
+		return dataSource, nil
 	}
 
 	var envAdminDataSourceRestriction, projectAdminDataSourceRestriction v1pb.DataSourceQueryPolicy_Restriction
-	environment, err := s.store.GetEnvironmentV2(ctx, &store.FindEnvironmentMessage{ResourceID: &database.EffectiveEnvironmentID})
+	environment, err := storeInstance.GetEnvironmentV2(ctx, &store.FindEnvironmentMessage{ResourceID: &database.EffectiveEnvironmentID})
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to get environment")
+		return nil, errors.Wrapf(err, "failed to get environment")
 	}
 	if environment == nil {
-		return false, errors.Errorf("environment %q not found", database.EffectiveEnvironmentID)
+		return nil, errors.Errorf("environment %q not found", database.EffectiveEnvironmentID)
 	}
 	dataSourceQueryPolicyType := api.PolicyTypeDataSourceQuery
 	environmentResourceType := api.PolicyResourceTypeEnvironment
 	projectResourceType := api.PolicyResourceTypeProject
-	environmentPolicy, err := s.store.GetPolicyV2(ctx, &store.FindPolicyMessage{
+	environmentPolicy, err := storeInstance.GetPolicyV2(ctx, &store.FindPolicyMessage{
 		ResourceType: &environmentResourceType,
 		ResourceUID:  &environment.UID,
 		Type:         &dataSourceQueryPolicyType,
 	})
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to get policy")
+		return nil, errors.Wrapf(err, "failed to get policy")
 	}
 	if environmentPolicy != nil {
 		envPayload, err := convertToV1PBDataSourceQueryPolicy(environmentPolicy.Payload)
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to convert policy payload")
+			return nil, errors.Wrapf(err, "failed to convert policy payload")
 		}
 		envAdminDataSourceRestriction = envPayload.DataSourceQueryPolicy.GetAdminDataSourceRestriction()
 	}
 
-	project, err := s.store.GetProjectV2(ctx, &store.FindProjectMessage{ResourceID: &database.ProjectID})
+	project, err := storeInstance.GetProjectV2(ctx, &store.FindProjectMessage{ResourceID: &database.ProjectID})
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to get project")
+		return nil, errors.Wrapf(err, "failed to get project")
 	}
 	if project == nil {
-		return false, errors.Errorf("project %q not found", database.ProjectID)
+		return nil, errors.Errorf("project %q not found", database.ProjectID)
 	}
-	projectPolicy, err := s.store.GetPolicyV2(ctx, &store.FindPolicyMessage{
+	projectPolicy, err := storeInstance.GetPolicyV2(ctx, &store.FindPolicyMessage{
 		ResourceType: &projectResourceType,
 		ResourceUID:  &project.UID,
 		Type:         &dataSourceQueryPolicyType,
 	})
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to get policy")
+		return nil, errors.Wrapf(err, "failed to get policy")
 	}
 	if projectPolicy != nil {
 		projectPayload, err := convertToV1PBDataSourceQueryPolicy(projectPolicy.Payload)
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to convert policy payload")
+			return nil, errors.Wrapf(err, "failed to convert policy payload")
 		}
 		projectAdminDataSourceRestriction = projectPayload.DataSourceQueryPolicy.GetAdminDataSourceRestriction()
 	}
 
 	// If any of the policy is DISALLOW, then return false.
 	if envAdminDataSourceRestriction == v1pb.DataSourceQueryPolicy_DISALLOW || projectAdminDataSourceRestriction == v1pb.DataSourceQueryPolicy_DISALLOW {
-		return false, nil
+		return nil, status.Errorf(codes.PermissionDenied, "data source %q is not queriable", dataSourceID)
 	} else if envAdminDataSourceRestriction == v1pb.DataSourceQueryPolicy_FALLBACK || projectAdminDataSourceRestriction == v1pb.DataSourceQueryPolicy_FALLBACK {
 		readOnlyDataSourceType := api.RO
-		readOnlyDataSources, err := s.store.ListDataSourcesV2(ctx, &store.FindDataSourceMessage{
+		readOnlyDataSources, err := storeInstance.ListDataSourcesV2(ctx, &store.FindDataSourceMessage{
 			InstanceID: &database.InstanceID,
 			Type:       &readOnlyDataSourceType,
 		})
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to list read-only data sources")
+			return nil, errors.Wrapf(err, "failed to list read-only data sources")
 		}
 		// If there is any read-only data source, then return false.
 		if len(readOnlyDataSources) > 0 {
-			return false, nil
+			return nil, status.Errorf(codes.PermissionDenied, "data source %q is not queriable", dataSourceID)
 		}
 	}
 
-	return true, nil
+	return dataSource, nil
 }

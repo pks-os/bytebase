@@ -3,45 +3,73 @@
     v-if="metadata?.schema"
     class="px-2 py-2 gap-y-2 h-full overflow-hidden flex flex-col"
   >
-    <template v-if="!metadata.table">
-      <SchemaSelectToolbar />
-      <TablesTable
-        v-if="!metadata.table"
-        :db="database"
-        :database="metadata.database"
-        :schema="metadata.schema"
-        :tables="metadata.schema.tables"
-        @click="select"
-      />
-    </template>
+    <div
+      v-show="!metadata.table"
+      class="w-full flex flex-row gap-x-2 justify-between items-center"
+    >
+      <div class="flex items-center justify-start gap-2">
+        <DatabaseChooser />
+        <SchemaSelectToolbar simple />
+      </div>
+      <div class="flex items-center justify-end">
+        <SearchBox
+          v-model:value="state.keywords.table"
+          size="small"
+          style="width: 10rem"
+        />
+      </div>
+    </div>
+    <TablesTable
+      v-show="!metadata.table"
+      :db="database"
+      :database="metadata.database"
+      :schema="metadata.schema"
+      :tables="metadata.schema.tables"
+      :keyword="state.keywords.table"
+      @click="select"
+    />
 
     <template v-if="metadata.table">
-      <div class="w-full flex flex-row gap-x-2 justify-start items-center">
-        <NButton size="small" @click="deselect">
-          <ArrowLeftIcon class="w-4 h-4" />
-        </NButton>
+      <div
+        class="w-full h-[28px] flex flex-row gap-x-2 justify-between items-center"
+      >
+        <div class="flex items-center justify-start">
+          <NButton text @click="deselect">
+            <ChevronLeftIcon class="w-5 h-5" />
+            <div class="flex items-center gap-1">
+              <TableIcon class="w-4 h-4" />
+              <span>{{ metadata.table.name }}</span>
+            </div>
+          </NButton>
+        </div>
+        <div class="flex items-center justify-end">
+          <SearchBox
+            v-model:value="state.keywords.column"
+            size="small"
+            style="width: 10rem"
+          />
+        </div>
       </div>
       <ColumnsTable
-        v-if="metadata.table"
         :db="database"
         :database="metadata.database"
         :schema="metadata.schema"
         :table="metadata.table"
+        :keyword="state.keywords.column"
       />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeftIcon } from "lucide-vue-next";
+import { ChevronLeftIcon } from "lucide-vue-next";
 import { NButton } from "naive-ui";
-import { computed, ref, watch } from "vue";
-import { provideSchemaEditorContext } from "@/components/SchemaEditorLite";
+import { computed, reactive } from "vue";
+import { TableIcon } from "@/components/Icon";
+import { SearchBox } from "@/components/v2";
 import {
   useConnectionOfCurrentSQLEditorTab,
   useDBSchemaV1Store,
-  useProjectV1Store,
-  useSQLEditorStore,
 } from "@/store";
 import {
   DatabaseMetadata,
@@ -49,71 +77,51 @@ import {
   SchemaMetadata,
   TableMetadata,
 } from "@/types/proto/v1/database_service";
+import DatabaseChooser from "@/views/sql-editor/EditorCommon/DatabaseChooser.vue";
 import { useEditorPanelContext } from "../../context";
 import { SchemaSelectToolbar } from "../common";
 import ColumnsTable from "./ColumnsTable.vue";
 import TablesTable from "./TablesTable.vue";
 
-const editorStore = useSQLEditorStore();
 const { database } = useConnectionOfCurrentSQLEditorTab();
-const { selectedSchemaName } = useEditorPanelContext();
+const { viewState, updateViewState } = useEditorPanelContext();
 const databaseMetadata = computed(() => {
   return useDBSchemaV1Store().getDatabaseMetadata(
     database.value.name,
     DatabaseMetadataView.DATABASE_METADATA_VIEW_FULL
   );
 });
+const state = reactive({
+  keywords: {
+    table: "",
+    column: "",
+  },
+});
 
-const metadata = ref<{
-  database: DatabaseMetadata;
-  schema?: SchemaMetadata;
-  table?: TableMetadata;
-}>();
+const metadata = computed(() => {
+  const database = databaseMetadata.value;
+  const schema = database.schemas.find(
+    (s) => s.name === viewState.value?.schema
+  );
+  const table = schema?.tables.find(
+    (t) => t.name === viewState.value?.detail?.table
+  );
+  return { database, schema, table };
+});
 
 const select = (selected: {
   database: DatabaseMetadata;
   schema: SchemaMetadata;
   table: TableMetadata;
 }) => {
-  metadata.value = selected;
+  updateViewState({
+    detail: { table: selected.table.name },
+  });
 };
 
 const deselect = () => {
-  if (!metadata.value) return;
-  metadata.value.table = undefined;
+  updateViewState({
+    detail: {},
+  });
 };
-
-watch(
-  [databaseMetadata, selectedSchemaName],
-  ([database, schema]) => {
-    metadata.value = {
-      database,
-      schema: database.schemas.find((s) => s.name === schema),
-      table: undefined,
-    };
-  },
-  { immediate: true }
-);
-
-provideSchemaEditorContext({
-  targets: computed(() => [
-    {
-      database: database.value,
-      metadata: databaseMetadata.value,
-      baselineMetadata: databaseMetadata.value,
-    },
-  ]),
-  project: computed(() =>
-    useProjectV1Store().getProjectByName(editorStore.project)
-  ),
-  resourceType: ref("branch"),
-  readonly: ref(true),
-  selectedRolloutObjects: ref(undefined),
-  showLastUpdater: ref(false),
-  disableDiffColoring: ref(true),
-  options: ref({
-    forceShowIndexes: true,
-    forceShowPartitions: true,
-  }),
-});
 </script>

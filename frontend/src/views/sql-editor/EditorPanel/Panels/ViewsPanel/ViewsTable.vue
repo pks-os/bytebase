@@ -6,7 +6,7 @@
       size="small"
       :row-key="(view) => view.name"
       :columns="columns"
-      :data="layoutReady ? views : []"
+      :data="layoutReady ? filteredViews : []"
       :row-props="rowProps"
       :max-height="tableBodyHeight"
       :virtual-scroll="true"
@@ -19,7 +19,7 @@
 
 <script setup lang="tsx">
 import { NDataTable, type DataTableColumn, type DataTableInst } from "naive-ui";
-import { computed, ref } from "vue";
+import { computed, h, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { ComposedDatabase } from "@/types";
 import type {
@@ -27,16 +27,16 @@ import type {
   ViewMetadata,
   SchemaMetadata,
 } from "@/types/proto/v1/database_service";
-import { nextAnimationFrame } from "@/utils";
+import { getHighlightHTMLByRegExp } from "@/utils";
 import { useAutoHeightDataTable } from "../../common";
 import { useEditorPanelContext } from "../../context";
-import type { RichMetadataWithDB } from "../../types";
 
 const props = defineProps<{
   db: ComposedDatabase;
   database: DatabaseMetadata;
   schema: SchemaMetadata;
   views: ViewMetadata[];
+  keyword?: string;
 }>();
 
 const emit = defineEmits<{
@@ -58,7 +58,15 @@ const vlRef = computed(() => {
   return (dataTableRef.value as any)?.$refs?.mainTableInstRef?.bodyInstRef
     ?.virtualListRef;
 });
-const { useConsumePendingScrollToTarget } = useEditorPanelContext();
+const { viewState } = useEditorPanelContext();
+
+const filteredViews = computed(() => {
+  const keyword = props.keyword?.trim().toLowerCase();
+  if (keyword) {
+    return props.views.filter((view) => view.name.includes(keyword));
+  }
+  return props.views;
+});
 
 const columns = computed(() => {
   const columns: (DataTableColumn<ViewMetadata> & { hide?: boolean })[] = [
@@ -67,6 +75,11 @@ const columns = computed(() => {
       title: t("schema-editor.database.name"),
       resizable: true,
       className: "truncate",
+      render: (view) => {
+        return h("span", {
+          innerHTML: getHighlightHTMLByRegExp(view.name, props.keyword ?? ""),
+        });
+      },
     },
     {
       key: "comment",
@@ -90,29 +103,14 @@ const rowProps = (view: ViewMetadata) => {
   };
 };
 
-useConsumePendingScrollToTarget(
-  (target: RichMetadataWithDB<"view">) => {
-    if (target.db.name !== props.db.name) {
-      return false;
+watch(
+  [() => viewState.value?.detail.view, vlRef],
+  ([view, vl]) => {
+    if (view && vl) {
+      vl.scrollTo({ key: view });
     }
-    return (
-      target.metadata.type === "view" &&
-      target.metadata.schema.name === props.schema.name
-    );
   },
-  vlRef,
-  async (target, vl) => {
-    const key = target.metadata.view.name;
-    if (!key) return false;
-    await nextAnimationFrame();
-    try {
-      console.debug("scroll-to-view", vl, target, key);
-      vl.scrollTo({ key });
-    } catch {
-      // Do nothing
-    }
-    return true;
-  }
+  { immediate: true }
 );
 </script>
 

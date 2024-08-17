@@ -108,15 +108,15 @@ func (checker *columnSetDefaultForNotNullChecker) EnterCreateTable(ctx *mysql.Cr
 			continue
 		}
 		_, _, columnName := mysqlparser.NormalizeMySQLColumnName(tableElement.ColumnDefinition().ColumnName())
-		filed := tableElement.ColumnDefinition().FieldDefinition()
-		if filed == nil {
+		field := tableElement.ColumnDefinition().FieldDefinition()
+		if field == nil {
 			continue
 		}
 
 		if pkColumn[columnName] {
 			continue
 		}
-		if !checker.canNull(filed) && !checker.hasDefault(filed) && checker.needDefault(filed) {
+		if !checker.canNull(field) && !checker.hasDefault(field) && checker.needDefault(field) {
 			checker.adviceList = append(checker.adviceList, &storepb.Advice{
 				Status:  checker.level,
 				Code:    advisor.NotNullColumnWithNoDefault.Int32(),
@@ -180,11 +180,10 @@ func (*columnSetDefaultForNotNullChecker) needDefault(ctx mysql.IFieldDefinition
 	}
 
 	switch ctx.DataType().GetType_().GetTokenType() {
-	case mysql.MySQLParserBLOB_SYMBOL:
-		return false
-	case mysql.MySQLParserJSON_SYMBOL:
-		return false
-	case mysql.MySQLParserGEOMETRY_SYMBOL,
+	case mysql.MySQLParserBLOB_SYMBOL,
+		mysql.MySQLParserJSON_SYMBOL,
+		mysql.MySQLParserTEXT_SYMBOL,
+		mysql.MySQLParserGEOMETRY_SYMBOL,
 		mysql.MySQLParserGEOMETRYCOLLECTION_SYMBOL,
 		mysql.MySQLParserPOINT_SYMBOL,
 		mysql.MySQLParserMULTIPOINT_SYMBOL,
