@@ -57,21 +57,38 @@
       <NButton size="small">
         <router-link
           :to="sqlEditorLink"
+          class="flex flex-row justify-center items-center"
           exact-active-class=""
           target="_blank"
-          class="flex flex-row justify-center items-center"
         >
-          <heroicons-outline:terminal class="w-5 h-auto mr-1" />
+          <SquareTerminalIcon class="w-4 h-auto mr-1" />
           <span class="whitespace-nowrap">{{ $t("sql-editor.self") }}</span>
         </router-link>
       </NButton>
-      <router-link
-        v-if="hasGetSettingPermission"
-        :to="{ name: SETTING_ROUTE_WORKSPACE_GENERAL }"
-        exact-active-class=""
-      >
-        <SettingsIcon class="w-5 h-auto" />
-      </router-link>
+      <NTooltip>
+        <template #trigger>
+          <NButton size="small" @click="goToMyIssues">
+            <router-link :to="myIssueLink" exact-active-class="">
+              <CircleDotIcon class="w-4 h-auto" />
+            </router-link>
+          </NButton>
+        </template>
+        {{ $t("issue.my-issues") }}
+      </NTooltip>
+      <NTooltip>
+        <template #trigger>
+          <NButton size="small">
+            <router-link
+              v-if="hasGetSettingPermission"
+              :to="{ name: SETTING_ROUTE_WORKSPACE_GENERAL }"
+              exact-active-class=""
+            >
+              <SettingsIcon class="w-4 h-auto" />
+            </router-link>
+          </NButton>
+        </template>
+        {{ $t("common.setting") }}
+      </NTooltip>
       <div class="ml-2">
         <ProfileBrandingLogo>
           <ProfileDropdown />
@@ -96,9 +113,17 @@
 <script lang="ts" setup>
 import { defineAction, useRegisterActions } from "@bytebase/vue-kbar";
 import { useKBarHandler } from "@bytebase/vue-kbar";
-import { SettingsIcon, ChevronDownIcon, SearchIcon } from "lucide-vue-next";
-import { NButton } from "naive-ui";
+import { useLocalStorage } from "@vueuse/core";
+import {
+  SettingsIcon,
+  CircleDotIcon,
+  ChevronDownIcon,
+  SearchIcon,
+  SquareTerminalIcon,
+} from "lucide-vue-next";
+import { NButton, NTooltip } from "naive-ui";
 import { storeToRefs } from "pinia";
+import { v4 as uuidv4 } from "uuid";
 import { computed, reactive } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -115,6 +140,7 @@ import {
 import { useSubscriptionV1Store } from "@/store";
 import { PlanType } from "@/types/proto/v1/subscription_service";
 import { extractProjectResourceName, hasWorkspacePermissionV2 } from "@/utils";
+import { getComponentIdLocalStorageKey } from "@/utils/localStorage";
 import BytebaseLogo from "../components/BytebaseLogo.vue";
 import ProfileBrandingLogo from "../components/ProfileBrandingLogo.vue";
 import ProfileDropdown from "../components/ProfileDropdown.vue";
@@ -171,6 +197,21 @@ const sqlEditorLink = computed(() => {
     name: SQL_EDITOR_HOME_MODULE,
   });
 });
+
+const myIssueLink = computed(() => {
+  // Always redirect to my issues page in workspace level.
+  return router.resolve({
+    name: WORKSPACE_ROUTE_MY_ISSUES,
+  });
+});
+
+const goToMyIssues = () => {
+  // Trigger page reload manually.
+  useLocalStorage<string>(
+    getComponentIdLocalStorageKey(WORKSPACE_ROUTE_MY_ISSUES),
+    ""
+  ).value = uuidv4();
+};
 
 const kbarActions = computed(() => {
   if (!hasGetSettingPermission.value) {

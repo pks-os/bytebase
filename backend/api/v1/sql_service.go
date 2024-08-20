@@ -228,7 +228,7 @@ func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1
 		}
 		defer conn.Close()
 	}
-	results, spans, duration, queryErr := queryRetry(ctx, s.store, user, instance, database, driver, conn, statement, request.Timeout, db.QueryContext{Explain: request.Explain}, false, s.licenseService, s.accessCheck, s.schemaSyncer)
+	results, spans, duration, queryErr := queryRetry(ctx, s.store, user, instance, database, driver, conn, statement, request.Timeout, db.QueryContext{Explain: request.Explain, Limit: int(request.Limit)}, false, s.licenseService, s.accessCheck, s.schemaSyncer)
 
 	// Update activity.
 	if err = s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, statement, user.ID, duration, queryErr); err != nil {
@@ -271,24 +271,28 @@ func queryRetry(
 	optionalAccessCheck accessCheckFunc,
 	schemaSyncer *schemasync.Syncer,
 ) ([]*v1pb.QueryResult, []*base.QuerySpan, time.Duration, error) {
-	spans, firstSpanErr := base.GetQuerySpan(
-		ctx,
-		base.GetQuerySpanContext{
-			InstanceID:                    instance.ResourceID,
-			GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(stores),
-			ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(stores),
-			GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(stores, instance.Engine),
-		},
-		instance.Engine,
-		statement,
-		database.DatabaseName,
-		"",
-		store.IgnoreDatabaseAndTableCaseSensitive(instance),
-	)
-	if firstSpanErr == nil {
-		if licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil && optionalAccessCheck != nil {
-			if err := optionalAccessCheck(ctx, instance, user, spans, isExport); err != nil {
-				return nil, nil, time.Duration(0), err
+	var spans []*base.QuerySpan
+	var firstSpanErr error
+	if !queryContext.Explain {
+		spans, firstSpanErr = base.GetQuerySpan(
+			ctx,
+			base.GetQuerySpanContext{
+				InstanceID:                    instance.ResourceID,
+				GetDatabaseMetadataFunc:       BuildGetDatabaseMetadataFunc(stores),
+				ListDatabaseNamesFunc:         BuildListDatabaseNamesFunc(stores),
+				GetLinkedDatabaseMetadataFunc: BuildGetLinkedDatabaseMetadataFunc(stores, instance.Engine),
+			},
+			instance.Engine,
+			statement,
+			database.DatabaseName,
+			"",
+			store.IgnoreDatabaseAndTableCaseSensitive(instance),
+		)
+		if firstSpanErr == nil {
+			if licenseService.IsFeatureEnabled(api.FeatureAccessControl) == nil && optionalAccessCheck != nil {
+				if err := optionalAccessCheck(ctx, instance, user, spans, isExport); err != nil {
+					return nil, nil, time.Duration(0), err
+				}
 			}
 		}
 	}
@@ -296,6 +300,9 @@ func queryRetry(
 	results, duration, queryErr := executeWithTimeout(ctx, driver, conn, statement, timeout, queryContext)
 	if queryErr != nil {
 		return nil, nil, duration, queryErr
+	}
+	if queryContext.Explain {
+		return results, nil, duration, nil
 	}
 	hasOK := false
 	databaseMap := make(map[string]bool)
@@ -509,7 +516,7 @@ func DoExport(
 		}
 		defer conn.Close()
 	}
-	results, spans, duration, queryErr := queryRetry(ctx, storeInstance, user, instance, database, driver, conn, request.Statement, nil /* timeDuration */, db.QueryContext{}, true, licenseService, optionalAccessCheck, schemaSyncer)
+	results, spans, duration, queryErr := queryRetry(ctx, storeInstance, user, instance, database, driver, conn, request.Statement, nil /* timeDuration */, db.QueryContext{Limit: int(request.Limit)}, true, licenseService, optionalAccessCheck, schemaSyncer)
 	if queryErr != nil {
 		return nil, duration, err
 	}
@@ -1224,23 +1231,6 @@ func (*SQLService) ParseMyBatisMapper(_ context.Context, request *v1pb.ParseMyBa
 
 	return &v1pb.ParseMyBatisMapperResponse{
 		Statements: results,
-	}, nil
-}
-
-// DifferPreview returns the diff preview of the given SQL statement and metadata.
-func (*SQLService) DifferPreview(ctx context.Context, request *v1pb.DifferPreviewRequest) (*v1pb.DifferPreviewResponse, error) {
-	storeSchemaMetadata, _, err := convertV1DatabaseMetadata(ctx, request.NewMetadata, nil /* optionalStores */)
-	if err != nil {
-		return nil, err
-	}
-	defaultSchema := extractDefaultSchemaForOracleBranch(storepb.Engine(request.Engine), storeSchemaMetadata)
-	schema, err := schema.GetDesignSchema(storepb.Engine(request.Engine), defaultSchema, request.OldSchema, storeSchemaMetadata)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v1pb.DifferPreviewResponse{
-		Schema: schema,
 	}, nil
 }
 
