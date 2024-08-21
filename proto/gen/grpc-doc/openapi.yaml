@@ -10048,10 +10048,6 @@ components:
                     description: |-
                         The name of the issue.
                          Format: projects/{project}/issues/{issue}
-                uid:
-                    readOnly: true
-                    type: string
-                    description: The system-assigned, unique identifier for a resource.
                 title:
                     type: string
                 description:
@@ -10166,9 +10162,9 @@ components:
         IssueComment:
             type: object
             properties:
-                uid:
-                    readOnly: true
+                name:
                     type: string
+                    description: 'Format: projects/{project}/issues/{issue}/issueComments/{issueComment-uid}'
                 comment:
                     type: string
                 payload:
@@ -10182,9 +10178,6 @@ components:
                     readOnly: true
                     type: string
                     format: date-time
-                name:
-                    type: string
-                    description: 'Format: projects/{project}/issues/{issue}/issueComments/{issueComment-uid}'
                 creator:
                     type: string
                     description: 'Format: users/{email}'
@@ -11047,10 +11040,6 @@ components:
                         The name of the plan.
                          `plan` is a system generated ID.
                          Format: projects/{project}/plans/{plan}
-                uid:
-                    readOnly: true
-                    type: string
-                    description: The system-assigned, unique identifier for a resource.
                 issue:
                     type: string
                     description: |-
@@ -11096,9 +11085,6 @@ components:
                 name:
                     type: string
                     description: 'Format: projects/{project}/plans/{plan}/planCheckRuns/{planCheckRun}'
-                uid:
-                    type: string
-                    description: The system-assigned, unique identifier for a resource.
                 type:
                     enum:
                         - TYPE_UNSPECIFIED
@@ -11920,10 +11906,6 @@ components:
                     description: |-
                         The resource name of the rollout.
                          Format: projects/{project}/rollouts/{rollout}
-                uid:
-                    readOnly: true
-                    type: string
-                    description: The system-assigned, unique identifier for a resource.
                 plan:
                     type: string
                     description: |-
@@ -12941,10 +12923,6 @@ components:
                 name:
                     type: string
                     description: 'Format: projects/{project}/rollouts/{rollout}/stages/{stage}'
-                uid:
-                    readOnly: true
-                    type: string
-                    description: The system-assigned, unique identifier for a resource.
                 title:
                     type: string
                 tasks:
@@ -13243,10 +13221,6 @@ components:
                 name:
                     type: string
                     description: 'Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}'
-                uid:
-                    readOnly: true
-                    type: string
-                    description: The system-assigned, unique identifier for a resource.
                 title:
                     type: string
                 specId:
@@ -13316,10 +13290,6 @@ components:
                 name:
                     type: string
                     description: 'Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun}'
-                uid:
-                    readOnly: true
-                    type: string
-                    description: The system-assigned, unique identifier for a resource.
                 creator:
                     type: string
                     description: 'Format: user/hello@world.com'
