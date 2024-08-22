@@ -515,6 +515,8 @@
     - [ListTaskRunsRequest](#bytebase-v1-ListTaskRunsRequest)
     - [ListTaskRunsResponse](#bytebase-v1-ListTaskRunsResponse)
     - [PreviewRolloutRequest](#bytebase-v1-PreviewRolloutRequest)
+    - [PreviewTaskRunRollbackRequest](#bytebase-v1-PreviewTaskRunRollbackRequest)
+    - [PreviewTaskRunRollbackResponse](#bytebase-v1-PreviewTaskRunRollbackResponse)
     - [Rollout](#bytebase-v1-Rollout)
     - [Stage](#bytebase-v1-Stage)
     - [Task](#bytebase-v1-Task)
@@ -2493,7 +2495,6 @@ AdviseIndexResponse is the response of advising index.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory} |
-| uid | [string](#string) |  |  |
 | creator | [string](#string) |  | Format: users/hello@world.com |
 | updater | [string](#string) |  | Format: users/hello@world.com |
 | create_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
@@ -2722,7 +2723,6 @@ ColumnMetadata is the metadata for columns.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of the database. Format: instances/{instance}/databases/{database} {database} is the database name in the instance. |
-| uid | [string](#string) |  | The system-assigned, unique identifier for a resource. |
 | sync_state | [State](#bytebase-v1-State) |  | The existence of a database on latest sync. |
 | successful_sync_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | The latest synchronization time. |
 | project | [string](#string) |  | The project for a database. Format: projects/{project} |
@@ -3653,6 +3653,7 @@ ViewMetadata is the metadata for views.
 | definition | [string](#string) |  | The definition is the definition of a view. |
 | comment | [string](#string) |  | The comment is the comment of a view. |
 | dependent_columns | [DependentColumn](#bytebase-v1-DependentColumn) | repeated | The dependent_columns is the list of dependent columns of a view. |
+| columns | [ColumnMetadata](#bytebase-v1-ColumnMetadata) | repeated | The columns is the ordered list of columns in a table. |
 
 
 
@@ -6247,7 +6248,6 @@ MaskingExceptionPolicy is the allowlist of users who can access sensitive data.
 | data_source_query_policy | [DataSourceQueryPolicy](#bytebase-v1-DataSourceQueryPolicy) |  |  |
 | enforce | [bool](#bool) |  |  |
 | resource_type | [PolicyResourceType](#bytebase-v1-PolicyResourceType) |  | The resource type for the policy. |
-| resource_uid | [string](#string) |  | The system-assigned, unique identifier for the resource. |
 
 
 
@@ -8274,6 +8274,36 @@ When paginating, all other parameters provided to `ListRolloutTaskRuns` must mat
 
 
 
+<a name="bytebase-v1-PreviewTaskRunRollbackRequest"></a>
+
+### PreviewTaskRunRollbackRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun} |
+
+
+
+
+
+
+<a name="bytebase-v1-PreviewTaskRunRollbackResponse"></a>
+
+### PreviewTaskRunRollbackResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| statement | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="bytebase-v1-Rollout"></a>
 
 ### Rollout
@@ -8896,6 +8926,7 @@ Read from `pg_stat_activity`
 | BatchRunTasks | [BatchRunTasksRequest](#bytebase-v1-BatchRunTasksRequest) | [BatchRunTasksResponse](#bytebase-v1-BatchRunTasksResponse) | BatchRunTasks creates task runs for the specified tasks. DataExport issue only allows the creator to run the task. Users with &#34;bb.taskRuns.create&#34; permission can run the task, e.g. Workspace Admin and DBA. Follow role-based rollout policy for the environment. |
 | BatchSkipTasks | [BatchSkipTasksRequest](#bytebase-v1-BatchSkipTasksRequest) | [BatchSkipTasksResponse](#bytebase-v1-BatchSkipTasksResponse) | BatchSkipTasks skips the specified tasks. The access is the same as BatchRunTasks(). |
 | BatchCancelTaskRuns | [BatchCancelTaskRunsRequest](#bytebase-v1-BatchCancelTaskRunsRequest) | [BatchCancelTaskRunsResponse](#bytebase-v1-BatchCancelTaskRunsResponse) | BatchSkipTasks cancels the specified task runs in batch. The access is the same as BatchRunTasks(). |
+| PreviewTaskRunRollback | [PreviewTaskRunRollbackRequest](#bytebase-v1-PreviewTaskRunRollbackRequest) | [PreviewTaskRunRollbackResponse](#bytebase-v1-PreviewTaskRunRollbackResponse) |  |
 
  
 

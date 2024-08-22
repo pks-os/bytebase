@@ -342,8 +342,6 @@ export interface Database {
    * {database} is the database name in the instance.
    */
   name: string;
-  /** The system-assigned, unique identifier for a resource. */
-  uid: string;
   /** The existence of a database on latest sync. */
   syncState: State;
   /** The latest synchronization time. */
@@ -739,6 +737,8 @@ export interface ViewMetadata {
   comment: string;
   /** The dependent_columns is the list of dependent columns of a view. */
   dependentColumns: DependentColumn[];
+  /** The columns is the ordered list of columns in a table. */
+  columns: ColumnMetadata[];
 }
 
 /** DependentColumn is the metadata for dependent columns. */
@@ -1367,7 +1367,6 @@ export interface AdviseIndexResponse {
 export interface ChangeHistory {
   /** Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory} */
   name: string;
-  uid: string;
   /** Format: users/hello@world.com */
   creator: string;
   /** Format: users/hello@world.com */
@@ -2864,7 +2863,6 @@ export const DiffSchemaResponse = {
 function createBaseDatabase(): Database {
   return {
     name: "",
-    uid: "",
     syncState: State.STATE_UNSPECIFIED,
     successfulSyncTime: undefined,
     project: "",
@@ -2881,9 +2879,6 @@ export const Database = {
   encode(message: Database, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
-    }
-    if (message.uid !== "") {
-      writer.uint32(18).string(message.uid);
     }
     if (message.syncState !== State.STATE_UNSPECIFIED) {
       writer.uint32(24).int32(stateToNumber(message.syncState));
@@ -2928,13 +2923,6 @@ export const Database = {
           }
 
           message.name = reader.string();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.uid = reader.string();
           continue;
         case 3:
           if (tag !== 24) {
@@ -3014,7 +3002,6 @@ export const Database = {
   fromJSON(object: any): Database {
     return {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
-      uid: isSet(object.uid) ? globalThis.String(object.uid) : "",
       syncState: isSet(object.syncState) ? stateFromJSON(object.syncState) : State.STATE_UNSPECIFIED,
       successfulSyncTime: isSet(object.successfulSyncTime) ? fromJsonTimestamp(object.successfulSyncTime) : undefined,
       project: isSet(object.project) ? globalThis.String(object.project) : "",
@@ -3036,9 +3023,6 @@ export const Database = {
     const obj: any = {};
     if (message.name !== "") {
       obj.name = message.name;
-    }
-    if (message.uid !== "") {
-      obj.uid = message.uid;
     }
     if (message.syncState !== State.STATE_UNSPECIFIED) {
       obj.syncState = stateToJSON(message.syncState);
@@ -3082,7 +3066,6 @@ export const Database = {
   fromPartial(object: DeepPartial<Database>): Database {
     const message = createBaseDatabase();
     message.name = object.name ?? "";
-    message.uid = object.uid ?? "";
     message.syncState = object.syncState ?? State.STATE_UNSPECIFIED;
     message.successfulSyncTime = object.successfulSyncTime ?? undefined;
     message.project = object.project ?? "";
@@ -4526,7 +4509,7 @@ export const GenerationMetadata = {
 };
 
 function createBaseViewMetadata(): ViewMetadata {
-  return { name: "", definition: "", comment: "", dependentColumns: [] };
+  return { name: "", definition: "", comment: "", dependentColumns: [], columns: [] };
 }
 
 export const ViewMetadata = {
@@ -4542,6 +4525,9 @@ export const ViewMetadata = {
     }
     for (const v of message.dependentColumns) {
       DependentColumn.encode(v!, writer.uint32(34).fork()).ldelim();
+    }
+    for (const v of message.columns) {
+      ColumnMetadata.encode(v!, writer.uint32(42).fork()).ldelim();
     }
     return writer;
   },
@@ -4581,6 +4567,13 @@ export const ViewMetadata = {
 
           message.dependentColumns.push(DependentColumn.decode(reader, reader.uint32()));
           continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.columns.push(ColumnMetadata.decode(reader, reader.uint32()));
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4597,6 +4590,9 @@ export const ViewMetadata = {
       comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
       dependentColumns: globalThis.Array.isArray(object?.dependentColumns)
         ? object.dependentColumns.map((e: any) => DependentColumn.fromJSON(e))
+        : [],
+      columns: globalThis.Array.isArray(object?.columns)
+        ? object.columns.map((e: any) => ColumnMetadata.fromJSON(e))
         : [],
     };
   },
@@ -4615,6 +4611,9 @@ export const ViewMetadata = {
     if (message.dependentColumns?.length) {
       obj.dependentColumns = message.dependentColumns.map((e) => DependentColumn.toJSON(e));
     }
+    if (message.columns?.length) {
+      obj.columns = message.columns.map((e) => ColumnMetadata.toJSON(e));
+    }
     return obj;
   },
 
@@ -4627,6 +4626,7 @@ export const ViewMetadata = {
     message.definition = object.definition ?? "";
     message.comment = object.comment ?? "";
     message.dependentColumns = object.dependentColumns?.map((e) => DependentColumn.fromPartial(e)) || [];
+    message.columns = object.columns?.map((e) => ColumnMetadata.fromPartial(e)) || [];
     return message;
   },
 };
@@ -7989,7 +7989,6 @@ export const AdviseIndexResponse = {
 function createBaseChangeHistory(): ChangeHistory {
   return {
     name: "",
-    uid: "",
     creator: "",
     updater: "",
     createTime: undefined,
@@ -8017,9 +8016,6 @@ export const ChangeHistory = {
   encode(message: ChangeHistory, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
-    }
-    if (message.uid !== "") {
-      writer.uint32(18).string(message.uid);
     }
     if (message.creator !== "") {
       writer.uint32(26).string(message.creator);
@@ -8097,13 +8093,6 @@ export const ChangeHistory = {
           }
 
           message.name = reader.string();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.uid = reader.string();
           continue;
         case 3:
           if (tag !== 26) {
@@ -8257,7 +8246,6 @@ export const ChangeHistory = {
   fromJSON(object: any): ChangeHistory {
     return {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
-      uid: isSet(object.uid) ? globalThis.String(object.uid) : "",
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       updater: isSet(object.updater) ? globalThis.String(object.updater) : "",
       createTime: isSet(object.createTime) ? fromJsonTimestamp(object.createTime) : undefined,
@@ -8289,9 +8277,6 @@ export const ChangeHistory = {
     const obj: any = {};
     if (message.name !== "") {
       obj.name = message.name;
-    }
-    if (message.uid !== "") {
-      obj.uid = message.uid;
     }
     if (message.creator !== "") {
       obj.creator = message.creator;
@@ -8362,7 +8347,6 @@ export const ChangeHistory = {
   fromPartial(object: DeepPartial<ChangeHistory>): ChangeHistory {
     const message = createBaseChangeHistory();
     message.name = object.name ?? "";
-    message.uid = object.uid ?? "";
     message.creator = object.creator ?? "";
     message.updater = object.updater ?? "";
     message.createTime = object.createTime ?? undefined;

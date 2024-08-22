@@ -2,13 +2,14 @@ package snowflake
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 
 	"github.com/antlr4-go/antlr/v4"
 	parser "github.com/bytebase/snowsql-parser"
 	"github.com/pkg/errors"
+
+	parsererror "github.com/bytebase/bytebase/backend/plugin/parser/errors"
 
 	"github.com/bytebase/bytebase/backend/plugin/parser/base"
 )
@@ -43,34 +44,32 @@ func newQuerySpanExtractor(connectedDB, connectedSchema string, gCtx base.GetQue
 func (q *querySpanExtractor) getQuerySpan(ctx context.Context, statement string) (*base.QuerySpan, error) {
 	q.ctx = ctx
 
-	accessTables, err := getAccessTables(q.connectedDB, q.connectedSchema, statement)
+	parseResult, err := ParseSnowSQL(statement)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get access tables")
+		return nil, err
 	}
+	if parseResult == nil {
+		return nil, nil
+	}
+	tree := parseResult.Tree
+	if tree == nil {
+		return nil, nil
+	}
+
+	accessTables := getAccessTables(q.connectedDB, q.connectedSchema, tree)
 	// We do not support simultaneous access to the system table and the user table
 	// because we do not synchronize the schema of the system table.
 	// This causes an error (NOT_FOUND) when using querySpanExtractor.findTableSchema.
 	// As a result, we exclude getting query span results for accessing only the system table.
 	allSystems, mixed := isMixedQuery(accessTables, q.ignoreCaseSensitive)
-	if mixed != nil {
-		return nil, mixed
+	if mixed {
+		return nil, base.MixUserSystemTablesError
 	}
 	if allSystems {
 		return &base.QuerySpan{
-			Results:       []base.QuerySpanResult{},
 			SourceColumns: base.SourceColumnSet{},
+			Results:       []base.QuerySpanResult{},
 		}, nil
-	}
-
-	result, err := ParseSnowSQL(statement)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse tsql")
-	}
-	if result == nil {
-		return nil, nil
-	}
-	if result.Tree == nil {
-		return nil, nil
 	}
 
 	// We assumes the caller had handled the statement type case,
@@ -80,9 +79,19 @@ func (q *querySpanExtractor) getQuerySpan(ctx context.Context, statement string)
 	listener := &selectOnlyListener{
 		q: q,
 	}
-	antlr.ParseTreeWalkerDefault.Walk(listener, result.Tree)
-	if listener.err != nil {
-		return nil, errors.Wrapf(listener.err, "failed to extract sensitive fields from select statement")
+	antlr.ParseTreeWalkerDefault.Walk(listener, tree)
+	err = listener.err
+	if err != nil {
+		var resourceNotFound *parsererror.ResourceNotFoundError
+		if errors.As(err, &resourceNotFound) {
+			return &base.QuerySpan{
+				SourceColumns: accessTables,
+				Results:       []base.QuerySpanResult{},
+				NotFoundError: resourceNotFound,
+			}, nil
+		}
+
+		return nil, err
 	}
 
 	return &base.QuerySpan{
@@ -1285,15 +1294,7 @@ func normalizedObjectName(objectName parser.IObject_nameContext, normalizedFallb
 }
 
 // getAccessTables extracts the list of resources from the SELECT statement, and normalizes the object names with the NON-EMPTY currentNormalizedDatabase and currentNormalizedSchema.
-func getAccessTables(currentNormalizedDatabase string, currentNormalizedSchema string, selectStatement string) (base.SourceColumnSet, error) {
-	parseResult, err := ParseSnowSQL(selectStatement)
-	if err != nil {
-		return nil, err
-	}
-	if parseResult == nil {
-		return nil, nil
-	}
-
+func getAccessTables(currentNormalizedDatabase string, currentNormalizedSchema string, tree antlr.Tree) base.SourceColumnSet {
 	l := &accessTablesListener{
 		currentDatabase: currentNormalizedDatabase,
 		currentSchema:   currentNormalizedSchema,
@@ -1301,38 +1302,35 @@ func getAccessTables(currentNormalizedDatabase string, currentNormalizedSchema s
 	}
 
 	var result []base.SchemaResource
-	antlr.ParseTreeWalkerDefault.Walk(l, parseResult.Tree)
+	antlr.ParseTreeWalkerDefault.Walk(l, tree)
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].String() < result[j].String()
 	})
 
-	return l.resourceMap, nil
+	return l.resourceMap
 }
 
 // isMixedQuery checks whether the query accesses the user table and system table at the same time.
-func isMixedQuery(m base.SourceColumnSet, ignoreCaseSensitive bool) (allSystems bool, mixed error) {
-	userMsg, systemMsg := "", ""
+func isMixedQuery(m base.SourceColumnSet, ignoreCaseSensitive bool) (bool, bool) {
+	hasSystem, hasUser := false, false
 	for table := range m {
-		if msg := isSystemResource(table, ignoreCaseSensitive); msg != "" {
-			systemMsg = msg
-			continue
-		}
-		userMsg = fmt.Sprintf("user table %q.%q", table.Schema, table.Table)
-		if systemMsg != "" {
-			return false, errors.Errorf("cannot access %s and %s at the same time", userMsg, systemMsg)
+		if isSystemResource(table, ignoreCaseSensitive) {
+			hasSystem = true
+		} else {
+			hasUser = true
 		}
 	}
 
-	if userMsg != "" && systemMsg != "" {
-		return false, errors.Errorf("cannot access %s and %s at the same time", userMsg, systemMsg)
+	if hasSystem && hasUser {
+		return false, true
 	}
 
-	return userMsg == "" && systemMsg != "", nil
+	return !hasUser && hasSystem, false
 }
 
-func isSystemResource(base.ColumnResource, bool) string {
+func isSystemResource(base.ColumnResource, bool) bool {
 	// TODO(zp): fix me.
-	return ""
+	return false
 }
 
 type accessTablesListener struct {

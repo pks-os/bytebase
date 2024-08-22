@@ -368,13 +368,12 @@ message Database {
     pattern: "instances/{instance}/databases/{database}"
   };
 
+  reserved 2;
+
   // The name of the database.
   // Format: instances/{instance}/databases/{database}
   // {database} is the database name in the instance.
   string name = 1;
-
-  // The system-assigned, unique identifier for a resource.
-  string uid = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The existence of a database on latest sync.
   State sync_state = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
@@ -664,6 +663,9 @@ message ViewMetadata {
 
   // The dependent_columns is the list of dependent columns of a view.
   repeated DependentColumn dependent_columns = 4;
+
+  // The columns is the ordered list of columns in a table.
+  repeated ColumnMetadata columns = 5;
 }
 
 // DependentColumn is the metadata for dependent columns.
@@ -1193,9 +1195,10 @@ message ChangeHistory {
     pattern: "instances/{instance}/databases/{database}/changeHistories/{changeHistory}"
   };
 
+  reserved 2;
+
   // Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory}
   string name = 1;
-  string uid = 2;
 
   // Format: users/hello@world.com
   string creator = 3;

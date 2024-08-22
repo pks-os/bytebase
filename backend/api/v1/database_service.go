@@ -1037,7 +1037,6 @@ func (s *DatabaseService) convertToChangeHistories(ctx context.Context, h []*sto
 func (s *DatabaseService) convertToChangeHistory(ctx context.Context, h *store.InstanceChangeHistoryMessage) (*v1pb.ChangeHistory, error) {
 	v1pbHistory := &v1pb.ChangeHistory{
 		Name:              fmt.Sprintf("%s%s/%s%s/%s%v", common.InstanceNamePrefix, h.InstanceID, common.DatabaseIDPrefix, h.DatabaseName, common.ChangeHistoryPrefix, h.UID),
-		Uid:               h.UID,
 		Creator:           fmt.Sprintf("users/%s", h.Creator.Email),
 		Updater:           fmt.Sprintf("users/%s", h.Updater.Email),
 		CreateTime:        timestamppb.New(time.Unix(h.CreatedTs, 0)),
@@ -1681,7 +1680,6 @@ func (s *DatabaseService) convertToDatabase(ctx context.Context, database *store
 	}
 	return &v1pb.Database{
 		Name:                 common.FormatDatabase(database.InstanceID, database.DatabaseName),
-		Uid:                  fmt.Sprintf("%d", database.UID),
 		SyncState:            syncState,
 		SuccessfulSyncTime:   timestamppb.New(time.Unix(database.SuccessfulSyncTimeTs, 0)),
 		Project:              fmt.Sprintf("%s%s", common.ProjectNamePrefix, database.ProjectID),

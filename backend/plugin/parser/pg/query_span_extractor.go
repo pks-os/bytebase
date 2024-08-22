@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -103,13 +102,13 @@ func (q *querySpanExtractor) getQuerySpan(ctx context.Context, stmt string) (*ba
 	// This causes an error (NOT_FOUND) when using querySpanExtractor.findTableSchema.
 	// As a result, we exclude getting query span results for accessing only the system table.
 	allSystems, mixed := isMixedQuery(accessTables)
-	if mixed != nil {
-		return nil, mixed
+	if mixed {
+		return nil, base.MixUserSystemTablesError
 	}
 	if allSystems {
 		return &base.QuerySpan{
-			Results:       []base.QuerySpanResult{},
 			SourceColumns: base.SourceColumnSet{},
+			Results:       []base.QuerySpanResult{},
 		}, nil
 	}
 
@@ -127,14 +126,14 @@ func (q *querySpanExtractor) getQuerySpan(ctx context.Context, stmt string) (*ba
 	case *pgquery.Node_ExplainStmt:
 		// Skip the EXPLAIN statement.
 		return &base.QuerySpan{
-			Results:       []base.QuerySpanResult{},
 			SourceColumns: base.SourceColumnSet{},
+			Results:       []base.QuerySpanResult{},
 		}, nil
 	case *pgquery.Node_VariableSetStmt, *pgquery.Node_VariableShowStmt:
 		// Skip the SET statement and VARIABLE SHOW statement.
 		return &base.QuerySpan{
-			Results:       []base.QuerySpanResult{},
 			SourceColumns: base.SourceColumnSet{},
+			Results:       []base.QuerySpanResult{},
 		}, nil
 	default:
 		return nil, errors.Errorf("expect a query statement but found %T", ast.Stmt.Node)
@@ -142,15 +141,21 @@ func (q *querySpanExtractor) getQuerySpan(ctx context.Context, stmt string) (*ba
 
 	tableSource, err := q.extractTableSourceFromNode(ast.Stmt)
 	if err != nil {
-		tableNotFound := regexp.MustCompile("^Table \"(.*)\\.(.*)\" not found$")
-		content := tableNotFound.FindStringSubmatch(err.Error())
-		if len(content) == 3 && IsSystemSchema(content[1]) {
-			// skip for system schema
+		var resourceNotFound *parsererror.ResourceNotFoundError
+		if errors.As(err, &resourceNotFound) {
+			// Sadly, getAccessTables() returns nil for resources not found.
+			if len(accessTables) == 0 {
+				accessTables[base.ColumnResource{
+					Database: q.connectedDB,
+				}] = true
+			}
 			return &base.QuerySpan{
+				SourceColumns: accessTables,
 				Results:       []base.QuerySpanResult{},
-				SourceColumns: base.SourceColumnSet{},
+				NotFoundError: resourceNotFound,
 			}, nil
 		}
+
 		return nil, err
 	}
 
@@ -160,8 +165,8 @@ func (q *querySpanExtractor) getQuerySpan(ctx context.Context, stmt string) (*ba
 	}
 
 	return &base.QuerySpan{
-		Results:       tableSource.GetQuerySpanResult(),
 		SourceColumns: accessTables,
+		Results:       tableSource.GetQuerySpanResult(),
 	}, nil
 }
 
@@ -1689,8 +1694,8 @@ func (q *querySpanExtractor) getRangeVarsFromJSONRecursive(jsonData map[string]a
 	if jsonData["RangeVar"] != nil {
 		resource := base.ColumnResource{
 			Server:   "",
-			Database: "",
-			Schema:   "",
+			Database: currentDatabase,
+			Schema:   currentSchema,
 			Table:    "",
 			Column:   "",
 		}
@@ -1722,14 +1727,7 @@ func (q *querySpanExtractor) getRangeVarsFromJSONRecursive(jsonData map[string]a
 		// figure out whether the table is the table the query actually accesses?
 
 		// Bytebase do not sync the system objects, so we skip finding for system objects in the metadata.
-		if msg := isSystemResource(resource); msg == "" {
-			// Backfill the default database/schema name.
-			if resource.Database == "" {
-				resource.Database = currentDatabase
-			}
-			if resource.Schema == "" {
-				resource.Schema = currentSchema
-			}
+		if !isSystemResource(resource) {
 			databaseMetadata, err := q.getDatabaseMetadata(currentDatabase)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get database metadata for database: %s", currentDatabase)
@@ -1774,42 +1772,39 @@ func (q *querySpanExtractor) getRangeVarsFromJSONRecursive(jsonData map[string]a
 }
 
 // isMixedQuery checks whether the query accesses the user table and system table at the same time.
-func isMixedQuery(m base.SourceColumnSet) (allSystems bool, mixed error) {
-	userMsg, systemMsg := "", ""
+func isMixedQuery(m base.SourceColumnSet) (bool, bool) {
+	hasSystem, hasUser := false, false
 	for table := range m {
-		if msg := isSystemResource(table); msg != "" {
-			systemMsg = msg
-			continue
-		}
-		userMsg = fmt.Sprintf("user table %q.%q", table.Schema, table.Table)
-		if systemMsg != "" {
-			return false, errors.Errorf("cannot access %s and %s at the same time", userMsg, systemMsg)
+		if isSystemResource(table) {
+			hasSystem = true
+		} else {
+			hasUser = true
 		}
 	}
 
-	if userMsg != "" && systemMsg != "" {
-		return false, errors.Errorf("cannot access %s and %s at the same time", userMsg, systemMsg)
+	if hasSystem && hasUser {
+		return false, true
 	}
 
-	return userMsg == "" && systemMsg != "", nil
+	return !hasUser && hasSystem, false
 }
 
-func isSystemResource(resource base.ColumnResource) string {
+func isSystemResource(resource base.ColumnResource) bool {
 	// User can access the system table/view by name directly without database/schema name.
 	// For example: `SELECT * FROM pg_database`, which will access the system table `pg_database`.
 	// Additionally, user can create a table/view with the same name with system table/view and access them
 	// by specify the schema name, for example:
 	// `CREATE TABLE pg_database(id INT); SELECT * FROM public.pg_database;` which will access the user table `pg_database`.
 	if IsSystemSchema(resource.Schema) {
-		return fmt.Sprintf("system schema %q", resource.Schema)
+		return true
 	}
 	if resource.Database == "" && resource.Schema == "" && IsSystemView(resource.Table) {
-		return fmt.Sprintf("system view %q", resource.Table)
+		return true
 	}
 	if resource.Database == "" && resource.Schema == "" && IsSystemTable(resource.Table) {
-		return fmt.Sprintf("system table %q", resource.Table)
+		return true
 	}
-	return ""
+	return false
 }
 
 func (q *querySpanExtractor) getColumnsForView(definition string) ([]base.QuerySpanResult, error) {

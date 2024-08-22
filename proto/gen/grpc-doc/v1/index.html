@@ -2139,6 +2139,14 @@
                 </li>
               
                 <li>
+                  <a href="#bytebase.v1.PreviewTaskRunRollbackRequest"><span class="badge">M</span>PreviewTaskRunRollbackRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#bytebase.v1.PreviewTaskRunRollbackResponse"><span class="badge">M</span>PreviewTaskRunRollbackResponse</a>
+                </li>
+              
+                <li>
                   <a href="#bytebase.v1.Rollout"><span class="badge">M</span>Rollout</a>
                 </li>
               
@@ -7554,13 +7562,6 @@ A maximum of 1000 databases can be modified in a batch. </p></td>
                 </tr>
               
                 <tr>
-                  <td>uid</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
                   <td>creator</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -8188,13 +8189,6 @@ column masking data and global masking rules. </p></td>
                   <td><p>The name of the database.
 Format: instances/{instance}/databases/{database}
 {database} is the database name in the instance. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>uid</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>The system-assigned, unique identifier for a resource. </p></td>
                 </tr>
               
                 <tr>
@@ -10666,6 +10660,13 @@ Format: projcets/{project}/branches/{branch} </p></td>
                   <td><a href="#bytebase.v1.DependentColumn">DependentColumn</a></td>
                   <td>repeated</td>
                   <td><p>The dependent_columns is the list of dependent columns of a view. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>columns</td>
+                  <td><a href="#bytebase.v1.ColumnMetadata">ColumnMetadata</a></td>
+                  <td>repeated</td>
+                  <td><p>The columns is the ordered list of columns in a table. </p></td>
                 </tr>
               
             </tbody>
@@ -17605,13 +17606,6 @@ Database resource name: instances/instance-id/databases/database-name. </p></td>
                   <td><p>The resource type for the policy. </p></td>
                 </tr>
               
-                <tr>
-                  <td>resource_uid</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>The system-assigned, unique identifier for the resource. </p></td>
-                </tr>
-              
             </tbody>
           </table>
 
@@ -22856,6 +22850,54 @@ Format: projects/{project} </p></td>
 
         
       
+        <h3 id="bytebase.v1.PreviewTaskRunRollbackRequest">PreviewTaskRunRollbackRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun} </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="bytebase.v1.PreviewTaskRunRollbackResponse">PreviewTaskRunRollbackResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>statement</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="bytebase.v1.Rollout">Rollout</h3>
         <p></p>
 
@@ -24509,6 +24551,13 @@ The access is the same as BatchRunTasks().</p></td>
 The access is the same as BatchRunTasks().</p></td>
               </tr>
             
+              <tr>
+                <td>PreviewTaskRunRollback</td>
+                <td><a href="#bytebase.v1.PreviewTaskRunRollbackRequest">PreviewTaskRunRollbackRequest</a></td>
+                <td><a href="#bytebase.v1.PreviewTaskRunRollbackResponse">PreviewTaskRunRollbackResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
           </tbody>
         </table>
 
@@ -24613,6 +24662,16 @@ The access is the same as BatchRunTasks().</p></td>
                 <td>BatchCancelTaskRuns</td>
                 <td>POST</td>
                 <td>/v1/{parent=projects/*/rollouts/*/stages/*/tasks/*}/taskRuns:batchCancel</td>
+                <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>PreviewTaskRunRollback</td>
+                <td>POST</td>
+                <td>/v1/{name=projects/*/rollouts/*/stages/*/tasks/*/taskRuns/*}:previewRollback</td>
                 <td>*</td>
               </tr>
               
