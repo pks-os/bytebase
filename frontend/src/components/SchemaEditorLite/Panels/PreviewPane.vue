@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="!hidePreview"
     v-show="layoutReady"
     class="overflow-hidden flex flex-col items-stretch shrink-0 transition-all"
     :style="{
@@ -19,7 +20,7 @@
         :class="expanded ? '' : 'rotate-180'"
       />
       <span v-if="true || expanded" class="text-xs origin-left">
-        {{ $t("schema-editor.preview-schema-text") }}
+        {{ title }}
       </span>
     </div>
     <div class="relative flex-1 overflow-hidden">
@@ -44,22 +45,20 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import {
+  refDebounced,
   useElementSize,
   useLocalStorage,
   useParentElement,
 } from "@vueuse/core";
-import { cloneDeep } from "lodash-es";
 import { ChevronDownIcon } from "lucide-vue-next";
-import { computed } from "vue";
+import { computed, toRef } from "vue";
 import { MonacoEditor } from "@/components/MonacoEditor";
 import MaskSpinner from "@/components/misc/MaskSpinner.vue";
 import { sqlServiceClient } from "@/grpcweb";
 import type { ComposedDatabase } from "@/types";
 import {
   DatabaseMetadata,
-  SchemaConfig,
   SchemaMetadata,
-  type TableMetadata,
 } from "@/types/proto/v1/database_service";
 import { minmax } from "@/utils";
 import { extractGrpcErrorMessage } from "@/utils/grpcweb";
@@ -69,14 +68,12 @@ const props = defineProps<{
   db: ComposedDatabase;
   database: DatabaseMetadata;
   schema: SchemaMetadata;
-  table: TableMetadata;
+  title: string;
+  mocked: DatabaseMetadata | undefined;
 }>();
 
-const expanded = useLocalStorage(
-  "bb.schema-editor.table-schema-preview.expanded",
-  true
-);
-const { getColumnStatus } = useSchemaEditorContext();
+const { hidePreview } = useSchemaEditorContext();
+const expanded = useLocalStorage("bb.schema-editor.preview.expanded", true);
 const parentElement = useParentElement();
 const { height: parentHeight } = useElementSize(parentElement);
 const layoutReady = computed(() => parentHeight.value > 0);
@@ -88,49 +85,16 @@ const panelHeight = computed(() => {
 });
 
 const engine = computed(() => props.db.instanceResource.engine);
-const mockedSchemaMetadata = computed(() => {
-  if (!expanded.value) return undefined;
-  const { db, database, schema, table } = props;
-
-  const mockedTable = cloneDeep(table);
-  mockedTable.columns = mockedTable.columns.filter((column) => {
-    const status = getColumnStatus(db, { database, schema, table, column });
-    return status !== "dropped";
-  });
-  const mockedDatabase = DatabaseMetadata.fromJSON({
-    name: database.name,
-    characterSet: database.characterSet,
-    collation: database.collation,
-    schemas: [
-      {
-        name: schema.name,
-        tables: [mockedTable],
-      },
-    ],
-  });
-  const schemaConfig = database.schemaConfigs.find(
-    (sc) => sc.name === schema.name
-  );
-  const tableConfig = schemaConfig?.tableConfigs.find(
-    (tc) => tc.name === table.name
-  );
-  if (schemaConfig && tableConfig) {
-    mockedDatabase.schemaConfigs = [
-      SchemaConfig.fromJSON({
-        name: schemaConfig.name,
-        tableConfigs: [cloneDeep(tableConfig)],
-      }),
-    ];
-  }
-  return mockedDatabase;
-});
+const mocked = toRef(props, "mocked");
+const debouncedMocked = refDebounced(mocked, 500);
 
 const { status, data, error } = useQuery({
-  queryKey: [engine, mockedSchemaMetadata],
+  queryKey: [engine, debouncedMocked],
   queryFn: async () => {
     if (!expanded.value) return "";
-    const metadata = mockedSchemaMetadata.value;
+    const metadata = debouncedMocked.value;
     if (!metadata) return "";
+    console.log("call query");
     try {
       const response = await sqlServiceClient.stringifyMetadata(
         {

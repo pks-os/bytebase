@@ -52,6 +52,7 @@ import {
   WORKSPACE_ROUTE_USER_PROFILE,
   WORKSPACE_ROUTE_IM,
 } from "@/router/dashboard/workspaceRoutes";
+import { usePermissionStore } from "@/store";
 import type { Permission } from "@/types";
 import { hasWorkspacePermissionV2 } from "@/utils";
 
@@ -64,6 +65,7 @@ interface DashboardSidebarItem extends SidebarItem {
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const permissionStore = usePermissionStore();
 
 const getItemClass = (item: SidebarItem): string[] => {
   const { name: current } = route;
@@ -218,6 +220,7 @@ const dashboardSidebarItemList = computed((): DashboardSidebarItem[] => {
           title: t("settings.sidebar.members"),
           name: WORKSPACE_ROUTE_MEMBERS,
           type: "route",
+          hide: permissionStore.onlyWorkspaceMember,
         },
         {
           title: t("settings.sidebar.custom-roles"),

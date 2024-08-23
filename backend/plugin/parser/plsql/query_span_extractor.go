@@ -68,14 +68,7 @@ func (q *querySpanExtractor) getQuerySpan(ctx context.Context, statement string)
 		return nil, nil
 	}
 
-	listener := &selectListener{
-		q: q,
-	}
-	antlr.ParseTreeWalkerDefault.Walk(listener, tree)
-	if listener.err != nil {
-		return nil, errors.Wrapf(listener.err, "failed to extract query span from statement: %s", statement)
-	}
-	resources, err := ExtractResourceList(q.connectedDatabase, q.connectedDatabase, statement)
+	resources, err := ExtractResourceList(q.connectedDatabase, "", statement)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to extract resource list from statement: %s", statement)
 	}
@@ -91,13 +84,38 @@ func (q *querySpanExtractor) getQuerySpan(ctx context.Context, statement string)
 			Table:    resource.Table,
 		}] = true
 	}
-	result := base.QuerySpan{
-		SourceColumns: columnSet,
+
+	listener := &selectListener{
+		q: q,
 	}
+	antlr.ParseTreeWalkerDefault.Walk(listener, tree)
+	err = listener.err
+	if err != nil {
+		var resourceNotFound *parsererror.ResourceNotFoundError
+		if errors.As(err, &resourceNotFound) {
+			if len(columnSet) == 0 {
+				columnSet[base.ColumnResource{
+					Database: q.connectedDatabase,
+				}] = true
+			}
+			return &base.QuerySpan{
+				SourceColumns: columnSet,
+				Results:       []base.QuerySpanResult{},
+				NotFoundError: resourceNotFound,
+			}, nil
+		}
+
+		return nil, err
+	}
+
+	var results []base.QuerySpanResult
 	if listener.result != nil {
-		result.Results = listener.result.Results
+		results = listener.result.Results
 	}
-	return &result, nil
+	return &base.QuerySpan{
+		SourceColumns: columnSet,
+		Results:       results,
+	}, nil
 }
 
 func (q *querySpanExtractor) existsTableMetadata(resource base.SchemaResource) bool {
