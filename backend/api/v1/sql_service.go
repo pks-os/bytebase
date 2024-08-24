@@ -884,13 +884,17 @@ func (s *SQLService) accessCheck(
 				return status.Errorf(codes.InvalidArgument, "project %q not found", databaseMessage.ProjectID)
 			}
 
+			workspacePolicy, err := s.store.GetWorkspaceIamPolicy(ctx)
+			if err != nil {
+				return status.Errorf(codes.Internal, "failed to get workspace iam policy, error: %v", err)
+			}
 			// Allow query databases across different projects.
 			projectPolicy, err := s.store.GetProjectIamPolicy(ctx, project.UID)
 			if err != nil {
 				return status.Error(codes.Internal, err.Error())
 			}
 
-			ok, err := s.hasDatabaseAccessRights(ctx, user, projectPolicy.Policy, attributes, isExport)
+			ok, err := s.hasDatabaseAccessRights(ctx, user, []*storepb.IamPolicy{workspacePolicy.Policy, projectPolicy.Policy}, attributes, isExport)
 			if err != nil {
 				return status.Errorf(codes.Internal, "failed to check access control for database: %q, error %v", column.Database, err)
 			}
@@ -980,21 +984,13 @@ func validateQueryRequest(instance *store.InstanceMessage, statement string) err
 	return nil
 }
 
-func (s *SQLService) hasDatabaseAccessRights(ctx context.Context, user *store.UserMessage, projectPolicy *storepb.IamPolicy, attributes map[string]any, isExport bool) (bool, error) {
+func (s *SQLService) hasDatabaseAccessRights(ctx context.Context, user *store.UserMessage, iamPolicies []*storepb.IamPolicy, attributes map[string]any, isExport bool) (bool, error) {
 	wantPermission := iam.PermissionDatabasesQuery
 	if isExport {
 		wantPermission = iam.PermissionDatabasesExport
 	}
 
-	hasPermission, err := s.iamManager.CheckPermission(ctx, wantPermission, user)
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to check permissions")
-	}
-	if hasPermission {
-		return true, nil
-	}
-
-	bindings := utils.GetUserIAMPolicyBindings(ctx, s.store, user, projectPolicy)
+	bindings := utils.GetUserIAMPolicyBindings(ctx, s.store, user, iamPolicies...)
 	for _, binding := range bindings {
 		permissions, err := s.iamManager.GetPermissions(binding.Role)
 		if err != nil {
@@ -1357,75 +1353,6 @@ func (*SQLService) Pretty(_ context.Context, request *v1pb.PrettyRequest) (*v1pb
 	return &v1pb.PrettyResponse{
 		CurrentSchema:  prettyCurrentSchema,
 		ExpectedSchema: prettyExpectedSchema,
-	}, nil
-}
-
-func (s *SQLService) GenerateRestoreSQL(ctx context.Context, request *v1pb.GenerateRestoreSQLRequest) (*v1pb.GenerateRestoreSQLResponse, error) {
-	instanceID, databaseName, err := common.GetInstanceDatabaseID(request.Name)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	instance, err := s.store.GetInstanceV2(ctx, &store.FindInstanceMessage{ResourceID: &instanceID})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get instance")
-	}
-	if instance == nil {
-		return nil, status.Errorf(codes.NotFound, "instance %q not found", instanceID)
-	}
-	database, err := s.store.GetDatabaseV2(ctx, &store.FindDatabaseMessage{
-		InstanceID:          &instanceID,
-		DatabaseName:        &databaseName,
-		IgnoreCaseSensitive: store.IgnoreDatabaseAndTableCaseSensitive(instance),
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get database")
-	}
-	if database == nil {
-		return nil, status.Errorf(codes.NotFound, "database %q not found", databaseName)
-	}
-
-	if instance.Engine != storepb.Engine_MYSQL {
-		return nil, status.Errorf(codes.Unimplemented, "Generate restore SQL is only supported for MySQL")
-	}
-
-	offset, originTable, err := getOffsetAndOriginTable(request.BackupTable)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	_, sheetUID, err := common.GetProjectResourceIDSheetUID(request.Sheet)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "failed to get sheet UID: %v", err)
-	}
-	statement, err := s.store.GetSheetStatementByID(ctx, sheetUID)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get sheet: %v", err)
-	}
-
-	list, err := base.SplitMultiSQL(storepb.Engine_MYSQL, statement)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "failed to split SQL: %v", err)
-	}
-
-	if len(list) <= offset {
-		return nil, status.Errorf(codes.InvalidArgument, "offset %d is out of range", offset)
-	}
-
-	_, backupDatabase, err := common.GetInstanceDatabaseID(request.BackupDataSource)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	result, err := base.GenerateRestoreSQL(ctx, storepb.Engine_MYSQL, base.RestoreContext{
-		InstanceID:              instanceID,
-		GetDatabaseMetadataFunc: BuildGetDatabaseMetadataFunc(s.store),
-	}, list[offset].Text, backupDatabase, request.BackupTable, databaseName, originTable)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to generate restore SQL: %v", err)
-	}
-
-	return &v1pb.GenerateRestoreSQLResponse{
-		Statement: result,
 	}, nil
 }
 

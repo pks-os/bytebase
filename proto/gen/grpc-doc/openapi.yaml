@@ -9065,9 +9065,6 @@ components:
                 region:
                     type: string
                     description: region is the location of where the DB is, works for AWS RDS. For example, us-east-1.
-                accountId:
-                    type: string
-                    description: account_id is used by Databricks.
                 warehouseId:
                     type: string
                     description: warehouse_id is used by Databricks.
@@ -12031,6 +12028,9 @@ components:
                     allOf:
                         - $ref: '#/components/schemas/GoogleProtobufValue'
                     description: value_value is used for Spanner and TUPLE ARRAY MAP in Clickhouse only.
+                timestampValue:
+                    type: string
+                    format: date-time
         RunPlanChecksRequest:
             required:
                 - name
