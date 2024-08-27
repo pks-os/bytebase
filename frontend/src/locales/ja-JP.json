@@ -487,6 +487,7 @@
       "phone-tips": "国コードを必ず含めてください",
       "country-code": "国または地域コード",
       "password": "パスワード",
+      "password-hint": "最低 8 文字で、少なくとも 1 つの文字と 1 つの数字が含まれます。",
       "password-confirm": "パスワードの確認",
       "password-confirm-placeholder": "新しいパスワードを確認します",
       "password-mismatch": "新しいパスワードが一致しません",
@@ -2226,7 +2227,12 @@
     "wont-be-deployed": "導入には関与しない",
     "pipeline-generated-from-deployment-config": "デプロイ パイプラインはプロジェクト {deployment_config} に基づいて生成されます。",
     "preview-deployment-pipeline": "導入パイプラインのプレビュー",
-    "select-database-group": "データベースグループの選択"
+    "select-database-group": "データベースグループの選択",
+    "matched-databases": {
+      "all": "一致したすべてのデータベース",
+      "n": "{n} 個の一致したデータベース | {n} 個の一致したデータベース",
+      "show-more": "もっと見る"
+    }
   },
   "data-source": {
     "role-type": "権限の種類",

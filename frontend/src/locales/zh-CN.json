@@ -487,6 +487,7 @@
       "phone-tips": "请包含国家代码前缀",
       "country-code": "国家或地区代码",
       "password": "密码",
+      "password-hint": "最少 8 个字符，其中至少包含 1 个字母和 1 个数字。",
       "password-confirm": "确认密码",
       "password-confirm-placeholder": "确认新密码",
       "password-mismatch": "新密码不匹配",
@@ -2226,7 +2227,12 @@
     "wont-be-deployed": "不参与部署",
     "pipeline-generated-from-deployment-config": "部署的流水线根据项目的{deployment_config}生成。",
     "preview-deployment-pipeline": "预览部署流水线",
-    "select-database-group": "选择数据库分组"
+    "select-database-group": "选择数据库分组",
+    "matched-databases": {
+      "all": "所有匹配的数据库",
+      "n": "{n} 个匹配的数据库 | {n} 个匹配的数据库",
+      "show-more": "显示更多"
+    }
   },
   "data-source": {
     "role-type": "权限类型",
