@@ -567,7 +567,8 @@
       "add-member": "添加成员",
       "add-user": "添加用户",
       "aad-sync": {
-        "self": "从 Entra ID (Azure ID) 同步",
+        "self": "从 Entra ID (Azure AD) 同步",
+        "description": "将 Entra ID（前 Azure AD）中的用户和组同步到您的 Bytebase 实例。",
         "endpoint": "API URL",
         "endpoint-tip": "将该 URL 提供给 Azure，它将通过 webhook 来同步用户和组。",
         "token": "密钥",
@@ -2914,7 +2915,7 @@
       "self": "绑定到资源",
       "label": "审核策略需要绑定到环境资源或项目资源上，并影响对应资源下所有数据库。若一个数据库同时受到项目级别与环境级别策略影响，则只有项目级别策略生效。",
       "label-environment": "SQL 审查策略将影响属于所选环境的所有数据库。",
-      "label-project": "SQL 审核策略将影响所选项目下的所有数据库。环境的 SQL 审核策略将被忽略。",
+      "label-project": "SQL 审核策略将影响所选项目下的所有数据库。数据库所属环境的 SQL 审核策略将被忽略。",
       "override-warning": "以下资源已与其他 SQL 审核策略绑定。点击“{button}”将覆盖配置。"
     },
     "create": {
