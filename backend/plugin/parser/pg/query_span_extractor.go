@@ -42,6 +42,7 @@ const (
 type querySpanExtractor struct {
 	ctx             context.Context
 	defaultDatabase string
+	defaultSchema   string
 	// The metaCache serves as a lazy-load cache for the database metadata and should not be accessed directly.
 	// Instead, use querySpanExtractor.getDatabaseMetadata to access it.
 	metaCache map[string]*model.DatabaseMetadata
@@ -65,9 +66,15 @@ type querySpanExtractor struct {
 }
 
 // newQuerySpanExtractor creates a new query span extractor, the databaseMetadata and the ast are in the read guard.
-func newQuerySpanExtractor(defaultDatabase string, gCtx base.GetQuerySpanContext) *querySpanExtractor {
+func newQuerySpanExtractor(defaultDatabase string, defaultSchema string, gCtx base.GetQuerySpanContext) *querySpanExtractor {
+	if defaultSchema == "" {
+		// Fall back to the default schema `public`.
+		// Reference: https://www.postgresql.org/docs/current/ddl-schemas.html#DDL-SCHEMAS-PUBLIC
+		defaultSchema = "public"
+	}
 	return &querySpanExtractor{
 		defaultDatabase:         defaultDatabase,
+		defaultSchema:           defaultSchema,
 		metaCache:               make(map[string]*model.DatabaseMetadata),
 		gCtx:                    gCtx,
 		sourceColumnsInFunction: make(base.SourceColumnSet),
@@ -408,7 +415,7 @@ func (q *querySpanExtractor) findFunctionDefine(schemaName, funcName string) (ba
 		}
 	}
 	if schemaName == "" {
-		schemaName = "public"
+		schemaName = q.defaultSchema
 	}
 	schema := dbSchema.GetSchema(schemaName)
 	if schema == nil {
@@ -553,7 +560,7 @@ func (q *querySpanExtractor) extractTableSourceFromPLPGSQLFunction(createFunc *p
 	}
 
 	for _, sql := range sqlList {
-		newQ := newQuerySpanExtractor(q.defaultDatabase, q.gCtx)
+		newQ := newQuerySpanExtractor(q.defaultDatabase, q.defaultSchema, q.gCtx)
 		span, err := newQ.getQuerySpan(q.ctx, sql)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get query span for function: %s", name)
@@ -622,7 +629,7 @@ func extractSQL(data any) string {
 }
 
 func (q *querySpanExtractor) extractTableSourceFromSQLFunction(createFunc *pgquery.Node_CreateFunctionStmt, name string, asBody string) ([]base.QuerySpanResult, error) {
-	newQ := newQuerySpanExtractor(q.defaultDatabase, q.gCtx)
+	newQ := newQuerySpanExtractor(q.defaultDatabase, q.defaultSchema, q.gCtx)
 	span, err := newQ.getQuerySpan(q.ctx, asBody)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get query span for function: %s", name)
@@ -1143,7 +1150,7 @@ func (q *querySpanExtractor) extractSourceColumnSetFromUDF(node *pgquery.Node_Fu
 		return base.SourceColumnSet{}, nil
 	}
 	if schemaName == "" {
-		schemaName = "public"
+		schemaName = q.defaultSchema
 	}
 	result := make(base.SourceColumnSet)
 	tableSource, err := q.findFunctionDefine(schemaName, funcName)
@@ -1268,6 +1275,7 @@ func (q *querySpanExtractor) extractSourceColumnSetFromExpressionNode(node *pgqu
 		subqueryExtractor := &querySpanExtractor{
 			ctx:               q.ctx,
 			defaultDatabase:   q.defaultDatabase,
+			defaultSchema:     q.defaultSchema,
 			metaCache:         q.metaCache,
 			gCtx:              q.gCtx,
 			ctes:              q.ctes,
@@ -1450,7 +1458,7 @@ func (q *querySpanExtractor) findTableInFrom(schemaName string, tableName string
 
 	for i := len(q.tableSourcesFrom) - 1; i >= 0; i-- {
 		tableSource := q.tableSourcesFrom[i]
-		emptySchemaNameMatch := schemaName == "" && (tableSource.GetSchemaName() == "" || tableSource.GetSchemaName() == "public") && tableName == tableSource.GetTableName()
+		emptySchemaNameMatch := schemaName == "" && (tableSource.GetSchemaName() == "" || tableSource.GetSchemaName() == q.defaultSchema) && tableName == tableSource.GetTableName()
 		nonEmptySchemaNameMatch := schemaName != "" && tableSource.GetSchemaName() == schemaName && tableName == tableSource.GetTableName()
 		if emptySchemaNameMatch || nonEmptySchemaNameMatch {
 			return tableSource, nil
@@ -1490,7 +1498,7 @@ func (q *querySpanExtractor) findTableSchema(schemaName string, tableName string
 		}
 	}
 	if schemaName == "" {
-		schemaName = "public"
+		schemaName = q.defaultSchema
 	}
 	schema := dbSchema.GetSchema(schemaName)
 	if schema == nil {
@@ -1766,7 +1774,7 @@ func (q *querySpanExtractor) getAccessTables(sql string) (base.SourceColumnSet, 
 
 	accessesMap := make(base.SourceColumnSet)
 
-	result, err := q.getRangeVarsFromJSONRecursive(jsonData, q.defaultDatabase, "public")
+	result, err := q.getRangeVarsFromJSONRecursive(jsonData, q.defaultDatabase, q.defaultSchema)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get range vars from json")
 	}
@@ -1896,7 +1904,7 @@ func isSystemResource(resource base.ColumnResource) bool {
 }
 
 func (q *querySpanExtractor) getColumnsForView(definition string) ([]base.QuerySpanResult, error) {
-	newQ := newQuerySpanExtractor(q.defaultDatabase, q.gCtx)
+	newQ := newQuerySpanExtractor(q.defaultDatabase, q.defaultSchema, q.gCtx)
 	span, err := newQ.getQuerySpan(q.ctx, definition)
 	if err != nil {
 		return nil, err
@@ -1905,7 +1913,7 @@ func (q *querySpanExtractor) getColumnsForView(definition string) ([]base.QueryS
 }
 
 func (q *querySpanExtractor) getColumnsForMaterializedView(definition string) ([]base.QuerySpanResult, error) {
-	newQ := newQuerySpanExtractor(q.defaultDatabase, q.gCtx)
+	newQ := newQuerySpanExtractor(q.defaultDatabase, q.defaultSchema, q.gCtx)
 	span, err := newQ.getQuerySpan(q.ctx, definition)
 	if err != nil {
 		return nil, err

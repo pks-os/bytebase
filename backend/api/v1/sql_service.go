@@ -124,7 +124,11 @@ func (s *SQLService) AdminExecute(server v1pb.SQLService_AdminExecuteServer) err
 			}
 		}
 
-		result, duration, queryErr := executeWithTimeout(ctx, driver, conn, request.Statement, request.Timeout, db.QueryContext{})
+		queryContext := db.QueryContext{}
+		if request.Schema != nil {
+			queryContext.Schema = *request.Schema
+		}
+		result, duration, queryErr := executeWithTimeout(ctx, driver, conn, request.Statement, request.Timeout, queryContext)
 
 		if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, duration, queryErr); err != nil {
 			slog.Error("failed to post admin execute activity", log.BBError(err))
@@ -170,7 +174,11 @@ func (s *SQLService) Execute(ctx context.Context, request *v1pb.ExecuteRequest) 
 		defer conn.Close()
 	}
 
-	results, duration, queryErr := executeWithTimeout(ctx, driver, conn, request.Name, request.Timeout, db.QueryContext{})
+	queryContext := db.QueryContext{}
+	if request.Schema != nil {
+		queryContext.Schema = *request.Schema
+	}
+	results, duration, queryErr := executeWithTimeout(ctx, driver, conn, request.Name, request.Timeout, queryContext)
 
 	if err := s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, request.Statement, user.ID, duration, queryErr); err != nil {
 		slog.Error("failed to post admin execute activity", log.BBError(err))
@@ -228,7 +236,12 @@ func (s *SQLService) Query(ctx context.Context, request *v1pb.QueryRequest) (*v1
 		}
 		defer conn.Close()
 	}
-	results, spans, duration, queryErr := queryRetry(ctx, s.store, user, instance, database, driver, conn, statement, request.Timeout, db.QueryContext{Explain: request.Explain, Limit: int(request.Limit)}, false, s.licenseService, s.accessCheck, s.schemaSyncer)
+
+	queryContext := db.QueryContext{Explain: request.Explain, Limit: int(request.Limit)}
+	if request.Schema != nil {
+		queryContext.Schema = *request.Schema
+	}
+	results, spans, duration, queryErr := queryRetry(ctx, s.store, user, instance, database, driver, conn, statement, request.Timeout, queryContext, false, s.licenseService, s.accessCheck, s.schemaSyncer)
 
 	// Update activity.
 	if err = s.createQueryHistory(ctx, database, store.QueryHistoryTypeQuery, statement, user.ID, duration, queryErr); err != nil {
@@ -285,7 +298,7 @@ func queryRetry(
 			instance.Engine,
 			statement,
 			database.DatabaseName,
-			"",
+			queryContext.Schema,
 			store.IgnoreDatabaseAndTableCaseSensitive(instance),
 		)
 		if err != nil {
@@ -341,7 +354,7 @@ func queryRetry(
 			instance.Engine,
 			statement,
 			database.DatabaseName,
-			"",
+			queryContext.Schema,
 			store.IgnoreDatabaseAndTableCaseSensitive(instance),
 		)
 		if err != nil {

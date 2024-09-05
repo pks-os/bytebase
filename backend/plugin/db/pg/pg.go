@@ -582,7 +582,7 @@ var (
 	// VACUUM cannot run inside a transaction block.
 	// VACUUM [ ( option [, ...] ) ] [ table_and_columns [, ...] ]
 	// VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ table_and_columns [, ...] ].
-	vacuumReg = regexp.MustCompile(`(?i)VACUUM`)
+	vacuumReg = regexp.MustCompile(`(?i)^\s*VACUUM`)
 	// SET ROLE is a special statement that should be run before any other statements containing inside a transaction block or not.
 	setRoleReg = regexp.MustCompile(`(?i)SET\s+((SESSION|LOCAL)\s+)?ROLE`)
 )
@@ -665,6 +665,14 @@ func (driver *Driver) QueryConn(ctx context.Context, conn *sql.Conn, statement s
 		if err != nil {
 			return nil, err
 		}
+
+		// If the queryContext.Schema is not empty, set the search path for the database connection to the specified schema.
+		if queryContext.Schema != "" {
+			if _, err := conn.ExecContext(ctx, fmt.Sprintf("SET search_path TO %s;", queryContext.Schema)); err != nil {
+				return nil, err
+			}
+		}
+
 		startTime := time.Now()
 		queryResult, err := func() (*v1pb.QueryResult, error) {
 			if allQuery {
