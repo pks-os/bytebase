@@ -288,7 +288,8 @@
       "n-rows": "{n} rows"
     },
     "back-to-workspace": "Back to workspace",
-    "override": "Override"
+    "override": "Override",
+    "encoding": "Encoding"
   },
   "error-page": {
     "go-back-home": "Go back home"
@@ -1832,7 +1833,8 @@
     "sensitive": "Sensitive",
     "access-denied": "You don't have the permission to access this database.",
     "schema": {
-      "select": "Select schema"
+      "select": "Select schema",
+      "unspecified": "Unspecified"
     },
     "show-missing-databases": "Show missing databases",
     "n-selected-m-in-total": "({selected} selected, {total} in total)",

@@ -288,7 +288,8 @@
       "n-rows": "{n} 行"
     },
     "back-to-workspace": "ワークスペースに戻る",
-    "override": "オーバーライド"
+    "override": "オーバーライド",
+    "encoding": "エンコーディング"
   },
   "error-page": {
     "go-back-home": "ホームページに戻る"
@@ -1832,7 +1833,8 @@
     "sensitive": "センシティブ",
     "access-denied": "データベースにアクセスする権限がありません",
     "schema": {
-      "select": "スキーマの選択"
+      "select": "スキーマの選択",
+      "unspecified": "不特定"
     },
     "show-missing-databases": "データベースが見つからないことを表示",
     "n-selected-m-in-total": "({selected} 個が選択され、合計 {total} 個)",
