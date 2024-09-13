@@ -289,7 +289,8 @@
     },
     "back-to-workspace": "ワークスペースに戻る",
     "override": "オーバーライド",
-    "encoding": "エンコーディング"
+    "encoding": "エンコーディング",
+    "finish": "仕上げる"
   },
   "error-page": {
     "go-back-home": "ホームページに戻る"
@@ -490,7 +491,7 @@
       "phone-tips": "国コードを必ず含めてください",
       "country-code": "国または地域コード",
       "password": "パスワード",
-      "password-hint": "最低 8 文字で、少なくとも 1 つの文字と 1 つの数字が含まれます。",
+      "password-hint": "パスワードは制限設定に従う必要があります。",
       "password-confirm": "パスワードの確認",
       "password-confirm-placeholder": "新しいパスワードを確認します",
       "password-mismatch": "新しいパスワードが一致しません",
@@ -715,6 +716,14 @@
             "description": "指定されたドメインの電子メール アドレスを持つユーザーのみにサインインを制限します。"
           }
         },
+        "password-restriction": {
+          "self": "パスワード制限",
+          "min-length": "パスワードの最小文字数は {min} 文字以上である必要があります",
+          "require-number": "パスワードには少なくとも1つの数字が含まれている必要があります",
+          "require-letter": "パスワードには大文字、小文字に関係なく少なくとも1文字が含まれている必要があります",
+          "require-uppercase-letter": "パスワードには少なくとも1つの大文字が含まれている必要があります",
+          "require-special-character": "パスワードには少なくとも1つの特殊文字が含まれている必要があります"
+        },
         "config-updated": "構成が更新されました。",
         "ai-assistant": {
           "self": "AI助手",
@@ -759,12 +768,14 @@
         },
         "database-change-mode": {
           "self": "データベース変更モード",
-          "description": "ユーザーがデータベース スキーマの移行を実行する方法を制御します。問題モードでは、構造化されたプロセスにカスタム承認を使用した問題/タスク ワークフローを使用します。SQL エディター モードでは、SQL エディターで直接 SQL を実行して、すばやく簡単に変更できます。",
+          "description": "ユーザーがデータベース スキーマの移行を実行する方法を制御します。",
           "issue-mode": {
-            "self": "発行モード"
+            "self": "発行モード",
+            "description": "構造化されたプロセスのカスタム承認を備えた課題/タスクのワークフローを使用します。"
           },
           "sql-editor-mode": {
-            "self": "SQL エディター モード"
+            "self": "SQL エディター モード",
+            "description": "SQL エディターで SQL を直接実行できるため、迅速かつ簡単に変更できます。"
           }
         }
       }
@@ -1013,6 +1024,7 @@
       "verb-type-target-by-people": "{verb}{type} {target}",
       "verb-type-target-by-system-bot": "{type} {target} {verb}",
       "changed-x-link": "{name} が変更されました。 {link}",
+      "failed-to-backup": "データのバックアップに失敗しました: {error}",
       "prior-back-table": "データベース {database} のテーブル {tables} にバックアップされました",
       "prior-back-table-for-line": "DML のデータベース {database} とテーブル {tables} の行 {line} へのデータのバックアップ"
     },
@@ -2101,6 +2113,13 @@
         "enforce-issue-title": {
           "self": "問題のタイトルを強制する",
           "description": "問題のタイトルが空でないこと、および自動生成ではなくユーザーが作成することを強制します。"
+        },
+        "default-backup-behavior": {
+          "self": "デフォルトのバックアップ動作",
+          "description": "データ変更の問題を作成するときのデフォルトのバックアップ動作。",
+          "default_backup_behavior_no_backup": "バックアップを無効にする",
+          "default_backup_behavior_backup_on_error_stop": "バックアップを有効にするが、エラーが発生した場合はタスクを停止する",
+          "default_backup_behavior_backup_on_error_skip": "バックアップを有効にし、失敗した場合はバックアップ エラーをスキップします"
         }
       }
     },
@@ -3702,5 +3721,20 @@
   },
   "worksheet": {
     "self": "ワークシート"
+  },
+  "setup": {
+    "workspace-mode": {
+      "choose": "ワークスペースモードを選択してください",
+      "issue-mode": {
+        "self": "発行モード",
+        "description": "問題をコミットしてデータベースを変更します。\nバッチ変更、GitOps、SQL レビュー、カスタム承認などを使用してデータベース変更ワークフローを強化します。"
+      },
+      "sql-editor-mode": {
+        "self": "SQLエディターモード",
+        "description": "従来の SQL GUI クライアントと同様に、SQL エディターを介してデータベースを変更します。\nデータベースに素早く直接アクセスする簡単な方法です。"
+      },
+      "can-be-changed-later": "この設定は後でいつでも変更できます。"
+    },
+    "self": "設定"
   }
 }
