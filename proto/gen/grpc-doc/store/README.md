@@ -313,6 +313,7 @@
   
 - [store/user.proto](#store_user-proto)
     - [MFAConfig](#bytebase-store-MFAConfig)
+    - [UserProfile](#bytebase-store-UserProfile)
   
 - [store/vcs.proto](#store_vcs-proto)
     - [VCSConnector](#bytebase-store-VCSConnector)
@@ -3917,7 +3918,7 @@ SlowQueryPolicy is the policy configuration for slow query.
 | require_uppercase_letter | [bool](#bool) |  | require_uppercase_letter requires the password must contains at least one upper case letter. |
 | require_special_character | [bool](#bool) |  | require_uppercase_letter requires the password must contains at least one special character. |
 | require_reset_password_for_first_login | [bool](#bool) |  | require_reset_password_for_first_login requires users to reset their password after the 1st login. |
-| rotation_days | [int32](#int32) | optional | rotation_days requires users to reset their password after n days. |
+| password_rotation | [google.protobuf.Duration](#google-protobuf-Duration) |  | password_rotation requires users to reset their password after the duration. |
 
 
 
@@ -4813,6 +4814,22 @@ MFAConfig is the MFA configuration for a user.
 | temp_otp_secret | [string](#string) |  | The temp_otp_secret is the temporary secret key used to validate the OTP code and will replace the otp_secret in two phase commits. |
 | recovery_codes | [string](#string) | repeated | The recovery_codes are the codes that can be used to recover the account. |
 | temp_recovery_codes | [string](#string) | repeated | The temp_recovery_codes are the temporary codes that will replace the recovery_codes in two phase commits. |
+
+
+
+
+
+
+<a name="bytebase-store-UserProfile"></a>
+
+### UserProfile
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| last_login_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| last_change_password_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
 
 
 
