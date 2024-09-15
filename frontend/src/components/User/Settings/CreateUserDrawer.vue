@@ -52,6 +52,7 @@
             <EmailInput
               v-else
               v-model:value="state.user.email"
+              :readonly="disallowEditUser"
               :domain="workspaceDomain"
             />
           </NFormItem>
@@ -84,6 +85,7 @@
               ref="userPasswordRef"
               v-model:password="state.user.password"
               v-model:password-confirm="state.passwordConfirm"
+              :password-restriction="passwordRestrictionSetting"
             />
           </template>
         </NForm>
@@ -171,7 +173,6 @@ import {
   User,
 } from "@/types/proto/v1/auth_service";
 import { State } from "@/types/proto/v1/common";
-import { randomString } from "@/utils";
 import UserPassword from "./UserPassword.vue";
 
 interface LocalState {
@@ -223,6 +224,10 @@ const state = reactive<LocalState>({
   passwordConfirm: "",
 });
 
+const passwordRestrictionSetting = computed(
+  () => settingV1Store.passwordRestriction
+);
+
 const workspaceDomain = computed(() => {
   if (!settingV1Store.workspaceProfileSetting?.enforceIdentityDomain) {
     return undefined;
@@ -239,6 +244,8 @@ const rolesChanged = computed(() => {
 
   return !isUndefined(state.roles) && !isEqual(initRoles(), state.roles);
 });
+
+const disallowEditUser = computed(() => !!props.user?.profile?.source);
 
 const allowConfirm = computed(() => {
   if (!state.user.email) {
@@ -310,9 +317,7 @@ const tryCreateOrUpdateUser = async () => {
     const createdUser = await userStore.createUser({
       ...state.user,
       title: state.user.title || extractUserTitle(state.user.email),
-      password:
-        state.user.password ||
-        randomString(10) + randomString(10, "0123456789"),
+      password: state.user.password,
     });
     if (state.roles.length > 0) {
       await workspaceStore.patchIamPolicy([

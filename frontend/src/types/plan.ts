@@ -13,6 +13,7 @@ export type FeatureType =
   | "bb.feature.sso"
   | "bb.feature.2fa"
   | "bb.feature.secure-token"
+  | "bb.feature.password-restriction"
   | "bb.feature.rbac"
   | "bb.feature.disallow-signup"
   | "bb.feature.disallow-password-signin"
@@ -33,6 +34,7 @@ export type FeatureType =
   | "bb.feature.encrypted-secrets"
   | "bb.feature.database-grouping"
   | "bb.feature.schema-template"
+  | "bb.feature.issue-project-setting"
   // Database management
   | "bb.feature.read-replica-connection"
   | "bb.feature.custom-instance-scan-interval"

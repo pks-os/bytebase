@@ -770,15 +770,16 @@
         },
         "database-change-mode": {
           "self": "データベース変更モード",
-          "description": "ユーザーがデータベース スキーマの移行を実行する方法を制御します。",
+          "description": "ユーザーがデータベース スキーマの移行を実行する方法を制御します",
           "issue-mode": {
-            "self": "発行モード",
-            "description": "構造化されたプロセスのカスタム承認を備えた課題/タスクのワークフローを使用します。"
+            "self": "作業モード（チーム）",
+            "description": "作業を使用して、データベースの変更をリクエスト、レビュー、ロールアウト、バージョン管理します。チームコラボレーションに適しています。。"
           },
           "sql-editor-mode": {
-            "self": "SQL エディター モード",
-            "description": "SQL エディターで SQL を直接実行できるため、迅速かつ簡単に変更できます。"
-          }
+            "self": "SQL エディター モード (個人)",
+            "description": "SQL エディタを使用してデータベースの変更を直接実行します。個人に適しています。"
+          },
+          "can-be-changed-later": "この設定は後でいつでも変更できます。"
         }
       }
     },
@@ -2122,6 +2123,14 @@
           "default_backup_behavior_no_backup": "バックアップを無効にする",
           "default_backup_behavior_backup_on_error_stop": "バックアップを有効にするが、エラーが発生した場合はタスクを停止する",
           "default_backup_behavior_backup_on_error_skip": "バックアップを有効にし、失敗した場合はバックアップ エラーをスキップします"
+        },
+        "auto-enable-backup": {
+          "self": "バックアップの自動有効化",
+          "description": "すべてのデータ変更の問題に対してバックアップを自動的に有効にします。"
+        },
+        "skip-backup-errors": {
+          "self": "バックアップエラーをスキップ",
+          "description": "バックアップ エラーをスキップすると、データの変更タスクは引き続き実行されます。"
         }
       }
     },
@@ -2498,7 +2507,12 @@
     "view-detail": "詳細を見る",
     "generate-sql": "SQLの生成",
     "current-editing-statement-is-not-empty": "現在編集中のステートメントは空ではありません。",
-    "run-anyway": "とにかく走ってください"
+    "run-anyway": "とにかく走ってください",
+    "no-project": {
+      "not-member-of-any-projects": "あなたはどのプロジェクトのメンバーでもありません。",
+      "go-to-create": "作成に行く",
+      "contact-the-admin-to-grant-access": "管理者に連絡してアクセスを許可してください。"
+    }
   },
   "schema-editor": {
     "self": "スキーマエディタ",
@@ -2877,6 +2891,14 @@
       "bb-feature-issue-advanced-search": {
         "title": "チケットの詳細検索",
         "desc": "高度な検索機能を使用して、無制限の過去のチケットにアクセスできます。"
+      },
+      "bb-feature-issue-project-setting": {
+        "title": "高度な問題プロジェクト設定",
+        "desc": "高度な問題プロジェクト設定をカスタマイズします。問題制限の作成やデフォルトのバックアップ設定などが含まれます。"
+      },
+      "bb-feature-password-restriction": {
+        "title": "パスワード制限",
+        "desc": "ユーザーのパスワードの制限を設定できるようにする"
       }
     }
   },
@@ -3725,18 +3747,6 @@
     "self": "ワークシート"
   },
   "setup": {
-    "workspace-mode": {
-      "choose": "ワークスペースモードを選択してください",
-      "issue-mode": {
-        "self": "発行モード",
-        "description": "問題をコミットしてデータベースを変更します。\nバッチ変更、GitOps、SQL レビュー、カスタム承認などを使用してデータベース変更ワークフローを強化します。"
-      },
-      "sql-editor-mode": {
-        "self": "SQLエディターモード",
-        "description": "従来の SQL GUI クライアントと同様に、SQL エディターを介してデータベースを変更します。\nデータベースに素早く直接アクセスする簡単な方法です。"
-      },
-      "can-be-changed-later": "この設定は後でいつでも変更できます。"
-    },
     "self": "設定"
   }
 }

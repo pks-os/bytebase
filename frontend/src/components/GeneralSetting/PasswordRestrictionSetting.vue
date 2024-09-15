@@ -4,6 +4,7 @@
       <span class="mr-2">
         {{ $t("settings.general.workspace.password-restriction.self") }}
       </span>
+      <FeatureBadge feature="bb.feature.password-restriction" />
     </p>
     <div class="w-full flex flex-col space-y-3">
       <div class="flex items-center space-x-2">
@@ -15,7 +16,13 @@
           :placeholder="'Minimum length'"
           :precision="0"
           @update:value="
-            (val) => onUpdate({ minLength: val || DEFAULT_MIN_LENGTH })
+            (val) =>
+              onUpdate({
+                minLength: Math.max(
+                  val || DEFAULT_MIN_LENGTH,
+                  DEFAULT_MIN_LENGTH
+                ),
+              })
           "
         />
         <span class="textlabel">
@@ -145,12 +152,12 @@
               :size="'small'"
               :placeholder="'Minimum length'"
               :precision="0"
+              @click="(e: MouseEvent) => e.stopPropagation()"
               @update:value="
                 (val) =>
-                  val &&
                   onUpdate({
                     passwordRotation: Duration.fromPartial({
-                      seconds: val * 24 * 60 * 60,
+                      seconds: (val || 1) * 24 * 60 * 60,
                       nanos: 0,
                     }),
                   })
@@ -162,16 +169,23 @@
       </NCheckbox>
     </div>
   </div>
+
+  <FeatureModal
+    feature="bb.feature.password-restriction"
+    :open="showFeatureModal"
+    @cancel="showFeatureModal = false"
+  />
 </template>
 
 <script setup lang="tsx">
 import { NInputNumber, NCheckbox } from "naive-ui";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { pushNotification } from "@/store";
+import { featureToRef, pushNotification } from "@/store";
 import { useSettingV1Store } from "@/store/modules/v1/setting";
 import { Duration } from "@/types/proto/google/protobuf/duration";
 import { PasswordRestrictionSetting } from "@/types/proto/v1/setting_service";
+import { FeatureBadge, FeatureModal } from "../FeatureGuard";
 
 const DEFAULT_MIN_LENGTH = 8;
 
@@ -181,6 +195,8 @@ defineProps<{
 
 const { t } = useI18n();
 const settingV1Store = useSettingV1Store();
+const showFeatureModal = ref<boolean>(false);
+const hasPasswordFeature = featureToRef("bb.feature.password-restriction");
 
 const passwordRestrictionSetting = computed(
   () =>
@@ -189,6 +205,10 @@ const passwordRestrictionSetting = computed(
 );
 
 const onUpdate = async (update: Partial<PasswordRestrictionSetting>) => {
+  if (!hasPasswordFeature.value) {
+    showFeatureModal.value = true;
+    return;
+  }
   await settingV1Store.upsertSetting({
     name: "bb.workspace.password-restriction",
     value: {
