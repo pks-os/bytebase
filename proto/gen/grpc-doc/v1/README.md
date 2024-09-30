@@ -72,6 +72,7 @@
     - [Release](#bytebase-v1-Release)
     - [Release.File](#bytebase-v1-Release-File)
     - [Release.VCSSource](#bytebase-v1-Release-VCSSource)
+    - [UpdateReleaseRequest](#bytebase-v1-UpdateReleaseRequest)
   
     - [ReleaseFileType](#bytebase-v1-ReleaseFileType)
   
@@ -1375,6 +1376,7 @@ When paginating, all other parameters provided to `ListInstances` must match the
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of instance. Format: instances/{instance} |
+| enable_full_sync | [bool](#bool) |  | When full sync is enabled, all databases in the instance will be synchronized. Otherwise, only the instance metadata (such as the database list) and any newly discovered instances will be synced. |
 
 
 
@@ -1695,6 +1697,22 @@ When paginating, all other parameters provided to `ListReleasesRequest` must mat
 
 
 
+
+<a name="bytebase-v1-UpdateReleaseRequest"></a>
+
+### UpdateReleaseRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| release | [Release](#bytebase-v1-Release) |  | The release to update. |
+| update_mask | [google.protobuf.FieldMask](#google-protobuf-FieldMask) |  | The list of fields to be updated. |
+
+
+
+
+
  
 
 
@@ -1724,6 +1742,7 @@ When paginating, all other parameters provided to `ListReleasesRequest` must mat
 | GetRelease | [GetReleaseRequest](#bytebase-v1-GetReleaseRequest) | [Release](#bytebase-v1-Release) |  |
 | ListReleases | [ListReleasesRequest](#bytebase-v1-ListReleasesRequest) | [ListReleasesResponse](#bytebase-v1-ListReleasesResponse) |  |
 | CreateRelease | [CreateReleaseRequest](#bytebase-v1-CreateReleaseRequest) | [Release](#bytebase-v1-Release) |  |
+| UpdateRelease | [UpdateReleaseRequest](#bytebase-v1-UpdateReleaseRequest) | [Release](#bytebase-v1-Release) |  |
 
  
 
