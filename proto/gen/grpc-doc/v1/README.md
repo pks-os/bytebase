@@ -673,6 +673,7 @@
     - [QueryResult.PostgresError](#bytebase-v1-QueryResult-PostgresError)
     - [QueryRow](#bytebase-v1-QueryRow)
     - [RowValue](#bytebase-v1-RowValue)
+    - [RowValue.TimestampTZ](#bytebase-v1-RowValue-TimestampTZ)
     - [SearchQueryHistoriesRequest](#bytebase-v1-SearchQueryHistoriesRequest)
     - [SearchQueryHistoriesResponse](#bytebase-v1-SearchQueryHistoriesResponse)
     - [StringifyMetadataRequest](#bytebase-v1-StringifyMetadataRequest)
@@ -10758,7 +10759,25 @@ for field description.
 | uint32_value | [uint32](#uint32) |  |  |
 | uint64_value | [uint64](#uint64) |  |  |
 | value_value | [google.protobuf.Value](#google-protobuf-Value) |  | value_value is used for Spanner and TUPLE ARRAY MAP in Clickhouse only. |
-| timestamp_value | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| timestamp_value | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | timestamp_value is used for the timestamp without time zone data type, meaning it only includes the timestamp without any time zone or location info. Although it may be expressed as a UTC value, it should be seen as a timestamp missing location context. |
+| timestamp_tz_value | [RowValue.TimestampTZ](#bytebase-v1-RowValue-TimestampTZ) |  | timestamp_tz_value is used for the timestamptz data type, which accurately represents the timestamp with location information. |
+
+
+
+
+
+
+<a name="bytebase-v1-RowValue-TimestampTZ"></a>
+
+### RowValue.TimestampTZ
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| zone | [string](#string) |  | Zone is the time zone abbreviations in timezone database such as &#34;PDT&#34;, &#34;PST&#34;. https://en.wikipedia.org/wiki/List_of_tz_database_time_zones We retrieve the time zone information from the timestamptz field in the database. A timestamp is in UTC or epoch time, and with zone info, we can convert it to a local time string. Zone and offset are returned by time.Time.Zone() |
+| offset | [int32](#int32) |  | The offset is in seconds east of UTC |
 
 
 

@@ -2746,6 +2746,10 @@
                 </li>
               
                 <li>
+                  <a href="#bytebase.v1.RowValue.TimestampTZ"><span class="badge">M</span>RowValue.TimestampTZ</a>
+                </li>
+              
+                <li>
                   <a href="#bytebase.v1.SearchQueryHistoriesRequest"><span class="badge">M</span>SearchQueryHistoriesRequest</a>
                 </li>
               
@@ -29342,7 +29346,57 @@ The types come from the Golang SQL driver. </p></td>
                   <td>timestamp_value</td>
                   <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
                   <td></td>
+                  <td><p>timestamp_value is used for the timestamp without time zone data type, meaning it only includes the timestamp without any time zone or location info.
+Although it may be expressed as a UTC value, it should be seen as a timestamp missing location context. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>timestamp_tz_value</td>
+                  <td><a href="#bytebase.v1.RowValue.TimestampTZ">RowValue.TimestampTZ</a></td>
+                  <td></td>
+                  <td><p>timestamp_tz_value is used for the timestamptz data type, which accurately represents the timestamp with location information. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="bytebase.v1.RowValue.TimestampTZ">RowValue.TimestampTZ</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>timestamp</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
                   <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>zone</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Zone is the time zone abbreviations in timezone database such as &#34;PDT&#34;, &#34;PST&#34;.
+https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+We retrieve the time zone information from the timestamptz field in the database.
+A timestamp is in UTC or epoch time, and with zone info, we can convert it to a local time string.
+Zone and offset are returned by time.Time.Zone() </p></td>
+                </tr>
+              
+                <tr>
+                  <td>offset</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>The offset is in seconds east of UTC </p></td>
                 </tr>
               
             </tbody>

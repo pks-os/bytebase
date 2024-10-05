@@ -1,7 +1,8 @@
-package redshift
+package dm
 
 import (
 	"database/sql"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -10,6 +11,11 @@ import (
 )
 
 func makeValueByTypeName(typeName string, _ *sql.ColumnType) any {
+	// DATE: date.
+	// TIMESTAMPDTY: timestamp.
+	// TIMESTAMPTZ_DTY: timestamp with time zone.
+	// TIMESTAMPLTZ_DTY: timezone with local time zone.
+
 	switch typeName {
 	case "VARCHAR", "TEXT", "UUID":
 		return new(sql.NullString)
@@ -19,10 +25,10 @@ func makeValueByTypeName(typeName string, _ *sql.ColumnType) any {
 		return new(sql.NullInt64)
 	case "FLOAT", "DOUBLE", "FLOAT4", "FLOAT8":
 		return new(sql.NullFloat64)
-	case "TIMESTAMP", "TIMESTAMPTZ":
-		return new(sql.NullTime)
 	case "BIT", "VARBIT":
 		return new([]byte)
+	case "DATE", "TIMESTAMPDTY", "TIMESTAMPLTZ_DTY", "TIMESTAMPTZ_DTY":
+		return new(sql.NullTime)
 	default:
 		return new(sql.NullString)
 	}
@@ -72,10 +78,24 @@ func convertValue(typeName string, value any) *v1pb.RowValue {
 		}
 	case *sql.NullTime:
 		if raw.Valid {
-			if typeName == "TIMESTAMP" {
+			if typeName == "DATE" || typeName == "TIMESTAMPDTY" {
 				return &v1pb.RowValue{
 					Kind: &v1pb.RowValue_TimestampValue{
 						TimestampValue: timestamppb.New(raw.Time),
+					},
+				}
+			}
+			if typeName == "TIMESTAMPLTZ_DTY" {
+				s := raw.Time.Format("2006-01-02 15:04:05.000000000")
+				t, err := time.Parse(time.DateTime, s)
+				if err != nil {
+					return util.NullRowValue
+				}
+				// This timestamp is not consistent with sqlplus likely due to db and session timezone.
+				// TODO(d): fix the go-ora library.
+				return &v1pb.RowValue{
+					Kind: &v1pb.RowValue_TimestampValue{
+						TimestampValue: timestamppb.New(t),
 					},
 				}
 			}
