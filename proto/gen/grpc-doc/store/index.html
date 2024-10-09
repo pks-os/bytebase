@@ -414,6 +414,10 @@
                 </li>
               
                 <li>
+                  <a href="#bytebase.store.PackageMetadata"><span class="badge">M</span>PackageMetadata</a>
+                </li>
+              
+                <li>
                   <a href="#bytebase.store.ProcedureConfig"><span class="badge">M</span>ProcedureConfig</a>
                 </li>
               
@@ -1096,6 +1100,21 @@
               
                 <li>
                   <a href="#bytebase.store.ReviewConfigPayload"><span class="badge">M</span>ReviewConfigPayload</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#store%2frevision.proto">store/revision.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#bytebase.store.RevisionPayload"><span class="badge">M</span>RevisionPayload</a>
                 </li>
               
               
@@ -3629,6 +3648,37 @@ If the key length is not specified, it&#39;s -1. </p></td>
 
         
       
+        <h3 id="bytebase.store.PackageMetadata">PackageMetadata</h3>
+        <p>PackageMetadata is the metadata for packages.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name is the name of a package. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>definition</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The definition is the definition of a package. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="bytebase.store.ProcedureConfig">ProcedureConfig</h3>
         <p></p>
 
@@ -3839,6 +3889,13 @@ It is an empty string for databases without such concept such as MySQL. </p></td
                   <td><a href="#bytebase.store.SequenceMetadata">SequenceMetadata</a></td>
                   <td>repeated</td>
                   <td><p>The sequences is the list of sequences in a schema. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>packages</td>
+                  <td><a href="#bytebase.store.PackageMetadata">PackageMetadata</a></td>
+                  <td>repeated</td>
+                  <td><p>The packages is the list of packages in a schema. </p></td>
                 </tr>
               
             </tbody>
@@ -9012,6 +9069,91 @@ Format: projects/{project}/sheets/{sheet} </p></td>
                   <td><a href="#bytebase.store.SQLReviewRule">SQLReviewRule</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="store/revision.proto">store/revision.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="bytebase.store.RevisionPayload">RevisionPayload</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>release</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Format: projects/{project}/releases/{release}
+Can be empty. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>sheet</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The sheet that holds the content.
+Format: projects/{project}/sheets/{sheet} </p></td>
+                </tr>
+              
+                <tr>
+                  <td>sheet_sha1</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The SHA1 hash value of the sheet. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>type</td>
+                  <td><a href="#bytebase.store.ReleaseFileType">ReleaseFileType</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>version</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>file</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name of the file in the release.
+Expressed as a path, e.g. `2.2/V0001_create_table.sql`
+Can be empty. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>task_run</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The task run associated with the revision.
+Can be empty. </p></td>
                 </tr>
               
             </tbody>

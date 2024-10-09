@@ -63,6 +63,7 @@
     - [InstanceRoleMetadata](#bytebase-store-InstanceRoleMetadata)
     - [LinkedDatabaseMetadata](#bytebase-store-LinkedDatabaseMetadata)
     - [MaterializedViewMetadata](#bytebase-store-MaterializedViewMetadata)
+    - [PackageMetadata](#bytebase-store-PackageMetadata)
     - [ProcedureConfig](#bytebase-store-ProcedureConfig)
     - [ProcedureMetadata](#bytebase-store-ProcedureMetadata)
     - [SchemaConfig](#bytebase-store-SchemaConfig)
@@ -229,6 +230,9 @@
   
 - [store/review_config.proto](#store_review_config-proto)
     - [ReviewConfigPayload](#bytebase-store-ReviewConfigPayload)
+  
+- [store/revision.proto](#store_revision-proto)
+    - [RevisionPayload](#bytebase-store-RevisionPayload)
   
 - [store/role.proto](#store_role-proto)
     - [RolePermissions](#bytebase-store-RolePermissions)
@@ -1211,6 +1215,22 @@ MaterializedViewMetadata is the metadata for materialized views.
 
 
 
+<a name="bytebase-store-PackageMetadata"></a>
+
+### PackageMetadata
+PackageMetadata is the metadata for packages.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the name of a package. |
+| definition | [string](#string) |  | The definition is the definition of a package. |
+
+
+
+
+
+
 <a name="bytebase-store-ProcedureConfig"></a>
 
 ### ProcedureConfig
@@ -1283,6 +1303,7 @@ This is the concept of schema in Postgres, but it&#39;s a no-op for MySQL.
 | tasks | [TaskMetadata](#bytebase-store-TaskMetadata) | repeated | The routines is the list of routines in a schema, currently, only used for Snowflake. |
 | materialized_views | [MaterializedViewMetadata](#bytebase-store-MaterializedViewMetadata) | repeated | The materialized_views is the list of materialized views in a schema. |
 | sequences | [SequenceMetadata](#bytebase-store-SequenceMetadata) | repeated | The sequences is the list of sequences in a schema. |
+| packages | [PackageMetadata](#bytebase-store-PackageMetadata) | repeated | The packages is the list of packages in a schema. |
 
 
 
@@ -3558,6 +3579,43 @@ SlowQueryPolicy is the policy configuration for slow query.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | sql_review_rules | [SQLReviewRule](#bytebase-store-SQLReviewRule) | repeated |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+
+<a name="store_revision-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## store/revision.proto
+
+
+
+<a name="bytebase-store-RevisionPayload"></a>
+
+### RevisionPayload
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| release | [string](#string) |  | Format: projects/{project}/releases/{release} Can be empty. |
+| sheet | [string](#string) |  | The sheet that holds the content. Format: projects/{project}/sheets/{sheet} |
+| sheet_sha1 | [string](#string) |  | The SHA1 hash value of the sheet. |
+| type | [ReleaseFileType](#bytebase-store-ReleaseFileType) |  |  |
+| version | [string](#string) |  |  |
+| file | [string](#string) |  | The name of the file in the release. Expressed as a path, e.g. `2.2/V0001_create_table.sql` Can be empty. |
+| task_run | [string](#string) |  | The task run associated with the revision. Can be empty. |
 
 
 
