@@ -291,7 +291,8 @@
     "override": "オーバーライド",
     "encoding": "エンコーディング",
     "finish": "仕上げる",
-    "title": "タイトル"
+    "title": "タイトル",
+    "hide": "隠れる"
   },
   "error-page": {
     "go-back-home": "ホームページに戻る"
@@ -1637,6 +1638,11 @@
         "disallow": "管理者接続からのデータクエリを禁止する",
         "fallback": "読み取り専用接続が利用できない場合、管理者接続にフォールバックする"
       }
+    },
+    "statement-execution": {
+      "title": "ステートメントの実行",
+      "allow-ddl": "SQLエディタでDDL文を実行できるようにする",
+      "allow-dml": "SQL エディタで DML ステートメントを実行できるようにする"
     }
   },
   "quick-start": {
@@ -2370,6 +2376,7 @@
     "no-data-available": "データなし",
     "download-as-file": "{file} 形式でダウンロード",
     "only-select-allowed": "{select} ステートメントのみが実行を許可されます",
+    "enable-ddl-for-environment": "環境 {environment} に対して DDL/DML ステートメントを有効にすることができます。",
     "want-to-action": "{want} が必要な場合は、「{action}」ボタン {reaction} をクリックしてください。",
     "and-submit-an-issue": "そしてチケットを提出してください",
     "to-enable-admin-mode": "管理者モードを有効にするには",
@@ -3217,7 +3224,21 @@
       "dont-show-again": "再び表示しない",
       "text2sql": "Text2SQL",
       "disable-text2sql": "Text2SQLを閉じる",
-      "enable-text2sql": "Text2SQLを開く"
+      "enable-text2sql": "Text2SQLを開く",
+      "actions": {
+        "chat": "チャット",
+        "explain-code": "コードの説明",
+        "find-problems": "問題を見つける",
+        "new-chat": "新しいチャット"
+      },
+      "send": "送信",
+      "new-line": "改行",
+      "ai-assistant": "AI助手",
+      "not-configured": {
+        "self": "AI アシスタントが設定されていません。",
+        "contact-admin-to-configure": "組織の管理者に問い合わせてください。",
+        "go-to-configure": "設定に移動"
+      }
     }
   },
   "custom-approval": {

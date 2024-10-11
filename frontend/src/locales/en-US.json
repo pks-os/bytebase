@@ -291,7 +291,8 @@
     "override": "Override",
     "encoding": "Encoding",
     "finish": "Finish",
-    "title": "Title"
+    "title": "Title",
+    "hide": "Hide"
   },
   "error-page": {
     "go-back-home": "Go back home"
@@ -1637,6 +1638,11 @@
         "disallow": "Disallow querying data from the admin connection",
         "fallback": "Fallback to the admin connection if no read-only connection is available"
       }
+    },
+    "statement-execution": {
+      "title": "Statement execution",
+      "allow-ddl": "Allow running DDL statements in the SQL editor",
+      "allow-dml": "Allow running DML statements in the SQL editor"
     }
   },
   "quick-start": {
@@ -2370,6 +2376,7 @@
     "no-data-available": "No data available",
     "download-as-file": "Download as {file}",
     "only-select-allowed": "Only {select} statements are allowed to execute.",
+    "enable-ddl-for-environment": "You can enable the DDL/DML statement for the environment {environment}.",
     "want-to-action": "If you want to {want}, click the {action} button {reaction}.",
     "and-submit-an-issue": "and submit an issue",
     "to-enable-admin-mode": "to enable the admin mode",
@@ -3217,7 +3224,21 @@
       "dont-show-again": "Don't show again",
       "text2sql": "Text2SQL",
       "disable-text2sql": "Disable Text2SQL",
-      "enable-text2sql": "Enable Text2SQL"
+      "enable-text2sql": "Enable Text2SQL",
+      "actions": {
+        "chat": "Chat",
+        "explain-code": "Explain code",
+        "find-problems": "Find problems",
+        "new-chat": "New chat"
+      },
+      "send": "Send",
+      "new-line": "New line",
+      "ai-assistant": "AI Assistant",
+      "not-configured": {
+        "self": "AI Assistant is not configured.",
+        "contact-admin-to-configure": "Please contact your org administrator.",
+        "go-to-configure": "Go to configure"
+      }
     }
   },
   "custom-approval": {

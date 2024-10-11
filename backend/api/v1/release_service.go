@@ -74,6 +74,25 @@ func (s *ReleaseService) CreateRelease(ctx context.Context, request *v1pb.Create
 	return converted, nil
 }
 
+func (s *ReleaseService) GetRelease(ctx context.Context, request *v1pb.GetReleaseRequest) (*v1pb.Release, error) {
+	releaseUID, err := common.GetReleaseUID(request.Name)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to get release uid, err: %v", err)
+	}
+	releaseMessage, err := s.store.GetRelease(ctx, releaseUID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get release, err: %v", err)
+	}
+	if releaseMessage == nil {
+		return nil, status.Errorf(codes.NotFound, "release %v not found", releaseUID)
+	}
+	release, err := convertToRelease(ctx, s.store, releaseMessage)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to convert to release, err: %v", err)
+	}
+	return release, nil
+}
+
 func (s *ReleaseService) ListReleases(ctx context.Context, request *v1pb.ListReleasesRequest) (*v1pb.ListReleasesResponse, error) {
 	if request.PageSize < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "page size must be non-negative: %d", request.PageSize)
@@ -150,9 +169,14 @@ func convertToRelease(ctx context.Context, s *store.Store, release *store.Releas
 	r := &v1pb.Release{
 		Title:      release.Payload.Title,
 		CreateTime: timestamppb.New(release.CreatedTime),
-		Files:      convertToReleaseFiles(release.Payload.Files),
 		VcsSource:  convertToReleaseVcsSource(release.Payload.VcsSource),
 	}
+
+	files, err := convertToReleaseFiles(ctx, s, release.Payload.Files)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to convert release files")
+	}
+	r.Files = files
 
 	project, err := s.GetProjectV2(ctx, &store.FindProjectMessage{UID: &release.ProjectUID})
 	if err != nil {
@@ -172,21 +196,34 @@ func convertToRelease(ctx context.Context, s *store.Store, release *store.Releas
 	return r, nil
 }
 
-func convertToReleaseFiles(files []*storepb.ReleasePayload_File) []*v1pb.Release_File {
+func convertToReleaseFiles(ctx context.Context, s *store.Store, files []*storepb.ReleasePayload_File) ([]*v1pb.Release_File, error) {
 	if files == nil {
-		return nil
+		return nil, nil
 	}
-	var rFiles []*v1pb.Release_File
+	var v1Files []*v1pb.Release_File
 	for _, f := range files {
-		rFiles = append(rFiles, &v1pb.Release_File{
-			Name:        f.Name,
-			Sheet:       f.Sheet,
-			SheetSha256: f.SheetSha256,
-			Type:        v1pb.ReleaseFileType(f.Type),
-			Version:     f.Version,
+		_, sheetUID, err := common.GetProjectResourceIDSheetUID(f.Sheet)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get sheetUID from %q", f.Sheet)
+		}
+		sheet, err := s.GetSheet(ctx, &store.FindSheetMessage{UID: &sheetUID})
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get sheet %q", f.Sheet)
+		}
+		if sheet == nil {
+			return nil, errors.Errorf("sheet %q not found", f.Sheet)
+		}
+		v1Files = append(v1Files, &v1pb.Release_File{
+			Name:          f.Name,
+			Sheet:         f.Sheet,
+			SheetSha256:   f.SheetSha256,
+			Type:          v1pb.ReleaseFileType(f.Type),
+			Version:       f.Version,
+			Statement:     sheet.Statement,
+			StatementSize: sheet.Size,
 		})
 	}
-	return rFiles
+	return v1Files, nil
 }
 
 func convertToReleaseVcsSource(vs *storepb.ReleasePayload_VCSSource) *v1pb.Release_VCSSource {
