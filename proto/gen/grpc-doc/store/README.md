@@ -2989,7 +2989,7 @@ InstanceRole is the API message for instance role.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| file | [string](#string) |  | Format: projects/{project}/releases/{release}/files/{file} |
+| file | [string](#string) |  | Format: projects/{project}/releases/{release}/files/{file} {file} is URL path escaped. |
 
 
 
@@ -4261,7 +4261,7 @@ SlowQueryPolicy is the policy configuration for slow query.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| expression | [google.api.expr.v1alpha1.ParsedExpr](#google-api-expr-v1alpha1-ParsedExpr) |  |  |
+| expression | [google.api.expr.v1alpha1.Expr](#google-api-expr-v1alpha1-Expr) |  |  |
 | template | [ApprovalTemplate](#bytebase-store-ApprovalTemplate) |  |  |
 | condition | [google.type.Expr](#google-type-Expr) |  |  |
 
@@ -4598,7 +4598,7 @@ TaskDatabaseUpdatePayload is the task payload for updating database (DDL &amp; D
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| file | [string](#string) |  | Format: projects/{project}/releases/{release}/files/{file} |
+| file | [string](#string) |  | Format: projects/{project}/releases/{release}/files/{file} {file} is URL path escaped. |
 
 
 

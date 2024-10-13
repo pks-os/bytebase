@@ -491,7 +491,7 @@
       "email": "Email",
       "role": "Role",
       "phone": "Phone",
-      "phone-tips": "Be sure to include the country code",
+      "phone-tips": "Be sure to include the country code +1xxxxxx",
       "country-code": "Country Code",
       "password": "Password",
       "password-hint": "Password should follow restriction setting",
@@ -1757,7 +1757,8 @@
     "all-tables": "All tables",
     "affected-tables": "Affected Tables",
     "select-affection-tables": "Select affected tables",
-    "view-full": "View full"
+    "view-full": "View full",
+    "rollback-tip": "Select a specific DDL history to rollback."
   },
   "database": {
     "sync-database": "Sync database",

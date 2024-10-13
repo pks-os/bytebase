@@ -491,7 +491,7 @@
       "email": "邮箱",
       "role": "角色",
       "phone": "手机号",
-      "phone-tips": "请包含国家代码前缀",
+      "phone-tips": "请包含国家代码前缀 +86xxxxxx",
       "country-code": "国家或地区代码",
       "password": "密码",
       "password-hint": "密码应遵循限制设置",
@@ -1757,7 +1757,8 @@
     "all-tables": "所有表",
     "affected-tables": "受影响的表",
     "select-affection-tables": "选择受影响的表",
-    "view-full": "查看全部"
+    "view-full": "查看全部",
+    "rollback-tip": "选择要回滚到的某个 DDL 历史记录。"
   },
   "database": {
     "sync-database": "同步数据库",
