@@ -8153,6 +8153,20 @@ Format: projects/{project}/sheets/{sheet} </p></td>
                 </tr>
               
                 <tr>
+                  <td>statement</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The statement is used for preview purpose. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>statement_size</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
                   <td>type</td>
                   <td><a href="#bytebase.v1.ReleaseFileType">ReleaseFileType</a></td>
                   <td></td>
@@ -8176,11 +8190,21 @@ Can be empty. </p></td>
                 </tr>
               
                 <tr>
+                  <td>issue</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The issue associated with the revision.
+Can be empty.
+Format: projects/{project}/issues/{issue} </p></td>
+                </tr>
+              
+                <tr>
                   <td>task_run</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The task run associated with the revision.
-Can be empty. </p></td>
+Can be empty.
+Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun} </p></td>
                 </tr>
               
             </tbody>

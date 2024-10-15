@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,7 +15,6 @@ import (
 )
 
 type RevisionMessage struct {
-	InstanceUID int
 	DatabaseUID int
 
 	Payload *storepb.RevisionPayload
@@ -28,29 +28,43 @@ type RevisionMessage struct {
 type FindRevisionMessage struct {
 	DatabaseUID int
 
+	Version *string
+
 	Limit  *int
 	Offset *int
 }
 
 func (s *Store) ListRevisions(ctx context.Context, find *FindRevisionMessage) ([]*RevisionMessage, error) {
-	query := `
+	where, args := []string{"TRUE"}, []any{}
+
+	where = append(where, fmt.Sprintf("database_id = $%d", len(args)+1))
+	args = append(args, find.DatabaseUID)
+
+	if v := find.Version; v != nil {
+		where = append(where, fmt.Sprintf("payload->>'version' = $%d", len(args)+1))
+		args = append(args, *v)
+	}
+
+	limitOffsetClause := ""
+	if v := find.Limit; v != nil {
+		limitOffsetClause += fmt.Sprintf(" LIMIT %d", *v)
+	}
+	if v := find.Offset; v != nil {
+		limitOffsetClause += fmt.Sprintf(" OFFSET %d", *v)
+	}
+
+	query := fmt.Sprintf(`
 		SELECT
 			id,
-			instance_id,
 			database_id,
 			creator_id,
 			created_ts,
 			payload
 		FROM revision
-		WHERE database_id = $1
-	`
-
-	if v := find.Limit; v != nil {
-		query += fmt.Sprintf(" LIMIT %d", *v)
-	}
-	if v := find.Offset; v != nil {
-		query += fmt.Sprintf(" OFFSET %d", *v)
-	}
+		WHERE %s
+		ORDER BY payload->>'version' DESC
+		%s
+	`, strings.Join(where, " AND "), limitOffsetClause)
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
@@ -58,7 +72,7 @@ func (s *Store) ListRevisions(ctx context.Context, find *FindRevisionMessage) ([
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.QueryContext(ctx, query, find.DatabaseUID)
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to query context")
 	}
@@ -72,7 +86,6 @@ func (s *Store) ListRevisions(ctx context.Context, find *FindRevisionMessage) ([
 		var p []byte
 		if err := rows.Scan(
 			&r.UID,
-			&r.InstanceUID,
 			&r.DatabaseUID,
 			&r.CreatorUID,
 			&r.CreatedTime,
@@ -102,15 +115,13 @@ func (s *Store) ListRevisions(ctx context.Context, find *FindRevisionMessage) ([
 func (s *Store) CreateRevision(ctx context.Context, revision *RevisionMessage, creatorUID int) (*RevisionMessage, error) {
 	query := `
 		INSERT INTO revision (
-			instance_id,
 			database_id,
 			creator_id,
 			payload
 		) VALUES (
 		 	$1,
 			$2,
-			$3,
-			$4
+			$3
 		)
 		RETURNING id, created_ts
 	`
@@ -129,7 +140,6 @@ func (s *Store) CreateRevision(ctx context.Context, revision *RevisionMessage, c
 	var id int64
 	var createdTime time.Time
 	if err := tx.QueryRowContext(ctx, query,
-		revision.InstanceUID,
 		revision.DatabaseUID,
 		creatorUID,
 		p,
@@ -145,4 +155,24 @@ func (s *Store) CreateRevision(ctx context.Context, revision *RevisionMessage, c
 	revision.CreatedTime = createdTime
 
 	return revision, nil
+}
+
+func (s *Store) DeleteRevision(ctx context.Context, uid int64) error {
+	query := `DELETE FROM revision WHERE id = $1`
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to begin tx")
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx, query, uid); err != nil {
+		return errors.Wrapf(err, "failed to exec")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrapf(err, "failed to commit tx")
+	}
+
+	return nil
 }
