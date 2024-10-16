@@ -1968,6 +1968,76 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/instances/{instance}/databases/{database}/revisions/{revision}:
+        get:
+            tags:
+                - DatabaseService
+            operationId: DatabaseService_GetRevision
+            parameters:
+                - name: instance
+                  in: path
+                  description: The instance id.
+                  required: true
+                  schema:
+                    type: string
+                - name: database
+                  in: path
+                  description: The database id.
+                  required: true
+                  schema:
+                    type: string
+                - name: revision
+                  in: path
+                  description: The revision id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Revision'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        delete:
+            tags:
+                - DatabaseService
+            operationId: DatabaseService_DeleteRevision
+            parameters:
+                - name: instance
+                  in: path
+                  description: The instance id.
+                  required: true
+                  schema:
+                    type: string
+                - name: database
+                  in: path
+                  description: The database id.
+                  required: true
+                  schema:
+                    type: string
+                - name: revision
+                  in: path
+                  description: The revision id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/instances/{instance}/databases/{database}/schema:
         get:
             tags:
@@ -5422,6 +5492,33 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+        delete:
+            tags:
+                - ReleaseService
+            operationId: ReleaseService_DeleteRelease
+            parameters:
+                - name: project
+                  in: path
+                  description: The project id.
+                  required: true
+                  schema:
+                    type: string
+                - name: release
+                  in: path
+                  description: The release id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
         patch:
             tags:
                 - ReleaseService
@@ -5451,6 +5548,37 @@ paths:
                         schema:
                             $ref: '#/components/schemas/Release'
                 required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Release'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/projects/{project}/releases/{release}:undelete:
+        post:
+            tags:
+                - ReleaseService
+            operationId: ReleaseService_UndeleteRelease
+            parameters:
+                - name: project
+                  in: path
+                  description: The project id.
+                  required: true
+                  schema:
+                    type: string
+                - name: release
+                  in: path
+                  description: The release id.
+                  required: true
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -5583,6 +5711,55 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListTaskRunsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun}:
+        get:
+            tags:
+                - RolloutService
+            operationId: RolloutService_GetTaskRun
+            parameters:
+                - name: project
+                  in: path
+                  description: The project id.
+                  required: true
+                  schema:
+                    type: string
+                - name: rollout
+                  in: path
+                  description: The rollout id.
+                  required: true
+                  schema:
+                    type: string
+                - name: stage
+                  in: path
+                  description: The stage id.
+                  required: true
+                  schema:
+                    type: string
+                - name: task
+                  in: path
+                  description: The task id.
+                  required: true
+                  schema:
+                    type: string
+                - name: taskRun
+                  in: path
+                  description: The taskRun id.
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TaskRun'
                 default:
                     description: Default error response
                     content:

@@ -419,6 +419,10 @@
                 </li>
               
                 <li>
+                  <a href="#bytebase.v1.DeleteReleaseRequest"><span class="badge">M</span>DeleteReleaseRequest</a>
+                </li>
+              
+                <li>
                   <a href="#bytebase.v1.GetReleaseRequest"><span class="badge">M</span>GetReleaseRequest</a>
                 </li>
               
@@ -440,6 +444,10 @@
               
                 <li>
                   <a href="#bytebase.v1.Release.VCSSource"><span class="badge">M</span>Release.VCSSource</a>
+                </li>
+              
+                <li>
+                  <a href="#bytebase.v1.UndeleteReleaseRequest"><span class="badge">M</span>UndeleteReleaseRequest</a>
                 </li>
               
                 <li>
@@ -550,6 +558,10 @@
                 </li>
               
                 <li>
+                  <a href="#bytebase.v1.DeleteRevisionRequest"><span class="badge">M</span>DeleteRevisionRequest</a>
+                </li>
+              
+                <li>
                   <a href="#bytebase.v1.DeleteSecretRequest"><span class="badge">M</span>DeleteSecretRequest</a>
                 </li>
               
@@ -603,6 +615,10 @@
               
                 <li>
                   <a href="#bytebase.v1.GetDatabaseSchemaRequest"><span class="badge">M</span>GetDatabaseSchemaRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#bytebase.v1.GetRevisionRequest"><span class="badge">M</span>GetRevisionRequest</a>
                 </li>
               
                 <li>
@@ -2457,6 +2473,10 @@
               
                 <li>
                   <a href="#bytebase.v1.GetTaskRunLogRequest"><span class="badge">M</span>GetTaskRunLogRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#bytebase.v1.GetTaskRunRequest"><span class="badge">M</span>GetTaskRunRequest</a>
                 </li>
               
                 <li>
@@ -5354,6 +5374,31 @@ Format: instances/{instance} </p></td>
 
         
       
+        <h3 id="bytebase.v1.DeleteReleaseRequest">DeleteReleaseRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name of the release to delete.
+Format: projects/{project}/releases/{release} </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="bytebase.v1.GetReleaseRequest">GetReleaseRequest</h3>
         <p></p>
 
@@ -5612,6 +5657,31 @@ Format: projects/{project}/sheets/{sheet} </p></td>
 
         
       
+        <h3 id="bytebase.v1.UndeleteReleaseRequest">UndeleteReleaseRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name of the deleted release.
+Format: projects/{project}/releases/{release} </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="bytebase.v1.UpdateReleaseRequest">UpdateReleaseRequest</h3>
         <p></p>
 
@@ -5708,6 +5778,20 @@ Format: projects/{project}/sheets/{sheet} </p></td>
                 <td><p></p></td>
               </tr>
             
+              <tr>
+                <td>DeleteRelease</td>
+                <td><a href="#bytebase.v1.DeleteReleaseRequest">DeleteReleaseRequest</a></td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>UndeleteRelease</td>
+                <td><a href="#bytebase.v1.UndeleteReleaseRequest">UndeleteReleaseRequest</a></td>
+                <td><a href="#bytebase.v1.Release">Release</a></td>
+                <td><p></p></td>
+              </tr>
+            
           </tbody>
         </table>
 
@@ -5763,6 +5847,26 @@ Format: projects/{project}/sheets/{sheet} </p></td>
                 <td>PATCH</td>
                 <td>/v1/{release.name=projects/*/releases/*}</td>
                 <td>release</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>DeleteRelease</td>
+                <td>DELETE</td>
+                <td>/v1/{name=projects/*/releases/*}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>UndeleteRelease</td>
+                <td>POST</td>
+                <td>/v1/{name=projects/*/releases/*}:undelete</td>
+                <td></td>
               </tr>
               
             
@@ -6773,6 +6877,31 @@ Format: instances/{instance}/databases/{database}/metadata </p></td>
 
         
       
+        <h3 id="bytebase.v1.DeleteRevisionRequest">DeleteRevisionRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name of the revision to delete.
+Format: instances/{instance}/databases/{database}/revisions/{revision} </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="bytebase.v1.DeleteSecretRequest">DeleteSecretRequest</h3>
         <p></p>
 
@@ -7328,6 +7457,31 @@ Format: instances/{instance}/databases/{database}/schema </p></td>
                   <td></td>
                   <td><p>When true, the schema dump will be concise.
 For Oracle, there will be tables and indexes only for Sync Schema. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="bytebase.v1.GetRevisionRequest">GetRevisionRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The name of the revision.
+Format: instances/{instance}/databases/{database}/revisions/{revision} </p></td>
                 </tr>
               
             </tbody>
@@ -9767,6 +9921,20 @@ The API will default to the BASIC view.</p></td>
                 <td><p></p></td>
               </tr>
             
+              <tr>
+                <td>GetRevision</td>
+                <td><a href="#bytebase.v1.GetRevisionRequest">GetRevisionRequest</a></td>
+                <td><a href="#bytebase.v1.Revision">Revision</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>DeleteRevision</td>
+                <td><a href="#bytebase.v1.DeleteRevisionRequest">DeleteRevisionRequest</a></td>
+                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><p></p></td>
+              </tr>
+            
           </tbody>
         </table>
 
@@ -9975,6 +10143,26 @@ The API will default to the BASIC view.</p></td>
                 <td>ListRevisions</td>
                 <td>GET</td>
                 <td>/v1/{parent=instances/*/databases/*}/revisions</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetRevision</td>
+                <td>GET</td>
+                <td>/v1/{name=instances/*/databases/*/revisions/*}</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>DeleteRevision</td>
+                <td>DELETE</td>
+                <td>/v1/{name=instances/*/databases/*/revisions/*}</td>
                 <td></td>
               </tr>
               
@@ -26173,6 +26361,30 @@ TODO(d): check the resource_reference. </p></td>
 
         
       
+        <h3 id="bytebase.v1.GetTaskRunRequest">GetTaskRunRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Format: projects/{project}/rollouts/{rollout}/stages/{stage}/tasks/{task}/taskRuns/{taskRun} </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="bytebase.v1.GetTaskRunSessionRequest">GetTaskRunSessionRequest</h3>
         <p></p>
 
@@ -27970,6 +28182,13 @@ Format: instances/{instance}/databases/{database} </p></td>
               </tr>
             
               <tr>
+                <td>GetTaskRun</td>
+                <td><a href="#bytebase.v1.GetTaskRunRequest">GetTaskRunRequest</a></td>
+                <td><a href="#bytebase.v1.TaskRun">TaskRun</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
                 <td>GetTaskRunLog</td>
                 <td><a href="#bytebase.v1.GetTaskRunLogRequest">GetTaskRunLogRequest</a></td>
                 <td><a href="#bytebase.v1.TaskRunLog">TaskRunLog</a></td>
@@ -28070,6 +28289,16 @@ The access is the same as BatchRunTasks().</p></td>
                 <td>ListTaskRuns</td>
                 <td>GET</td>
                 <td>/v1/{parent=projects/*/rollouts/*/stages/*/tasks/*}/taskRuns</td>
+                <td></td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetTaskRun</td>
+                <td>GET</td>
+                <td>/v1/{name=projects/*/rollouts/*/stages/*/tasks/*/taskRuns/*}</td>
                 <td></td>
               </tr>
               
