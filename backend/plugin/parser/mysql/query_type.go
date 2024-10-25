@@ -1,51 +1,19 @@
 package mysql
 
 import (
-	"github.com/antlr4-go/antlr/v4"
 	mysql "github.com/bytebase/mysql-parser"
-	"github.com/pkg/errors"
 
 	"github.com/bytebase/bytebase/backend/plugin/parser/base"
-	storepb "github.com/bytebase/bytebase/proto/generated-go/store"
 )
 
-func init() {
-	base.RegisterGetQueryType(storepb.Engine_MYSQL, GetQueryType)
-	base.RegisterGetQueryType(storepb.Engine_MARIADB, GetQueryType)
-	base.RegisterGetQueryType(storepb.Engine_OCEANBASE, GetQueryType)
-	base.RegisterGetQueryType(storepb.Engine_STARROCKS, GetQueryType)
-	base.RegisterGetQueryType(storepb.Engine_DORIS, GetQueryType)
-}
-
-func GetQueryType(statement string) (base.QueryType, error) {
-	parseResult, err := ParseMySQL(statement)
-	if err != nil {
-		return base.QueryTypeUnknown, err
-	}
-
-	if len(parseResult) == 0 {
-		return base.QueryTypeUnknown, nil
-	}
-	if len(parseResult) > 1 {
-		return base.QueryTypeUnknown, errors.Errorf("expecting only one statement, but got %d", len(parseResult))
-	}
-
-	tree := parseResult[0].Tree
-
-	listener := &QueryTypeListener{
-		result: base.QueryTypeUnknown,
-	}
-	antlr.ParseTreeWalkerDefault.Walk(listener, tree)
-	return listener.result, nil
-}
-
-type QueryTypeListener struct {
+type queryTypeListener struct {
 	*mysql.BaseMySQLParserListener
 
-	result base.QueryType
+	allSystems bool
+	result     base.QueryType
 }
 
-func (l *QueryTypeListener) EnterSimpleStatement(ctx *mysql.SimpleStatementContext) {
+func (l *queryTypeListener) EnterSimpleStatement(ctx *mysql.SimpleStatementContext) {
 	if !isTopLevel(ctx) {
 		return
 	}
@@ -82,7 +50,7 @@ func (l *QueryTypeListener) EnterSimpleStatement(ctx *mysql.SimpleStatementConte
 	}
 }
 
-func (l *QueryTypeListener) EnterSelectStatement(ctx *mysql.SelectStatementContext) {
+func (l *queryTypeListener) EnterSelectStatement(ctx *mysql.SelectStatementContext) {
 	if !isTopLevel(ctx.GetParent()) {
 		return
 	}
@@ -90,9 +58,7 @@ func (l *QueryTypeListener) EnterSelectStatement(ctx *mysql.SelectStatementConte
 	// MySQL cannot use SELECT ... INTO .. FROM ... syntax to create a new table or insert into an existing table.
 	// So we can safely assume it's a SELECT statement.
 
-	accessTables := getAccessTables("", ctx)
-	allSystems, _ := isMixedQuery(accessTables, true)
-	if allSystems {
+	if l.allSystems {
 		l.result = base.SelectInfoSchema
 	} else {
 		l.result = base.Select

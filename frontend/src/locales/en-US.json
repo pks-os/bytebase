@@ -2157,6 +2157,10 @@
         "skip-backup-errors": {
           "self": "Skip backup errors",
           "description": "Skip backup errors and changing data tasks will continue to run."
+        },
+        "postgres-database-tenant-mode": {
+          "self": "Postgres database tenant mode",
+          "description": "The tenant mode for Postgres database. If enable, the issue will be run by the database user."
         }
       }
     },
@@ -2208,7 +2212,8 @@
     },
     "masking-access": {
       "self": "Access Masking",
-      "grant-access": "Grant Access"
+      "grant-access": "Grant Access",
+      "revoke-access-title": "Remove both export and query access for {member}?"
     }
   },
   "gitops": {
@@ -3729,6 +3734,7 @@
     "tasks-to-apply": "Tasks to apply",
     "out-of-order-files": "Out of order files",
     "applied-but-modifed-files": "Applied but modified files",
+    "allow-out-of-order": "Allow out of order",
     "no-tasks-to-apply": {
       "self": "No tasks to apply"
     }

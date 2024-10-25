@@ -2157,6 +2157,10 @@
         "skip-backup-errors": {
           "self": "バックアップエラーをスキップ",
           "description": "バックアップ エラーをスキップすると、データの変更タスクは引き続き実行されます。"
+        },
+        "postgres-database-tenant-mode": {
+          "self": "Postgres データベーステナントモード",
+          "description": "Postgres データベースのテナント モード。有効にすると、問題はデータベース ユーザーによって実行されます。"
         }
       }
     },
@@ -2208,7 +2212,8 @@
     },
     "masking-access": {
       "self": "アクセスマスキング",
-      "grant-access": "アクセスを許可する"
+      "grant-access": "アクセスを許可する",
+      "revoke-access-title": "{member} のエクスポート アクセスとクエリ アクセスの両方を削除しますか?"
     }
   },
   "gitops": {
@@ -3729,6 +3734,7 @@
     "tasks-to-apply": "適用するタスク",
     "out-of-order-files": "順序が間違っているファイル",
     "applied-but-modifed-files": "適用済みだが変更されたファイル",
+    "allow-out-of-order": "順序外を許可する",
     "no-tasks-to-apply": {
       "self": "適用するタスクはありません"
     }
