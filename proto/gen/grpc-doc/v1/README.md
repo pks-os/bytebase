@@ -2439,7 +2439,7 @@ FunctionMetadata is the metadata for functions.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of the changelog to retrieve. Format: instances/{instance}/databases/{database}/changelogs/{changelog} |
-| view | [ChangeHistoryView](#bytebase-v1-ChangeHistoryView) |  |  |
+| view | [ChangelogView](#bytebase-v1-ChangelogView) |  |  |
 | sdl_format | [bool](#bool) |  | Format the schema dump into SDL format. |
 | concise | [bool](#bool) |  | When true, the schema dump will be concise. For Oracle, there will be tables and indexes only for Sync Schema. For Postgres, we&#39;ll filter the backup schema. |
 
@@ -5204,6 +5204,7 @@ Actuator concept is similar to the Spring Boot Actuator.
 | unlicensed_features | [string](#string) | repeated |  |
 | disallow_password_signin | [bool](#bool) |  | disallow_password_signin is the flag to disallow user signin with email&amp;password. (except workspace admins) |
 | password_restriction | [PasswordRestrictionSetting](#bytebase-v1-PasswordRestrictionSetting) |  |  |
+| docker | [bool](#bool) |  | docker flag means if the Bytebase instance is running in docker. |
 
 
 
