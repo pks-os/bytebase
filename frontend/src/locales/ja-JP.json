@@ -92,6 +92,7 @@
     "updated-at": "更新日時",
     "commit": "提出する",
     "statement": "声明",
+    "statement-size": "ステートメントサイズ",
     "sql-statement": "SQL@:{'common.statement'}",
     "snapshot": "スナップショット",
     "status": "州",
@@ -3049,6 +3050,7 @@
   "audit-log": {
     "no-logs": "監査ログはまだありません",
     "audit-log-detail": "監査の詳細",
+    "export-finished": "エクスポートが完了しました",
     "table": {
       "created-ts": "時間",
       "created-time": "作成時間",
@@ -3407,9 +3409,10 @@
       "re-request-review-issue": "作業指示書の承認を再度リクエストしますか?",
       "sent-back-issue": "作業指示書を返却する",
       "re-requested-review": "作業指示書の承認を再度リクエストします",
-      "no-one-matches-role": "このロールに一致するユーザーはいません。プロジェクト管理者に連絡してロールを割り当ててください。",
+      "no-one-matched": "一致する人はいませんでした",
       "any-n-role-can-approve": "任意の {role} を承認できます",
-      "approved-by-n": "{approver} によって承認されました"
+      "approved-by-n": "{approver} によって承認されました",
+      "issue-creators-cannot-approve-their-own-issue": "問題作成者は自分の問題を承認できません"
     },
     "send-back": "戻る"
   },
@@ -3735,17 +3738,20 @@
     "releases": "リリース",
     "files": "ファイル",
     "create": "リリースを作成",
+    "select": "リリースを選択",
     "tasks-to-apply": "適用するタスク",
     "out-of-order-files": "順序が間違っているファイル",
     "applied-but-modifed-files": "適用済みだが変更されたファイル",
     "allow-out-of-order": "順序外を許可する",
     "show-archived": "アーカイブを表示",
     "archive-this-release": "このリリースをアーカイブする",
+    "total-files": "合計 {count} ファイル",
     "no-tasks-to-apply": {
       "self": "適用するタスクはありません"
     },
     "actions": {
-      "new-file": "新しいファイル"
+      "new-file": "新しいファイル",
+      "import-from-release": "リリースからのインポート"
     },
     "messages": {
       "succeed-to-create-release": "リリースの作成に成功",
