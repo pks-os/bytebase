@@ -56,14 +56,6 @@
   </Drawer>
 
   <template v-if="project">
-    <DatabaseGroupPanel
-      :show="
-        state.quickActionType === 'quickaction.bb.group.database-group.create'
-      "
-      :project="project"
-      @close="state.quickActionType = undefined"
-      @created="onDatabaseGroupCreated"
-    />
     <GrantRequestPanel
       v-if="
         state.quickActionType ===
@@ -76,15 +68,6 @@
           ? PresetRoleType.PROJECT_QUERIER
           : PresetRoleType.PROJECT_EXPORTER
       "
-      @close="state.quickActionType = undefined"
-    />
-    <GrantAccessDrawer
-      v-if="
-        project &&
-        state.quickActionType === 'quickaction.bb.database.masking-access'
-      "
-      :column-list="[]"
-      :project-name="project.name"
       @close="state.quickActionType = undefined"
     />
   </template>
@@ -106,13 +89,12 @@ import {
   ChevronsDownIcon,
   FileSearchIcon,
   FileDownIcon,
-  ShieldCheckIcon,
 } from "lucide-vue-next";
 import { NButton, NEllipsis } from "naive-ui";
 import type { PropType, VNode } from "vue";
 import { reactive, computed, watch, h } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { CreateDatabasePrepPanel } from "@/components/CreateDatabasePrepForm";
 import GrantRequestPanel from "@/components/GrantRequestPanel";
 import {
@@ -121,10 +103,8 @@ import {
   Buttons as InstanceFormButtons,
 } from "@/components/InstanceForm/";
 import ProjectCreatePanel from "@/components/Project/ProjectCreatePanel.vue";
-import GrantAccessDrawer from "@/components/SensitiveData/GrantAccessDrawer.vue";
 import { TransferDatabaseForm } from "@/components/TransferDatabaseForm";
 import { Drawer, DrawerContent } from "@/components/v2";
-import { PROJECT_V1_ROUTE_DATABASE_GROUP_DETAIL } from "@/router/dashboard/projectV1";
 import { PROJECT_V1_ROUTE_DASHBOARD } from "@/router/dashboard/workspaceRoutes";
 import {
   useCommandStore,
@@ -136,13 +116,11 @@ import {
 import { projectNamePrefix } from "@/store/modules/v1/common";
 import {
   type QuickActionType,
-  type DatabaseGroupQuickActionType,
   type FeatureType,
   PresetRoleType,
 } from "@/types";
 import { DatabaseChangeMode } from "@/types/proto/v1/setting_service";
 import { hasProjectPermissionV2 } from "@/utils";
-import DatabaseGroupPanel from "./DatabaseGroup/DatabaseGroupPanel.vue";
 import { FeatureModal } from "./FeatureGuard";
 
 interface LocalState {
@@ -171,7 +149,6 @@ const props = defineProps({
 
 const { t } = useI18n();
 const route = useRoute();
-const router = useRouter();
 const commandStore = useCommandStore();
 const subscriptionStore = useSubscriptionV1Store();
 const projectStore = useProjectV1Store();
@@ -179,10 +156,6 @@ const databaseChangeMode = useAppFeature("bb.feature.database-change-mode");
 
 const hasDBAWorkflowFeature = computed(() => {
   return subscriptionStore.hasFeature("bb.feature.dba-workflow");
-});
-
-const hasSensitiveDataFeature = computed(() => {
-  return subscriptionStore.hasFeature("bb.feature.sensitive-data");
 });
 
 const state = reactive<LocalState>({
@@ -238,23 +211,6 @@ const reorderEnvironment = () => {
   commandStore.dispatchCommand("bb.environment.reorder");
 };
 
-const openDatabaseGroupDrawer = (quickAction: DatabaseGroupQuickActionType) => {
-  if (!subscriptionStore.hasFeature("bb.feature.database-grouping")) {
-    state.feature = "bb.feature.database-grouping";
-    return;
-  }
-  state.quickActionType = quickAction;
-};
-
-const onDatabaseGroupCreated = (databaseGroupName: string) => {
-  router.push({
-    name: PROJECT_V1_ROUTE_DATABASE_GROUP_DETAIL,
-    params: {
-      databaseGroupName,
-    },
-  });
-};
-
 const availableQuickActionList = computed((): QuickAction[] => {
   const fullList: QuickAction[] = [
     {
@@ -274,13 +230,6 @@ const availableQuickActionList = computed((): QuickAction[] => {
         ),
       action: createDatabase,
       icon: h(DatabaseIcon),
-    },
-    {
-      type: "quickaction.bb.group.database-group.create",
-      title: t("database-group.create"),
-      action: () =>
-        openDatabaseGroupDrawer("quickaction.bb.group.database-group.create"),
-      icon: h(PlusIcon),
     },
     {
       type: "quickaction.bb.environment.create",
@@ -321,14 +270,6 @@ const availableQuickActionList = computed((): QuickAction[] => {
       action: () =>
         (state.quickActionType = "quickaction.bb.issue.grant.request.exporter"),
       icon: h(FileDownIcon),
-    },
-    {
-      type: "quickaction.bb.database.masking-access",
-      title: t("project.masking-access.grant-access"),
-      hide: !hasSensitiveDataFeature.value,
-      action: () =>
-        (state.quickActionType = "quickaction.bb.database.masking-access"),
-      icon: h(ShieldCheckIcon),
     },
   ];
 

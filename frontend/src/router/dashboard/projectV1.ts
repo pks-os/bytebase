@@ -6,9 +6,11 @@ import { PROJECT_V1_ROUTE_DASHBOARD } from "./workspaceRoutes";
 export const PROJECT_V1_ROUTE_DETAIL = `${PROJECT_V1_ROUTE_DASHBOARD}.detail`;
 export const PROJECT_V1_ROUTE_DATABASES = `${PROJECT_V1_ROUTE_DASHBOARD}.database`;
 export const PROJECT_V1_ROUTE_MASKING_ACCESS = `${PROJECT_V1_ROUTE_DASHBOARD}.masking-access`;
+export const PROJECT_V1_ROUTE_MASKING_ACCESS_CREATE = `${PROJECT_V1_ROUTE_DASHBOARD}.masking-access.create`;
 export const PROJECT_V1_ROUTE_DATABASE_DETAIL = `${PROJECT_V1_ROUTE_DASHBOARD}.database.detail`;
 export const PROJECT_V1_ROUTE_DATABASE_CHANGE_HISTORY_DETAIL = `${PROJECT_V1_ROUTE_DASHBOARD}.database.change-history.detail`;
 export const PROJECT_V1_ROUTE_DATABASE_GROUPS = `${PROJECT_V1_ROUTE_DASHBOARD}.database-group`;
+export const PROJECT_V1_ROUTE_DATABASE_GROUPS_CREATE = `${PROJECT_V1_ROUTE_DASHBOARD}.database-group.create`;
 export const PROJECT_V1_ROUTE_DATABASE_GROUP_DETAIL = `${PROJECT_V1_ROUTE_DASHBOARD}.database-group.detail`;
 export const PROJECT_V1_ROUTE_DEPLOYMENT_CONFIG = `${PROJECT_V1_ROUTE_DASHBOARD}.deployment-config`;
 export const PROJECT_V1_ROUTE_BRANCHES = `${PROJECT_V1_ROUTE_DASHBOARD}.branch`;
@@ -70,7 +72,6 @@ const projectV1Routes: RouteRecordRaw[] = [
       },
       {
         path: "masking-access",
-        name: PROJECT_V1_ROUTE_MASKING_ACCESS,
         meta: {
           overrideTitle: true,
           requiredProjectPermissionList: () => [
@@ -79,9 +80,26 @@ const projectV1Routes: RouteRecordRaw[] = [
             "bb.policies.get",
           ],
         },
-        component: () =>
-          import("@/views/project/ProjectDatabaseMaskingAccess.vue"),
         props: true,
+        children: [
+          {
+            path: "",
+            name: PROJECT_V1_ROUTE_MASKING_ACCESS,
+            component: () =>
+              import("@/views/project/ProjectDatabaseMaskingAccess.vue"),
+            props: true,
+          },
+          {
+            path: "create",
+            name: PROJECT_V1_ROUTE_MASKING_ACCESS_CREATE,
+            component: () =>
+              import("@/views/project/ProjectDatabaseMaskingAccessCreate.vue"),
+            props: true,
+            meta: {
+              requiredProjectPermissionList: () => ["bb.policies.create"],
+            },
+          },
+        ],
       },
       {
         path: "database-groups",
@@ -99,6 +117,17 @@ const projectV1Routes: RouteRecordRaw[] = [
             },
             component: () =>
               import("@/views/project/ProjectDatabaseGroupDashboard.vue"),
+            props: true,
+          },
+          {
+            path: "create",
+            name: PROJECT_V1_ROUTE_DATABASE_GROUPS_CREATE,
+            meta: {
+              overrideTitle: true,
+              requiredProjectPermissionList: () => ["bb.projects.update"],
+            },
+            component: () =>
+              import("@/views/project/ProjectDatabaseGroupCreate.vue"),
             props: true,
           },
           {
