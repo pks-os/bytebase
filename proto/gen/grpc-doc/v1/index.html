@@ -20499,17 +20499,17 @@ Database resource name: instances/instance-id/databases/database-name. </p></td>
                 </tr>
               
                 <tr>
-                  <td>enable_ddl</td>
+                  <td>disallow_ddl</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p>Allow running DDL statements in the SQL editor. </p></td>
+                  <td><p>Disallow running DDL statements in the SQL editor. </p></td>
                 </tr>
               
                 <tr>
-                  <td>enable_dml</td>
+                  <td>disallow_dml</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p>Allow running DML statements in the SQL editor. </p></td>
+                  <td><p>Disallow running DML statements in the SQL editor. </p></td>
                 </tr>
               
             </tbody>
@@ -25869,6 +25869,14 @@ The name field is used to identify the sql review to update. </p></td>
                   <td><a href="#google.protobuf.FieldMask">google.protobuf.FieldMask</a></td>
                   <td></td>
                   <td><p>The list of fields to update. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>allow_missing</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>If set to true, and the config is not found, a new config will be created.
+In this situation, `update_mask` is ignored. </p></td>
                 </tr>
               
             </tbody>

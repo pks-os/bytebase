@@ -1,5 +1,6 @@
 <template>
   <GrantAccessForm
+    :title="$t('project.masking-access.grant-access')"
     :column-list="[]"
     :project-name="project.name"
     @dismiss="() => router.back()"

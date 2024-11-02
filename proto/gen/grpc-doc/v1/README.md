@@ -7319,8 +7319,8 @@ DataSourceQueryPolicy is the policy configuration for running statements in the 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | admin_data_source_restriction | [DataSourceQueryPolicy.Restriction](#bytebase-v1-DataSourceQueryPolicy-Restriction) |  |  |
-| enable_ddl | [bool](#bool) |  | Allow running DDL statements in the SQL editor. |
-| enable_dml | [bool](#bool) |  | Allow running DML statements in the SQL editor. |
+| disallow_ddl | [bool](#bool) |  | Disallow running DDL statements in the SQL editor. |
+| disallow_dml | [bool](#bool) |  | Disallow running DML statements in the SQL editor. |
 
 
 
@@ -9355,6 +9355,7 @@ When paginating, all other parameters provided to `ListReviewConfigs` must match
 
 The name field is used to identify the sql review to update. |
 | update_mask | [google.protobuf.FieldMask](#google-protobuf-FieldMask) |  | The list of fields to update. |
+| allow_missing | [bool](#bool) |  | If set to true, and the config is not found, a new config will be created. In this situation, `update_mask` is ignored. |
 
 
 

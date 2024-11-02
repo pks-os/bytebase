@@ -1,16 +1,17 @@
 <template>
   <DatabaseGroupForm
-    ref="formRef"
+    class="flex-1"
     :project="project"
+    :title="$t('database-group.create')"
     @dismiss="() => router.back()"
     @created="(databaseGroupName: string) => {
-      router.push({
-        name: PROJECT_V1_ROUTE_DATABASE_GROUP_DETAIL,
-        params: {
-          databaseGroupName,
-        },
-      });
-    }"
+        router.push({
+          name: PROJECT_V1_ROUTE_DATABASE_GROUP_DETAIL,
+          params: {
+            databaseGroupName,
+          },
+        });
+      }"
   />
 </template>
 
