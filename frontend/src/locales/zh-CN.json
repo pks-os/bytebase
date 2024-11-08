@@ -2216,7 +2216,7 @@
       "delete-success": "GitOps 连接已删除"
     },
     "masking-access": {
-      "self": "数据管控",
+      "self": "脱敏管控",
       "grant-access": "授予访问权限",
       "revoke-access-title": "是否删除 {member} 的导出和查询访问权限？"
     }
@@ -2987,6 +2987,8 @@
     "no-policy-set": "没有 SQL 审核策略",
     "create-policy": "创建审核策略",
     "select-review": "选择 SQL 审核",
+    "select-review-rules": "选择 SQL 审核规则",
+    "select-all": "选择全部",
     "select-review-label": "您可以将现有的 SQL 审核策略附加到资源，或者 {create}。",
     "duplicate-policy": "复制审核策略",
     "configure-policy": "配置审核策略",
