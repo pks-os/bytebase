@@ -527,7 +527,7 @@ func executeWithTimeout(ctx context.Context, driver db.Driver, conn *sql.Conn, s
 	select {
 	case <-ctx.Done():
 		// canceled or timed out
-		return nil, time.Since(start), errors.Errorf("timeout reached: %v", timeout)
+		return nil, time.Since(start), errors.Errorf("timeout reached: %v", ctxTimeout)
 	default:
 		// So the select will not block
 	}
@@ -1036,11 +1036,11 @@ func (s *SQLService) accessCheck(
 	for _, span := range spans {
 		// New query ACL experience.
 		switch instance.Engine {
-		case storepb.Engine_MYSQL, storepb.Engine_POSTGRES, storepb.Engine_ORACLE, storepb.Engine_TIDB:
+		case storepb.Engine_MYSQL, storepb.Engine_POSTGRES, storepb.Engine_ORACLE, storepb.Engine_TIDB, storepb.Engine_MSSQL:
 			var permission iam.Permission
 			switch span.Type {
 			case base.QueryTypeUnknown:
-				// Skip ACL check for statements such as SET variable.
+				return status.Error(codes.PermissionDenied, "disallowed query type")
 			case base.DDL:
 				permission = iam.PermissionDatabasesQueryDDL
 			case base.DML:
@@ -1055,7 +1055,6 @@ func (s *SQLService) accessCheck(
 			if isExplain {
 				permission = iam.PermissionDatabasesQueryExplain
 			}
-			// TODO(d): DDL and DML org policy check.
 			if span.Type == base.DDL || span.Type == base.DML {
 				if err := checkDataSourceQueryPolicy(ctx, s.store, database, span.Type); err != nil {
 					return err
