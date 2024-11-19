@@ -555,14 +555,15 @@ func convertToSchedulerInfoWaitingCause(ctx context.Context, s *store.Store, c *
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get issue by pipeline %v", task.PipelineID)
 		}
-		if issue == nil {
-			return nil, errors.Errorf("issue not found by pipeline %v", task.PipelineID)
+		var issueName string
+		if issue != nil {
+			issueName = common.FormatIssue(issue.Project.ResourceID, issue.UID)
 		}
 		return &v1pb.TaskRun_SchedulerInfo_WaitingCause{
 			Cause: &v1pb.TaskRun_SchedulerInfo_WaitingCause_Task_{
 				Task: &v1pb.TaskRun_SchedulerInfo_WaitingCause_Task{
 					Task:  common.FormatTask(issue.Project.ResourceID, task.PipelineID, task.StageID, task.ID),
-					Issue: common.FormatIssue(issue.Project.ResourceID, issue.UID),
+					Issue: issueName,
 				},
 			},
 		}, nil
@@ -1086,6 +1087,29 @@ func convertToTaskRunLogEntries(logs []*store.TaskRunLog) []*v1pb.TaskRunLogEntr
 				},
 			}
 			entries = append(entries, e)
+
+		case storepb.TaskRunLog_PRIOR_BACKUP_START:
+			e := &v1pb.TaskRunLogEntry{
+				Type:     v1pb.TaskRunLogEntry_PRIOR_BACKUP,
+				LogTime:  timestamppb.New(l.T),
+				DeployId: l.Payload.DeployId,
+				PriorBackup: &v1pb.TaskRunLogEntry_PriorBackup{
+					StartTime: timestamppb.New(l.T),
+				},
+			}
+			entries = append(entries, e)
+
+		case storepb.TaskRunLog_PRIOR_BACKUP_END:
+			if len(entries) == 0 {
+				continue
+			}
+			prev := entries[len(entries)-1]
+			if prev == nil || prev.Type != v1pb.TaskRunLogEntry_PRIOR_BACKUP {
+				continue
+			}
+			prev.PriorBackup.EndTime = timestamppb.New(l.T)
+			prev.PriorBackup.Error = l.Payload.PriorBackupEnd.Error
+			prev.PriorBackup.PriorBackupDetail = convertToTaskRunPriorBackupDetail(l.Payload.PriorBackupEnd.PriorBackupDetail)
 		}
 	}
 
