@@ -1303,7 +1303,6 @@ InstanceOptions is the option for instances.
 | activation | [bool](#bool) |  |  |
 | name | [string](#string) |  | The name of the instance. Format: instances/{instance} |
 | environment | [string](#string) |  | The environment resource. Format: environments/prod where prod is the environment resource ID. |
-| roles | [InstanceRole](#bytebase-v1-InstanceRole) | repeated |  |
 
 
 
@@ -2821,6 +2820,8 @@ Secret is the secret of the database now.
 | cycle | [bool](#bool) |  | Cycle is whether the sequence cycles. |
 | cache_size | [string](#string) |  | Cache size of a sequence. |
 | last_value | [string](#string) |  | Last value of a sequence. |
+| owner_table | [string](#string) |  | The owner table of the sequence. |
+| owner_column | [string](#string) |  | The owner column of the sequence. |
 
 
 
