@@ -2904,6 +2904,27 @@ This information is not authenticated and should be treated accordingly. </p></t
                   <td><p> </p></td>
                 </tr>
               
+                <tr>
+                  <td>masking_level</td>
+                  <td><a href="#bytebase.store.MaskingLevel">MaskingLevel</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>full_masking_algorithm_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>partial_masking_algorithm_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -4660,6 +4681,13 @@ in syntax [SUB]PARTITION {number}. </p></td>
                   <td><a href="#bytebase.store.TablePartitionMetadata">TablePartitionMetadata</a></td>
                   <td>repeated</td>
                   <td><p>The subpartitions is the list of subpartitions in a table partition. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>indexes</td>
+                  <td><a href="#bytebase.store.IndexMetadata">IndexMetadata</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
                 </tr>
               
             </tbody>

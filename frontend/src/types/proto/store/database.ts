@@ -9,6 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import Long from "long";
 import { Timestamp } from "../google/protobuf/timestamp";
 import { StringValue } from "../google/protobuf/wrappers";
+import { MaskingLevel, maskingLevelFromJSON, maskingLevelToJSON, maskingLevelToNumber } from "./common";
 
 export const protobufPackage = "bytebase.store";
 
@@ -448,6 +449,7 @@ export interface TablePartitionMetadata {
   useDefault: string;
   /** The subpartitions is the list of subpartitions in a table partition. */
   subpartitions: TablePartitionMetadata[];
+  indexes: IndexMetadata[];
 }
 
 /**
@@ -932,6 +934,9 @@ export interface ColumnConfig {
   /** The user labels for a column. */
   labels: { [key: string]: string };
   classificationId: string;
+  maskingLevel: MaskingLevel;
+  fullMaskingAlgorithmId: string;
+  partialMaskingAlgorithmId: string;
 }
 
 export interface ColumnConfig_LabelsEntry {
@@ -3136,6 +3141,7 @@ function createBaseTablePartitionMetadata(): TablePartitionMetadata {
     value: "",
     useDefault: "",
     subpartitions: [],
+    indexes: [],
   };
 }
 
@@ -3158,6 +3164,9 @@ export const TablePartitionMetadata: MessageFns<TablePartitionMetadata> = {
     }
     for (const v of message.subpartitions) {
       TablePartitionMetadata.encode(v!, writer.uint32(50).fork()).join();
+    }
+    for (const v of message.indexes) {
+      IndexMetadata.encode(v!, writer.uint32(58).fork()).join();
     }
     return writer;
   },
@@ -3217,6 +3226,14 @@ export const TablePartitionMetadata: MessageFns<TablePartitionMetadata> = {
           message.subpartitions.push(TablePartitionMetadata.decode(reader, reader.uint32()));
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.indexes.push(IndexMetadata.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3237,6 +3254,9 @@ export const TablePartitionMetadata: MessageFns<TablePartitionMetadata> = {
       useDefault: isSet(object.useDefault) ? globalThis.String(object.useDefault) : "",
       subpartitions: globalThis.Array.isArray(object?.subpartitions)
         ? object.subpartitions.map((e: any) => TablePartitionMetadata.fromJSON(e))
+        : [],
+      indexes: globalThis.Array.isArray(object?.indexes)
+        ? object.indexes.map((e: any) => IndexMetadata.fromJSON(e))
         : [],
     };
   },
@@ -3261,6 +3281,9 @@ export const TablePartitionMetadata: MessageFns<TablePartitionMetadata> = {
     if (message.subpartitions?.length) {
       obj.subpartitions = message.subpartitions.map((e) => TablePartitionMetadata.toJSON(e));
     }
+    if (message.indexes?.length) {
+      obj.indexes = message.indexes.map((e) => IndexMetadata.toJSON(e));
+    }
     return obj;
   },
 
@@ -3275,6 +3298,7 @@ export const TablePartitionMetadata: MessageFns<TablePartitionMetadata> = {
     message.value = object.value ?? "";
     message.useDefault = object.useDefault ?? "";
     message.subpartitions = object.subpartitions?.map((e) => TablePartitionMetadata.fromPartial(e)) || [];
+    message.indexes = object.indexes?.map((e) => IndexMetadata.fromPartial(e)) || [];
     return message;
   },
 };
@@ -5806,7 +5830,15 @@ export const ViewConfig: MessageFns<ViewConfig> = {
 };
 
 function createBaseColumnConfig(): ColumnConfig {
-  return { name: "", semanticTypeId: "", labels: {}, classificationId: "" };
+  return {
+    name: "",
+    semanticTypeId: "",
+    labels: {},
+    classificationId: "",
+    maskingLevel: MaskingLevel.MASKING_LEVEL_UNSPECIFIED,
+    fullMaskingAlgorithmId: "",
+    partialMaskingAlgorithmId: "",
+  };
 }
 
 export const ColumnConfig: MessageFns<ColumnConfig> = {
@@ -5822,6 +5854,15 @@ export const ColumnConfig: MessageFns<ColumnConfig> = {
     });
     if (message.classificationId !== "") {
       writer.uint32(34).string(message.classificationId);
+    }
+    if (message.maskingLevel !== MaskingLevel.MASKING_LEVEL_UNSPECIFIED) {
+      writer.uint32(40).int32(maskingLevelToNumber(message.maskingLevel));
+    }
+    if (message.fullMaskingAlgorithmId !== "") {
+      writer.uint32(50).string(message.fullMaskingAlgorithmId);
+    }
+    if (message.partialMaskingAlgorithmId !== "") {
+      writer.uint32(58).string(message.partialMaskingAlgorithmId);
     }
     return writer;
   },
@@ -5868,6 +5909,30 @@ export const ColumnConfig: MessageFns<ColumnConfig> = {
           message.classificationId = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.maskingLevel = maskingLevelFromJSON(reader.int32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.fullMaskingAlgorithmId = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.partialMaskingAlgorithmId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5888,6 +5953,15 @@ export const ColumnConfig: MessageFns<ColumnConfig> = {
         }, {})
         : {},
       classificationId: isSet(object.classificationId) ? globalThis.String(object.classificationId) : "",
+      maskingLevel: isSet(object.maskingLevel)
+        ? maskingLevelFromJSON(object.maskingLevel)
+        : MaskingLevel.MASKING_LEVEL_UNSPECIFIED,
+      fullMaskingAlgorithmId: isSet(object.fullMaskingAlgorithmId)
+        ? globalThis.String(object.fullMaskingAlgorithmId)
+        : "",
+      partialMaskingAlgorithmId: isSet(object.partialMaskingAlgorithmId)
+        ? globalThis.String(object.partialMaskingAlgorithmId)
+        : "",
     };
   },
 
@@ -5911,6 +5985,15 @@ export const ColumnConfig: MessageFns<ColumnConfig> = {
     if (message.classificationId !== "") {
       obj.classificationId = message.classificationId;
     }
+    if (message.maskingLevel !== MaskingLevel.MASKING_LEVEL_UNSPECIFIED) {
+      obj.maskingLevel = maskingLevelToJSON(message.maskingLevel);
+    }
+    if (message.fullMaskingAlgorithmId !== "") {
+      obj.fullMaskingAlgorithmId = message.fullMaskingAlgorithmId;
+    }
+    if (message.partialMaskingAlgorithmId !== "") {
+      obj.partialMaskingAlgorithmId = message.partialMaskingAlgorithmId;
+    }
     return obj;
   },
 
@@ -5928,6 +6011,9 @@ export const ColumnConfig: MessageFns<ColumnConfig> = {
       return acc;
     }, {});
     message.classificationId = object.classificationId ?? "";
+    message.maskingLevel = object.maskingLevel ?? MaskingLevel.MASKING_LEVEL_UNSPECIFIED;
+    message.fullMaskingAlgorithmId = object.fullMaskingAlgorithmId ?? "";
+    message.partialMaskingAlgorithmId = object.partialMaskingAlgorithmId ?? "";
     return message;
   },
 };
