@@ -88,8 +88,16 @@
     - [TaskMetadata.State](#bytebase-store-TaskMetadata-State)
   
 - [store/branch.proto](#store_branch-proto)
+    - [BranchColumnConfig](#bytebase-store-BranchColumnConfig)
+    - [BranchColumnConfig.LabelsEntry](#bytebase-store-BranchColumnConfig-LabelsEntry)
     - [BranchConfig](#bytebase-store-BranchConfig)
+    - [BranchDatabaseConfig](#bytebase-store-BranchDatabaseConfig)
+    - [BranchFunctionConfig](#bytebase-store-BranchFunctionConfig)
+    - [BranchProcedureConfig](#bytebase-store-BranchProcedureConfig)
+    - [BranchSchemaConfig](#bytebase-store-BranchSchemaConfig)
     - [BranchSnapshot](#bytebase-store-BranchSnapshot)
+    - [BranchTableConfig](#bytebase-store-BranchTableConfig)
+    - [BranchViewConfig](#bytebase-store-BranchViewConfig)
   
 - [store/changelist.proto](#store_changelist-proto)
     - [Changelist](#bytebase-store-Changelist)
@@ -197,6 +205,8 @@
     - [PlanConfig.ChangeDatabaseConfig.GhostFlagsEntry](#bytebase-store-PlanConfig-ChangeDatabaseConfig-GhostFlagsEntry)
     - [PlanConfig.CreateDatabaseConfig](#bytebase-store-PlanConfig-CreateDatabaseConfig)
     - [PlanConfig.CreateDatabaseConfig.LabelsEntry](#bytebase-store-PlanConfig-CreateDatabaseConfig-LabelsEntry)
+    - [PlanConfig.DeploymentSnapshot](#bytebase-store-PlanConfig-DeploymentSnapshot)
+    - [PlanConfig.DeploymentSnapshot.DatabaseGroupSnapshot](#bytebase-store-PlanConfig-DeploymentSnapshot-DatabaseGroupSnapshot)
     - [PlanConfig.ExportDataConfig](#bytebase-store-PlanConfig-ExportDataConfig)
     - [PlanConfig.ReleaseSource](#bytebase-store-PlanConfig-ReleaseSource)
     - [PlanConfig.Spec](#bytebase-store-PlanConfig-Spec)
@@ -1697,6 +1707,43 @@ LIST, HASH (https://www.postgresql.org/docs/current/ddl-partitioning.html)
 
 
 
+<a name="bytebase-store-BranchColumnConfig"></a>
+
+### BranchColumnConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the name of a column. |
+| semantic_type_id | [string](#string) |  |  |
+| labels | [BranchColumnConfig.LabelsEntry](#bytebase-store-BranchColumnConfig-LabelsEntry) | repeated | The user labels for a column. |
+| classification_id | [string](#string) |  |  |
+| masking_level | [MaskingLevel](#bytebase-store-MaskingLevel) |  |  |
+| full_masking_algorithm_id | [string](#string) |  |  |
+| partial_masking_algorithm_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bytebase-store-BranchColumnConfig-LabelsEntry"></a>
+
+### BranchColumnConfig.LabelsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="bytebase-store-BranchConfig"></a>
 
 ### BranchConfig
@@ -1713,6 +1760,77 @@ LIST, HASH (https://www.postgresql.org/docs/current/ddl-partitioning.html)
 
 
 
+<a name="bytebase-store-BranchDatabaseConfig"></a>
+
+### BranchDatabaseConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| schema_configs | [BranchSchemaConfig](#bytebase-store-BranchSchemaConfig) | repeated | The schema_configs is the list of configs for schemas in a database. |
+
+
+
+
+
+
+<a name="bytebase-store-BranchFunctionConfig"></a>
+
+### BranchFunctionConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the name of a function. |
+| updater | [string](#string) |  | The last updater of the function in branch. Format: users/{userUID}. |
+| source_branch | [string](#string) |  | The last change come from branch. Format: projcets/{project}/branches/{branch} |
+| update_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | The timestamp when the function is updated in branch. |
+
+
+
+
+
+
+<a name="bytebase-store-BranchProcedureConfig"></a>
+
+### BranchProcedureConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the name of a procedure. |
+| updater | [string](#string) |  | The last updater of the procedure in branch. Format: users/{userUID}. |
+| source_branch | [string](#string) |  | The last change come from branch. Format: projcets/{project}/branches/{branch} |
+| update_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | The timestamp when the procedure is updated in branch. |
+
+
+
+
+
+
+<a name="bytebase-store-BranchSchemaConfig"></a>
+
+### BranchSchemaConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the schema name. It is an empty string for databases without such concept such as MySQL. |
+| table_configs | [BranchTableConfig](#bytebase-store-BranchTableConfig) | repeated | The table_configs is the list of configs for tables in a schema. |
+| function_configs | [BranchFunctionConfig](#bytebase-store-BranchFunctionConfig) | repeated |  |
+| procedure_configs | [BranchProcedureConfig](#bytebase-store-BranchProcedureConfig) | repeated |  |
+| view_configs | [BranchViewConfig](#bytebase-store-BranchViewConfig) | repeated |  |
+
+
+
+
+
+
 <a name="bytebase-store-BranchSnapshot"></a>
 
 ### BranchSnapshot
@@ -1723,6 +1841,44 @@ LIST, HASH (https://www.postgresql.org/docs/current/ddl-partitioning.html)
 | ----- | ---- | ----- | ----------- |
 | metadata | [DatabaseSchemaMetadata](#bytebase-store-DatabaseSchemaMetadata) |  |  |
 | database_config | [DatabaseConfig](#bytebase-store-DatabaseConfig) |  |  |
+
+
+
+
+
+
+<a name="bytebase-store-BranchTableConfig"></a>
+
+### BranchTableConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the name of a table. |
+| column_configs | [BranchColumnConfig](#bytebase-store-BranchColumnConfig) | repeated | The column_configs is the ordered list of configs for columns in a table. |
+| classification_id | [string](#string) |  |  |
+| updater | [string](#string) |  | The last updater of the table in branch. Format: users/{userUID}. |
+| source_branch | [string](#string) |  | The last change come from branch. Format: projcets/{project}/branches/{branch} |
+| update_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | The timestamp when the table is updated in branch. |
+
+
+
+
+
+
+<a name="bytebase-store-BranchViewConfig"></a>
+
+### BranchViewConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | The name is the name of a view. |
+| updater | [string](#string) |  | The last updater of the view in branch. Format: users/{userUID}. |
+| source_branch | [string](#string) |  | The last change come from branch. Format: projcets/{project}/branches/{branch} |
+| update_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | The timestamp when the view is updated in branch. |
 
 
 
@@ -3114,6 +3270,7 @@ InstanceRole is the API message for instance role.
 | steps | [PlanConfig.Step](#bytebase-store-PlanConfig-Step) | repeated |  |
 | vcs_source | [PlanConfig.VCSSource](#bytebase-store-PlanConfig-VCSSource) |  |  |
 | release_source | [PlanConfig.ReleaseSource](#bytebase-store-PlanConfig-ReleaseSource) |  |  |
+| deployment_snapshot | [PlanConfig.DeploymentSnapshot](#bytebase-store-PlanConfig-DeploymentSnapshot) |  |  |
 
 
 
@@ -3190,6 +3347,38 @@ InstanceRole is the API message for instance role.
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="bytebase-store-PlanConfig-DeploymentSnapshot"></a>
+
+### PlanConfig.DeploymentSnapshot
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deployment_config | [DeploymentConfig](#bytebase-store-DeploymentConfig) |  | The snapshot of the project deployment config at the time of creation. |
+| database_group_snapshots | [PlanConfig.DeploymentSnapshot.DatabaseGroupSnapshot](#bytebase-store-PlanConfig-DeploymentSnapshot-DatabaseGroupSnapshot) | repeated |  |
+
+
+
+
+
+
+<a name="bytebase-store-PlanConfig-DeploymentSnapshot-DatabaseGroupSnapshot"></a>
+
+### PlanConfig.DeploymentSnapshot.DatabaseGroupSnapshot
+The snapshot of the database group at the time of creation.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| database_group | [string](#string) |  | Format: projects/{project}/databaseGroups/{databaseGroup}. |
+| databases | [string](#string) | repeated | Format: instances/{instance-id}/databases/{database-name}. |
 
 
 

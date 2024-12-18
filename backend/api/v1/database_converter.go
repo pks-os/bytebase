@@ -11,7 +11,7 @@ import (
 	v1pb "github.com/bytebase/bytebase/proto/generated-go/v1"
 )
 
-func convertStoreDatabaseMetadata(ctx context.Context, metadata *storepb.DatabaseSchemaMetadata, config *storepb.DatabaseConfig, filter *metadataFilter, optionalStores *store.Store) (*v1pb.DatabaseMetadata, error) {
+func convertStoreDatabaseMetadata(metadata *storepb.DatabaseSchemaMetadata, filter *metadataFilter) (*v1pb.DatabaseMetadata, error) {
 	m := &v1pb.DatabaseMetadata{
 		CharacterSet: metadata.CharacterSet,
 		Collation:    metadata.Collation,
@@ -216,11 +216,6 @@ func convertStoreDatabaseMetadata(ctx context.Context, metadata *storepb.Databas
 			Version:     extension.Version,
 			Description: extension.Description,
 		})
-	}
-
-	databaseConfig := convertStoreDatabaseConfig(ctx, config, filter, optionalStores)
-	if databaseConfig != nil {
-		m.SchemaConfigs = databaseConfig.SchemaConfigs
 	}
 	return m, nil
 }
@@ -510,7 +505,7 @@ func convertStoreColumnConfig(column *storepb.ColumnConfig) *v1pb.ColumnConfig {
 	}
 }
 
-func convertV1DatabaseMetadata(ctx context.Context, metadata *v1pb.DatabaseMetadata, optionalStores *store.Store) (*storepb.DatabaseSchemaMetadata, *storepb.DatabaseConfig, error) {
+func convertV1DatabaseMetadata(metadata *v1pb.DatabaseMetadata) (*storepb.DatabaseSchemaMetadata, error) {
 	m := &storepb.DatabaseSchemaMetadata{
 		Name:         metadata.Name,
 		CharacterSet: metadata.CharacterSet,
@@ -702,16 +697,7 @@ func convertV1DatabaseMetadata(ctx context.Context, metadata *v1pb.DatabaseMetad
 			Description: extension.Description,
 		})
 	}
-
-	databaseConfig := convertV1DatabaseConfig(
-		ctx,
-		&v1pb.DatabaseConfig{
-			Name:          metadata.Name,
-			SchemaConfigs: metadata.SchemaConfigs,
-		},
-		optionalStores,
-	)
-	return m, databaseConfig, nil
+	return m, nil
 }
 
 func convertV1IndexMetadata(index *v1pb.IndexMetadata) *storepb.IndexMetadata {
