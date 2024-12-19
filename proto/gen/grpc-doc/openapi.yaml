@@ -5829,12 +5829,22 @@ paths:
         post:
             tags:
                 - RolloutService
+            description: CreateRollout can be called multiple times with the same rollout.plan but different stage_id to promote rollout stages.
             operationId: RolloutService_CreateRollout
             parameters:
                 - name: project
                   in: path
                   description: The project id.
                   required: true
+                  schema:
+                    type: string
+                - name: stageId
+                  in: query
+                  description: |-
+                    stage_id is the id in the plan deployment_config_snapshot.
+                     The rollout is created according to the plan and the
+                     stages are created up to the stage_id.
+                     If unspecified, all stages are created.
                   schema:
                     type: string
             requestBody:
@@ -10792,6 +10802,12 @@ components:
                 definition:
                     type: string
                     description: The definition of an index.
+                parentIndexSchema:
+                    type: string
+                    description: The schema name of the parent index.
+                parentIndexName:
+                    type: string
+                    description: The index name of the parent index.
             description: IndexMetadata is the metadata for indexes.
         Instance:
             type: object
@@ -10876,6 +10892,13 @@ components:
                         The maximum number of connections.
                          The default is 10 if the value is unset or zero.
                     format: int32
+                syncDatabases:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Enable sync for following databases in {schema}/{database} format.
+                         Default empty, means sync all schemas & databases.
             description: InstanceOptions is the option for instances.
         InstanceResource:
             type: object
@@ -12046,6 +12069,13 @@ components:
                          - ERROR
                 releaseSource:
                     $ref: '#/components/schemas/Plan_ReleaseSource'
+                deploymentConfigSnapshot:
+                    readOnly: true
+                    allOf:
+                        - $ref: '#/components/schemas/DeploymentConfig'
+                    description: |-
+                        The deployment config snapshot taken at the time of plan creation.
+                         This is to ensure that we get consistent rollout for the plan.
         PlanCheckRun:
             type: object
             properties:
@@ -12711,6 +12741,8 @@ components:
                     items:
                         $ref: '#/components/schemas/QueryRow'
                     description: Rows of the query result.
+                rowsCount:
+                    type: string
                 masked:
                     type: array
                     items:
