@@ -10897,7 +10897,7 @@ components:
                     items:
                         type: string
                     description: |-
-                        Enable sync for following databases in {schema}/{database} format.
+                        Enable sync for following databases.
                          Default empty, means sync all schemas & databases.
             description: InstanceOptions is the option for instances.
         InstanceResource:
@@ -14684,6 +14684,10 @@ components:
                     readOnly: true
                     allOf:
                         - $ref: '#/components/schemas/TaskRun_SchedulerInfo'
+                sheet:
+                    readOnly: true
+                    type: string
+                    description: 'Format: projects/{project}/sheets/{sheet}'
         TaskRunLog:
             type: object
             properties:
