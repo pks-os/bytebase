@@ -342,21 +342,6 @@ export interface GetDatabaseMetadataRequest {
   filter: string;
 }
 
-export interface UpdateDatabaseMetadataRequest {
-  /**
-   * The database metadata to update.
-   *
-   * The database_metadata's `name` field is used to identify the database
-   * metadata to update. Format:
-   * instances/{instance}/databases/{database}/metadata
-   */
-  databaseMetadata:
-    | DatabaseMetadata
-    | undefined;
-  /** The list of fields to update. */
-  updateMask: string[] | undefined;
-}
-
 export interface GetDatabaseSchemaRequest {
   /**
    * The name of the database to retrieve schema.
@@ -569,10 +554,6 @@ export interface TriggerMetadata {
   sqlMode: string;
   characterSetClient: string;
   collationConnection: string;
-  /** For Postgres, identifies whether the trigger fires once for each processed row or once for each statement (ROW or STATEMENT). */
-  actionOrientation: string;
-  /** For Postgres, the WHEN condition of the trigger. */
-  condition: string;
 }
 
 export interface ExternalTableMetadata {
@@ -904,6 +885,8 @@ export interface ViewMetadata {
   dependentColumns: DependentColumn[];
   /** The columns is the ordered list of columns in a table. */
   columns: ColumnMetadata[];
+  /** The triggers is the list of triggers in a view. */
+  triggers: TriggerMetadata[];
 }
 
 /** DependentColumn is the metadata for dependent columns. */
@@ -929,6 +912,8 @@ export interface MaterializedViewMetadata {
    * view.
    */
   dependentColumns: DependentColumn[];
+  /** The columns is the ordered list of columns in a table. */
+  triggers: TriggerMetadata[];
 }
 
 /** FunctionMetadata is the metadata for functions. */
@@ -3060,84 +3045,6 @@ export const GetDatabaseMetadataRequest: MessageFns<GetDatabaseMetadataRequest> 
   },
 };
 
-function createBaseUpdateDatabaseMetadataRequest(): UpdateDatabaseMetadataRequest {
-  return { databaseMetadata: undefined, updateMask: undefined };
-}
-
-export const UpdateDatabaseMetadataRequest: MessageFns<UpdateDatabaseMetadataRequest> = {
-  encode(message: UpdateDatabaseMetadataRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.databaseMetadata !== undefined) {
-      DatabaseMetadata.encode(message.databaseMetadata, writer.uint32(10).fork()).join();
-    }
-    if (message.updateMask !== undefined) {
-      FieldMask.encode(FieldMask.wrap(message.updateMask), writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UpdateDatabaseMetadataRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseUpdateDatabaseMetadataRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.databaseMetadata = DatabaseMetadata.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.updateMask = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): UpdateDatabaseMetadataRequest {
-    return {
-      databaseMetadata: isSet(object.databaseMetadata) ? DatabaseMetadata.fromJSON(object.databaseMetadata) : undefined,
-      updateMask: isSet(object.updateMask) ? FieldMask.unwrap(FieldMask.fromJSON(object.updateMask)) : undefined,
-    };
-  },
-
-  toJSON(message: UpdateDatabaseMetadataRequest): unknown {
-    const obj: any = {};
-    if (message.databaseMetadata !== undefined) {
-      obj.databaseMetadata = DatabaseMetadata.toJSON(message.databaseMetadata);
-    }
-    if (message.updateMask !== undefined) {
-      obj.updateMask = FieldMask.toJSON(FieldMask.wrap(message.updateMask));
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<UpdateDatabaseMetadataRequest>): UpdateDatabaseMetadataRequest {
-    return UpdateDatabaseMetadataRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<UpdateDatabaseMetadataRequest>): UpdateDatabaseMetadataRequest {
-    const message = createBaseUpdateDatabaseMetadataRequest();
-    message.databaseMetadata = (object.databaseMetadata !== undefined && object.databaseMetadata !== null)
-      ? DatabaseMetadata.fromPartial(object.databaseMetadata)
-      : undefined;
-    message.updateMask = object.updateMask ?? undefined;
-    return message;
-  },
-};
-
 function createBaseGetDatabaseSchemaRequest(): GetDatabaseSchemaRequest {
   return { name: "", sdlFormat: false, concise: false };
 }
@@ -4620,17 +4527,7 @@ export const SequenceMetadata: MessageFns<SequenceMetadata> = {
 };
 
 function createBaseTriggerMetadata(): TriggerMetadata {
-  return {
-    name: "",
-    event: "",
-    timing: "",
-    body: "",
-    sqlMode: "",
-    characterSetClient: "",
-    collationConnection: "",
-    actionOrientation: "",
-    condition: "",
-  };
+  return { name: "", event: "", timing: "", body: "", sqlMode: "", characterSetClient: "", collationConnection: "" };
 }
 
 export const TriggerMetadata: MessageFns<TriggerMetadata> = {
@@ -4655,12 +4552,6 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
     }
     if (message.collationConnection !== "") {
       writer.uint32(66).string(message.collationConnection);
-    }
-    if (message.actionOrientation !== "") {
-      writer.uint32(82).string(message.actionOrientation);
-    }
-    if (message.condition !== "") {
-      writer.uint32(90).string(message.condition);
     }
     return writer;
   },
@@ -4728,22 +4619,6 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
           message.collationConnection = reader.string();
           continue;
         }
-        case 10: {
-          if (tag !== 82) {
-            break;
-          }
-
-          message.actionOrientation = reader.string();
-          continue;
-        }
-        case 11: {
-          if (tag !== 90) {
-            break;
-          }
-
-          message.condition = reader.string();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4762,8 +4637,6 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
       sqlMode: isSet(object.sqlMode) ? globalThis.String(object.sqlMode) : "",
       characterSetClient: isSet(object.characterSetClient) ? globalThis.String(object.characterSetClient) : "",
       collationConnection: isSet(object.collationConnection) ? globalThis.String(object.collationConnection) : "",
-      actionOrientation: isSet(object.actionOrientation) ? globalThis.String(object.actionOrientation) : "",
-      condition: isSet(object.condition) ? globalThis.String(object.condition) : "",
     };
   },
 
@@ -4790,12 +4663,6 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
     if (message.collationConnection !== "") {
       obj.collationConnection = message.collationConnection;
     }
-    if (message.actionOrientation !== "") {
-      obj.actionOrientation = message.actionOrientation;
-    }
-    if (message.condition !== "") {
-      obj.condition = message.condition;
-    }
     return obj;
   },
 
@@ -4811,8 +4678,6 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
     message.sqlMode = object.sqlMode ?? "";
     message.characterSetClient = object.characterSetClient ?? "";
     message.collationConnection = object.collationConnection ?? "";
-    message.actionOrientation = object.actionOrientation ?? "";
-    message.condition = object.condition ?? "";
     return message;
   },
 };
@@ -5946,7 +5811,7 @@ export const GenerationMetadata: MessageFns<GenerationMetadata> = {
 };
 
 function createBaseViewMetadata(): ViewMetadata {
-  return { name: "", definition: "", comment: "", dependentColumns: [], columns: [] };
+  return { name: "", definition: "", comment: "", dependentColumns: [], columns: [], triggers: [] };
 }
 
 export const ViewMetadata: MessageFns<ViewMetadata> = {
@@ -5965,6 +5830,9 @@ export const ViewMetadata: MessageFns<ViewMetadata> = {
     }
     for (const v of message.columns) {
       ColumnMetadata.encode(v!, writer.uint32(42).fork()).join();
+    }
+    for (const v of message.triggers) {
+      TriggerMetadata.encode(v!, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -6016,6 +5884,14 @@ export const ViewMetadata: MessageFns<ViewMetadata> = {
           message.columns.push(ColumnMetadata.decode(reader, reader.uint32()));
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.triggers.push(TriggerMetadata.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6035,6 +5911,9 @@ export const ViewMetadata: MessageFns<ViewMetadata> = {
         : [],
       columns: globalThis.Array.isArray(object?.columns)
         ? object.columns.map((e: any) => ColumnMetadata.fromJSON(e))
+        : [],
+      triggers: globalThis.Array.isArray(object?.triggers)
+        ? object.triggers.map((e: any) => TriggerMetadata.fromJSON(e))
         : [],
     };
   },
@@ -6056,6 +5935,9 @@ export const ViewMetadata: MessageFns<ViewMetadata> = {
     if (message.columns?.length) {
       obj.columns = message.columns.map((e) => ColumnMetadata.toJSON(e));
     }
+    if (message.triggers?.length) {
+      obj.triggers = message.triggers.map((e) => TriggerMetadata.toJSON(e));
+    }
     return obj;
   },
 
@@ -6069,6 +5951,7 @@ export const ViewMetadata: MessageFns<ViewMetadata> = {
     message.comment = object.comment ?? "";
     message.dependentColumns = object.dependentColumns?.map((e) => DependentColumn.fromPartial(e)) || [];
     message.columns = object.columns?.map((e) => ColumnMetadata.fromPartial(e)) || [];
+    message.triggers = object.triggers?.map((e) => TriggerMetadata.fromPartial(e)) || [];
     return message;
   },
 };
@@ -6166,7 +6049,7 @@ export const DependentColumn: MessageFns<DependentColumn> = {
 };
 
 function createBaseMaterializedViewMetadata(): MaterializedViewMetadata {
-  return { name: "", definition: "", comment: "", dependentColumns: [] };
+  return { name: "", definition: "", comment: "", dependentColumns: [], triggers: [] };
 }
 
 export const MaterializedViewMetadata: MessageFns<MaterializedViewMetadata> = {
@@ -6182,6 +6065,9 @@ export const MaterializedViewMetadata: MessageFns<MaterializedViewMetadata> = {
     }
     for (const v of message.dependentColumns) {
       DependentColumn.encode(v!, writer.uint32(34).fork()).join();
+    }
+    for (const v of message.triggers) {
+      TriggerMetadata.encode(v!, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -6225,6 +6111,14 @@ export const MaterializedViewMetadata: MessageFns<MaterializedViewMetadata> = {
           message.dependentColumns.push(DependentColumn.decode(reader, reader.uint32()));
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.triggers.push(TriggerMetadata.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6241,6 +6135,9 @@ export const MaterializedViewMetadata: MessageFns<MaterializedViewMetadata> = {
       comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
       dependentColumns: globalThis.Array.isArray(object?.dependentColumns)
         ? object.dependentColumns.map((e: any) => DependentColumn.fromJSON(e))
+        : [],
+      triggers: globalThis.Array.isArray(object?.triggers)
+        ? object.triggers.map((e: any) => TriggerMetadata.fromJSON(e))
         : [],
     };
   },
@@ -6259,6 +6156,9 @@ export const MaterializedViewMetadata: MessageFns<MaterializedViewMetadata> = {
     if (message.dependentColumns?.length) {
       obj.dependentColumns = message.dependentColumns.map((e) => DependentColumn.toJSON(e));
     }
+    if (message.triggers?.length) {
+      obj.triggers = message.triggers.map((e) => TriggerMetadata.toJSON(e));
+    }
     return obj;
   },
 
@@ -6271,6 +6171,7 @@ export const MaterializedViewMetadata: MessageFns<MaterializedViewMetadata> = {
     message.definition = object.definition ?? "";
     message.comment = object.comment ?? "";
     message.dependentColumns = object.dependentColumns?.map((e) => DependentColumn.fromPartial(e)) || [];
+    message.triggers = object.triggers?.map((e) => TriggerMetadata.fromPartial(e)) || [];
     return message;
   },
 };
@@ -13049,109 +12950,6 @@ export const DatabaseServiceDefinition = {
               49,
               47,
               123,
-              110,
-              97,
-              109,
-              101,
-              61,
-              105,
-              110,
-              115,
-              116,
-              97,
-              110,
-              99,
-              101,
-              115,
-              47,
-              42,
-              47,
-              100,
-              97,
-              116,
-              97,
-              98,
-              97,
-              115,
-              101,
-              115,
-              47,
-              42,
-              47,
-              109,
-              101,
-              116,
-              97,
-              100,
-              97,
-              116,
-              97,
-              125,
-            ]),
-          ],
-        },
-      },
-    },
-    updateDatabaseMetadata: {
-      name: "UpdateDatabaseMetadata",
-      requestType: UpdateDatabaseMetadataRequest,
-      requestStream: false,
-      responseType: DatabaseMetadata,
-      responseStream: false,
-      options: {
-        _unknownFields: {
-          800010: [
-            new Uint8Array([19, 98, 98, 46, 100, 97, 116, 97, 98, 97, 115, 101, 115, 46, 117, 112, 100, 97, 116, 101]),
-          ],
-          800016: [new Uint8Array([1])],
-          800024: [new Uint8Array([1])],
-          578365826: [
-            new Uint8Array([
-              82,
-              58,
-              17,
-              100,
-              97,
-              116,
-              97,
-              98,
-              97,
-              115,
-              101,
-              95,
-              109,
-              101,
-              116,
-              97,
-              100,
-              97,
-              116,
-              97,
-              50,
-              61,
-              47,
-              118,
-              49,
-              47,
-              123,
-              100,
-              97,
-              116,
-              97,
-              98,
-              97,
-              115,
-              101,
-              95,
-              109,
-              101,
-              116,
-              97,
-              100,
-              97,
-              116,
-              97,
-              46,
               110,
               97,
               109,
