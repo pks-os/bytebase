@@ -170,6 +170,7 @@
     - [ChangeHistory.Type](#bytebase-v1-ChangeHistory-Type)
     - [ChangeHistoryView](#bytebase-v1-ChangeHistoryView)
     - [Changelog.Status](#bytebase-v1-Changelog-Status)
+    - [Changelog.Type](#bytebase-v1-Changelog-Type)
     - [ChangelogView](#bytebase-v1-ChangelogView)
     - [DatabaseMetadataView](#bytebase-v1-DatabaseMetadataView)
     - [GenerationMetadata.Type](#bytebase-v1-GenerationMetadata-Type)
@@ -2109,6 +2110,7 @@ AdviseIndexResponse is the response of advising index.
 | version | [string](#string) |  | Could be empty |
 | revision | [string](#string) |  | Could be empty Or present but not found if deleted |
 | changed_resources | [ChangedResources](#bytebase-v1-ChangedResources) |  |  |
+| type | [Changelog.Type](#bytebase-v1-Changelog-Type) |  |  |
 
 
 
@@ -2397,6 +2399,7 @@ DependentColumn is the metadata for dependent columns.
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of a type. |
 | values | [string](#string) | repeated | The enum values of a type. |
+| comment | [string](#string) |  |  |
 
 
 
@@ -2514,6 +2517,7 @@ FunctionMetadata is the metadata for functions.
 | collation_connection | [string](#string) |  |  |
 | database_collation | [string](#string) |  |  |
 | sql_mode | [string](#string) |  |  |
+| comment | [string](#string) |  |  |
 
 
 
@@ -3111,6 +3115,7 @@ Secret is the secret of the database now.
 | last_value | [string](#string) |  | Last value of a sequence. |
 | owner_table | [string](#string) |  | The owner table of the sequence. |
 | owner_column | [string](#string) |  | The owner column of the sequence. |
+| comment | [string](#string) |  |  |
 
 
 
@@ -3340,6 +3345,7 @@ TablePartitionMetadata is the metadata for table partitions.
 | sql_mode | [string](#string) |  |  |
 | character_set_client | [string](#string) |  |  |
 | collation_connection | [string](#string) |  |  |
+| comment | [string](#string) |  |  |
 
 
 
@@ -3489,6 +3495,22 @@ ViewMetadata is the metadata for views.
 | PENDING | 1 |  |
 | DONE | 2 |  |
 | FAILED | 3 |  |
+
+
+
+<a name="bytebase-v1-Changelog-Type"></a>
+
+### Changelog.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TYPE_UNSPECIFIED | 0 |  |
+| BASELINE | 1 |  |
+| MIGRATE | 2 |  |
+| MIGRATE_SDL | 3 |  |
+| MIGRATE_GHOST | 4 |  |
+| DATA | 6 |  |
 
 
 
@@ -5083,7 +5105,7 @@ When paginating, all other parameters provided to `ListSettings` must match the 
 | engine | [Engine](#bytebase-v1-Engine) |  |  |
 | category | [string](#string) |  |  |
 | table | [TableMetadata](#bytebase-v1-TableMetadata) |  |  |
-| config | [TableConfig](#bytebase-v1-TableConfig) |  |  |
+| catalog | [TableCatalog](#bytebase-v1-TableCatalog) |  |  |
 
 
 

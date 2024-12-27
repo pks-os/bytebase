@@ -99,6 +99,7 @@ func convertStoreDatabaseMetadata(metadata *storepb.DatabaseSchemaMetadata, filt
 				CollationConnection: function.CollationConnection,
 				DatabaseCollation:   function.DatabaseCollation,
 				SqlMode:             function.SqlMode,
+				Comment:             function.Comment,
 			}
 			s.Functions = append(s.Functions, v1Func)
 		}
@@ -178,6 +179,7 @@ func convertStoreDatabaseMetadata(metadata *storepb.DatabaseSchemaMetadata, filt
 				LastValue:   sequence.LastValue,
 				OwnerTable:  sequence.OwnerTable,
 				OwnerColumn: sequence.OwnerColumn,
+				Comment:     sequence.Comment,
 			}
 			s.Sequences = append(s.Sequences, v1Sequence)
 		}
@@ -202,8 +204,9 @@ func convertStoreDatabaseMetadata(metadata *storepb.DatabaseSchemaMetadata, filt
 				continue
 			}
 			v1Enum := &v1pb.EnumTypeMetadata{
-				Name:   enum.Name,
-				Values: enum.Values,
+				Name:    enum.Name,
+				Values:  enum.Values,
+				Comment: enum.Comment,
 			}
 			s.EnumTypes = append(s.EnumTypes, v1Enum)
 		}
@@ -351,6 +354,7 @@ func convertStoreTriggerMetadata(trigger *storepb.TriggerMetadata) *v1pb.Trigger
 		SqlMode:             trigger.SqlMode,
 		CharacterSetClient:  trigger.CharacterSetClient,
 		CollationConnection: trigger.CollationConnection,
+		Comment:             trigger.Comment,
 	}
 }
 
@@ -465,7 +469,7 @@ func convertStoreDatabaseConfig(ctx context.Context, config *storepb.DatabaseCon
 	databaseConfig := &v1pb.DatabaseConfig{
 		Name: config.Name,
 	}
-	for _, schema := range config.SchemaConfigs {
+	for _, schema := range config.Schemas {
 		if schema == nil {
 			continue
 		}
@@ -475,7 +479,7 @@ func convertStoreDatabaseConfig(ctx context.Context, config *storepb.DatabaseCon
 		s := &v1pb.SchemaConfig{
 			Name: schema.Name,
 		}
-		for _, table := range schema.TableConfigs {
+		for _, table := range schema.Tables {
 			if table == nil {
 				continue
 			}
@@ -534,7 +538,7 @@ func convertStoreViewConfig(ctx context.Context, config *storepb.ViewConfig, opt
 	}
 }
 
-func convertStoreTableConfig(ctx context.Context, table *storepb.TableConfig, optionalStores *store.Store) *v1pb.TableConfig {
+func convertStoreTableConfig(ctx context.Context, table *storepb.TableCatalog, optionalStores *store.Store) *v1pb.TableConfig {
 	t := &v1pb.TableConfig{
 		Name:             table.Name,
 		ClassificationId: table.ClassificationId,
@@ -542,7 +546,7 @@ func convertStoreTableConfig(ctx context.Context, table *storepb.TableConfig, op
 		SourceBranch:     table.SourceBranch,
 		UpdateTime:       table.UpdateTime,
 	}
-	for _, column := range table.ColumnConfigs {
+	for _, column := range table.Columns {
 		if column == nil {
 			continue
 		}
@@ -551,7 +555,7 @@ func convertStoreTableConfig(ctx context.Context, table *storepb.TableConfig, op
 	return t
 }
 
-func convertStoreColumnConfig(column *storepb.ColumnConfig) *v1pb.ColumnConfig {
+func convertStoreColumnConfig(column *storepb.ColumnCatalog) *v1pb.ColumnConfig {
 	return &v1pb.ColumnConfig{
 		Name:                      column.Name,
 		SemanticTypeId:            column.SemanticTypeId,
@@ -661,6 +665,7 @@ func convertV1DatabaseMetadata(metadata *v1pb.DatabaseMetadata) (*storepb.Databa
 				CollationConnection: function.CollationConnection,
 				DatabaseCollation:   function.DatabaseCollation,
 				SqlMode:             function.SqlMode,
+				Comment:             function.Comment,
 			}
 			s.Functions = append(s.Functions, storeFunc)
 		}
@@ -742,8 +747,9 @@ func convertV1DatabaseMetadata(metadata *v1pb.DatabaseMetadata) (*storepb.Databa
 				continue
 			}
 			storeEnum := &storepb.EnumTypeMetadata{
-				Name:   enum.Name,
-				Values: enum.Values,
+				Name:    enum.Name,
+				Values:  enum.Values,
+				Comment: enum.Comment,
 			}
 			s.EnumTypes = append(s.EnumTypes, storeEnum)
 		}
@@ -763,6 +769,7 @@ func convertV1DatabaseMetadata(metadata *v1pb.DatabaseMetadata) (*storepb.Databa
 				LastValue:   sequence.LastValue,
 				OwnerTable:  sequence.OwnerTable,
 				OwnerColumn: sequence.OwnerColumn,
+				Comment:     sequence.Comment,
 			}
 			s.Sequences = append(s.Sequences, storeSequence)
 		}
@@ -876,6 +883,7 @@ func convertV1TriggerMetadata(trigger *v1pb.TriggerMetadata) *storepb.TriggerMet
 		SqlMode:             trigger.SqlMode,
 		CharacterSetClient:  trigger.CharacterSetClient,
 		CollationConnection: trigger.CollationConnection,
+		Comment:             trigger.Comment,
 	}
 }
 
@@ -974,7 +982,7 @@ func convertV1DatabaseConfig(ctx context.Context, databaseConfig *v1pb.DatabaseC
 		if schema == nil {
 			continue
 		}
-		s := &storepb.SchemaConfig{
+		s := &storepb.SchemaCatalog{
 			Name: schema.Name,
 		}
 		for _, table := range schema.TableConfigs {
@@ -982,7 +990,7 @@ func convertV1DatabaseConfig(ctx context.Context, databaseConfig *v1pb.DatabaseC
 				continue
 			}
 
-			s.TableConfigs = append(s.TableConfigs, convertV1TableConfig(ctx, table, optionalStores))
+			s.Tables = append(s.Tables, convertV1TableConfig(ctx, table, optionalStores))
 		}
 		for _, view := range schema.ViewConfigs {
 			if view == nil {
@@ -1002,7 +1010,7 @@ func convertV1DatabaseConfig(ctx context.Context, databaseConfig *v1pb.DatabaseC
 			}
 			s.ProcedureConfigs = append(s.ProcedureConfigs, convertV1ProcedureConfig(ctx, procedure, optionalStores))
 		}
-		config.SchemaConfigs = append(config.SchemaConfigs, s)
+		config.Schemas = append(config.Schemas, s)
 	}
 	return config
 }
@@ -1034,8 +1042,8 @@ func convertV1ProcedureConfig(ctx context.Context, procedure *v1pb.ProcedureConf
 	}
 }
 
-func convertV1TableConfig(ctx context.Context, table *v1pb.TableConfig, optionalStores *store.Store) *storepb.TableConfig {
-	t := &storepb.TableConfig{
+func convertV1TableConfig(ctx context.Context, table *v1pb.TableConfig, optionalStores *store.Store) *storepb.TableCatalog {
+	t := &storepb.TableCatalog{
 		Name:             table.Name,
 		ClassificationId: table.ClassificationId,
 		Updater:          getUpdaterFromEmail(ctx, table.Updater, optionalStores),
@@ -1046,13 +1054,13 @@ func convertV1TableConfig(ctx context.Context, table *v1pb.TableConfig, optional
 		if column == nil {
 			continue
 		}
-		t.ColumnConfigs = append(t.ColumnConfigs, convertV1ColumnConfig(column))
+		t.Columns = append(t.Columns, convertV1ColumnConfig(column))
 	}
 	return t
 }
 
-func convertV1ColumnConfig(column *v1pb.ColumnConfig) *storepb.ColumnConfig {
-	return &storepb.ColumnConfig{
+func convertV1ColumnConfig(column *v1pb.ColumnConfig) *storepb.ColumnCatalog {
+	return &storepb.ColumnCatalog{
 		Name:                      column.Name,
 		SemanticTypeId:            column.SemanticTypeId,
 		Labels:                    column.Labels,

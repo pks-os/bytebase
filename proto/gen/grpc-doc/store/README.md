@@ -45,8 +45,8 @@
   
 - [store/database.proto](#store_database-proto)
     - [CheckConstraintMetadata](#bytebase-store-CheckConstraintMetadata)
-    - [ColumnConfig](#bytebase-store-ColumnConfig)
-    - [ColumnConfig.LabelsEntry](#bytebase-store-ColumnConfig-LabelsEntry)
+    - [ColumnCatalog](#bytebase-store-ColumnCatalog)
+    - [ColumnCatalog.LabelsEntry](#bytebase-store-ColumnCatalog-LabelsEntry)
     - [ColumnMetadata](#bytebase-store-ColumnMetadata)
     - [DatabaseConfig](#bytebase-store-DatabaseConfig)
     - [DatabaseMetadata](#bytebase-store-DatabaseMetadata)
@@ -72,13 +72,13 @@
     - [PackageMetadata](#bytebase-store-PackageMetadata)
     - [ProcedureConfig](#bytebase-store-ProcedureConfig)
     - [ProcedureMetadata](#bytebase-store-ProcedureMetadata)
-    - [SchemaConfig](#bytebase-store-SchemaConfig)
+    - [SchemaCatalog](#bytebase-store-SchemaCatalog)
     - [SchemaMetadata](#bytebase-store-SchemaMetadata)
     - [SecretItem](#bytebase-store-SecretItem)
     - [Secrets](#bytebase-store-Secrets)
     - [SequenceMetadata](#bytebase-store-SequenceMetadata)
     - [StreamMetadata](#bytebase-store-StreamMetadata)
-    - [TableConfig](#bytebase-store-TableConfig)
+    - [TableCatalog](#bytebase-store-TableCatalog)
     - [TableMetadata](#bytebase-store-TableMetadata)
     - [TablePartitionMetadata](#bytebase-store-TablePartitionMetadata)
     - [TaskMetadata](#bytebase-store-TaskMetadata)
@@ -915,9 +915,9 @@ Metadata about the request.
 
 
 
-<a name="bytebase-store-ColumnConfig"></a>
+<a name="bytebase-store-ColumnCatalog"></a>
 
-### ColumnConfig
+### ColumnCatalog
 
 
 
@@ -925,7 +925,7 @@ Metadata about the request.
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name is the name of a column. |
 | semantic_type_id | [string](#string) |  |  |
-| labels | [ColumnConfig.LabelsEntry](#bytebase-store-ColumnConfig-LabelsEntry) | repeated | The user labels for a column. |
+| labels | [ColumnCatalog.LabelsEntry](#bytebase-store-ColumnCatalog-LabelsEntry) | repeated | The user labels for a column. |
 | classification_id | [string](#string) |  |  |
 | masking_level | [MaskingLevel](#bytebase-store-MaskingLevel) |  |  |
 | full_masking_algorithm_id | [string](#string) |  |  |
@@ -937,9 +937,9 @@ Metadata about the request.
 
 
 
-<a name="bytebase-store-ColumnConfig-LabelsEntry"></a>
+<a name="bytebase-store-ColumnCatalog-LabelsEntry"></a>
 
-### ColumnConfig.LabelsEntry
+### ColumnCatalog.LabelsEntry
 
 
 
@@ -989,7 +989,7 @@ ColumnMetadata is the metadata for columns.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  |  |
-| schema_configs | [SchemaConfig](#bytebase-store-SchemaConfig) | repeated | The schema_configs is the list of configs for schemas in a database. |
+| schemas | [SchemaCatalog](#bytebase-store-SchemaCatalog) | repeated | The schema_configs is the list of configs for schemas in a database. |
 
 
 
@@ -1079,6 +1079,7 @@ DependentColumn is the metadata for dependent columns.
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name of a type. |
 | values | [string](#string) | repeated | The enum values of a type. |
+| comment | [string](#string) |  |  |
 
 
 
@@ -1196,6 +1197,7 @@ FunctionMetadata is the metadata for functions.
 | collation_connection | [string](#string) |  |  |
 | database_collation | [string](#string) |  |  |
 | sql_mode | [string](#string) |  |  |
+| comment | [string](#string) |  |  |
 
 
 
@@ -1415,16 +1417,16 @@ ProcedureMetadata is the metadata for procedures.
 
 
 
-<a name="bytebase-store-SchemaConfig"></a>
+<a name="bytebase-store-SchemaCatalog"></a>
 
-### SchemaConfig
+### SchemaCatalog
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name is the schema name. It is an empty string for databases without such concept such as MySQL. |
-| table_configs | [TableConfig](#bytebase-store-TableConfig) | repeated | The table_configs is the list of configs for tables in a schema. |
+| tables | [TableCatalog](#bytebase-store-TableCatalog) | repeated | The table_configs is the list of configs for tables in a schema. |
 | function_configs | [FunctionConfig](#bytebase-store-FunctionConfig) | repeated |  |
 | procedure_configs | [ProcedureConfig](#bytebase-store-ProcedureConfig) | repeated |  |
 | view_configs | [ViewConfig](#bytebase-store-ViewConfig) | repeated |  |
@@ -1514,6 +1516,7 @@ This is the concept of schema in Postgres, but it&#39;s a no-op for MySQL.
 | last_value | [string](#string) |  | Last value of a sequence. |
 | owner_table | [string](#string) |  | The owner table of the sequence. |
 | owner_column | [string](#string) |  | The owner column of the sequence. |
+| comment | [string](#string) |  |  |
 
 
 
@@ -1542,16 +1545,16 @@ This is the concept of schema in Postgres, but it&#39;s a no-op for MySQL.
 
 
 
-<a name="bytebase-store-TableConfig"></a>
+<a name="bytebase-store-TableCatalog"></a>
 
-### TableConfig
+### TableCatalog
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | The name is the name of a table. |
-| column_configs | [ColumnConfig](#bytebase-store-ColumnConfig) | repeated | The column_configs is the ordered list of configs for columns in a table. |
+| columns | [ColumnCatalog](#bytebase-store-ColumnCatalog) | repeated | The column_configs is the ordered list of configs for columns in a table. |
 | object_schema | [ObjectSchema](#bytebase-store-ObjectSchema) | optional |  |
 | classification_id | [string](#string) |  |  |
 | updater | [string](#string) |  | The last updater of the table in branch. Format: users/{userUID}. |
@@ -1656,6 +1659,7 @@ TablePartitionMetadata is the metadata for table partitions.
 | sql_mode | [string](#string) |  |  |
 | character_set_client | [string](#string) |  |  |
 | collation_connection | [string](#string) |  |  |
+| comment | [string](#string) |  |  |
 
 
 
@@ -4644,7 +4648,7 @@ SlowQueryPolicy is the policy configuration for slow query.
 | engine | [Engine](#bytebase-store-Engine) |  |  |
 | category | [string](#string) |  |  |
 | column | [ColumnMetadata](#bytebase-store-ColumnMetadata) |  |  |
-| config | [ColumnConfig](#bytebase-store-ColumnConfig) |  |  |
+| catalog | [ColumnCatalog](#bytebase-store-ColumnCatalog) |  |  |
 
 
 
@@ -4663,7 +4667,7 @@ SlowQueryPolicy is the policy configuration for slow query.
 | engine | [Engine](#bytebase-store-Engine) |  |  |
 | category | [string](#string) |  |  |
 | table | [TableMetadata](#bytebase-store-TableMetadata) |  |  |
-| config | [TableConfig](#bytebase-store-TableConfig) |  |  |
+| catalog | [TableCatalog](#bytebase-store-TableCatalog) |  |  |
 
 
 

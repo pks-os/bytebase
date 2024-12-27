@@ -103,6 +103,8 @@ message EnumTypeMetadata {
 
   // The enum values of a type.
   repeated string values = 2;
+
+  string comment = 3;
 }
 
 message EventMetadata {
@@ -155,6 +157,8 @@ message SequenceMetadata {
 
   // The owner column of the sequence.
   string owner_column = 11;
+
+  string comment = 12;
 }
 
 message TriggerMetadata {
@@ -176,6 +180,8 @@ message TriggerMetadata {
   string character_set_client = 7;
 
   string collation_connection = 8;
+
+  string comment = 9;
 }
 
 message TaskMetadata {
@@ -525,6 +531,8 @@ message FunctionMetadata {
   string database_collation = 6;
 
   string sql_mode = 7;
+
+  string comment = 8;
 }
 
 // ProcedureMetadata is the metadata for procedures.
@@ -680,16 +688,16 @@ message DatabaseConfig {
   string name = 1;
 
   // The schema_configs is the list of configs for schemas in a database.
-  repeated SchemaConfig schema_configs = 2;
+  repeated SchemaCatalog schemas = 2;
 }
 
-message SchemaConfig {
+message SchemaCatalog {
   // The name is the schema name.
   // It is an empty string for databases without such concept such as MySQL.
   string name = 1;
 
   // The table_configs is the list of configs for tables in a schema.
-  repeated TableConfig table_configs = 2;
+  repeated TableCatalog tables = 2;
 
   repeated FunctionConfig function_configs = 3;
 
@@ -698,12 +706,12 @@ message SchemaConfig {
   repeated ViewConfig view_configs = 5;
 }
 
-message TableConfig {
+message TableCatalog {
   // The name is the name of a table.
   string name = 1;
 
   // The column_configs is the ordered list of configs for columns in a table.
-  repeated ColumnConfig column_configs = 2;
+  repeated ColumnCatalog columns = 2;
 
   optional ObjectSchema object_schema = 7;
 
@@ -719,6 +727,48 @@ message TableConfig {
 
   // The timestamp when the table is updated in branch.
   google.protobuf.Timestamp update_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message ColumnCatalog {
+  // The name is the name of a column.
+  string name = 1;
+
+  string semantic_type_id = 2;
+
+  // The user labels for a column.
+  map<string, string> labels = 3;
+
+  string classification_id = 4;
+
+  MaskingLevel masking_level = 5;
+
+  string full_masking_algorithm_id = 6;
+
+  string partial_masking_algorithm_id = 7;
+
+  optional ObjectSchema object_schema = 8;
+}
+
+message ObjectSchema {
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    STRING = 1;
+    NUMBER = 2;
+    BOOLEAN = 3;
+    OBJECT = 4;
+    ARRAY = 5;
+  }
+  Type type = 1;
+  message StructKind {
+    map<string, ObjectSchema> properties = 1;
+  }
+  message ArrayKind {
+    ObjectSchema kind = 1;
+  }
+  oneof kind {
+    StructKind struct_kind = 2;
+    ArrayKind array_kind = 3;
+  }
 }
 
 message FunctionConfig {
@@ -767,46 +817,4 @@ message ViewConfig {
 
   // The timestamp when the view is updated in branch.
   google.protobuf.Timestamp update_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
-}
-
-message ColumnConfig {
-  // The name is the name of a column.
-  string name = 1;
-
-  string semantic_type_id = 2;
-
-  // The user labels for a column.
-  map<string, string> labels = 3;
-
-  string classification_id = 4;
-
-  MaskingLevel masking_level = 5;
-
-  string full_masking_algorithm_id = 6;
-
-  string partial_masking_algorithm_id = 7;
-
-  optional ObjectSchema object_schema = 8;
-}
-
-message ObjectSchema {
-  enum Type {
-    TYPE_UNSPECIFIED = 0;
-    STRING = 1;
-    NUMBER = 2;
-    BOOLEAN = 3;
-    OBJECT = 4;
-    ARRAY = 5;
-  }
-  Type type = 1;
-  message StructKind {
-    map<string, ObjectSchema> properties = 1;
-  }
-  message ArrayKind {
-    ObjectSchema kind = 1;
-  }
-  oneof kind {
-    StructKind struct_kind = 2;
-    ArrayKind array_kind = 3;
-  }
 }

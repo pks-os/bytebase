@@ -500,6 +500,7 @@ export interface EnumTypeMetadata {
   name: string;
   /** The enum values of a type. */
   values: string[];
+  comment: string;
 }
 
 export interface EventMetadata {
@@ -537,6 +538,7 @@ export interface SequenceMetadata {
   ownerTable: string;
   /** The owner column of the sequence. */
   ownerColumn: string;
+  comment: string;
 }
 
 export interface TriggerMetadata {
@@ -554,6 +556,7 @@ export interface TriggerMetadata {
   sqlMode: string;
   characterSetClient: string;
   collationConnection: string;
+  comment: string;
 }
 
 export interface ExternalTableMetadata {
@@ -932,6 +935,7 @@ export interface FunctionMetadata {
   collationConnection: string;
   databaseCollation: string;
   sqlMode: string;
+  comment: string;
 }
 
 /** ProcedureMetadata is the metadata for procedures. */
@@ -2155,6 +2159,7 @@ export interface Changelog {
    */
   revision: string;
   changedResources: ChangedResources | undefined;
+  type: Changelog_Type;
 }
 
 export enum Changelog_Status {
@@ -2213,6 +2218,83 @@ export function changelog_StatusToNumber(object: Changelog_Status): number {
     case Changelog_Status.FAILED:
       return 3;
     case Changelog_Status.UNRECOGNIZED:
+    default:
+      return -1;
+  }
+}
+
+export enum Changelog_Type {
+  TYPE_UNSPECIFIED = "TYPE_UNSPECIFIED",
+  BASELINE = "BASELINE",
+  MIGRATE = "MIGRATE",
+  MIGRATE_SDL = "MIGRATE_SDL",
+  MIGRATE_GHOST = "MIGRATE_GHOST",
+  DATA = "DATA",
+  UNRECOGNIZED = "UNRECOGNIZED",
+}
+
+export function changelog_TypeFromJSON(object: any): Changelog_Type {
+  switch (object) {
+    case 0:
+    case "TYPE_UNSPECIFIED":
+      return Changelog_Type.TYPE_UNSPECIFIED;
+    case 1:
+    case "BASELINE":
+      return Changelog_Type.BASELINE;
+    case 2:
+    case "MIGRATE":
+      return Changelog_Type.MIGRATE;
+    case 3:
+    case "MIGRATE_SDL":
+      return Changelog_Type.MIGRATE_SDL;
+    case 4:
+    case "MIGRATE_GHOST":
+      return Changelog_Type.MIGRATE_GHOST;
+    case 6:
+    case "DATA":
+      return Changelog_Type.DATA;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return Changelog_Type.UNRECOGNIZED;
+  }
+}
+
+export function changelog_TypeToJSON(object: Changelog_Type): string {
+  switch (object) {
+    case Changelog_Type.TYPE_UNSPECIFIED:
+      return "TYPE_UNSPECIFIED";
+    case Changelog_Type.BASELINE:
+      return "BASELINE";
+    case Changelog_Type.MIGRATE:
+      return "MIGRATE";
+    case Changelog_Type.MIGRATE_SDL:
+      return "MIGRATE_SDL";
+    case Changelog_Type.MIGRATE_GHOST:
+      return "MIGRATE_GHOST";
+    case Changelog_Type.DATA:
+      return "DATA";
+    case Changelog_Type.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+export function changelog_TypeToNumber(object: Changelog_Type): number {
+  switch (object) {
+    case Changelog_Type.TYPE_UNSPECIFIED:
+      return 0;
+    case Changelog_Type.BASELINE:
+      return 1;
+    case Changelog_Type.MIGRATE:
+      return 2;
+    case Changelog_Type.MIGRATE_SDL:
+      return 3;
+    case Changelog_Type.MIGRATE_GHOST:
+      return 4;
+    case Changelog_Type.DATA:
+      return 6;
+    case Changelog_Type.UNRECOGNIZED:
     default:
       return -1;
   }
@@ -4079,7 +4161,7 @@ export const SchemaMetadata: MessageFns<SchemaMetadata> = {
 };
 
 function createBaseEnumTypeMetadata(): EnumTypeMetadata {
-  return { name: "", values: [] };
+  return { name: "", values: [], comment: "" };
 }
 
 export const EnumTypeMetadata: MessageFns<EnumTypeMetadata> = {
@@ -4089,6 +4171,9 @@ export const EnumTypeMetadata: MessageFns<EnumTypeMetadata> = {
     }
     for (const v of message.values) {
       writer.uint32(18).string(v!);
+    }
+    if (message.comment !== "") {
+      writer.uint32(26).string(message.comment);
     }
     return writer;
   },
@@ -4116,6 +4201,14 @@ export const EnumTypeMetadata: MessageFns<EnumTypeMetadata> = {
           message.values.push(reader.string());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.comment = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4129,6 +4222,7 @@ export const EnumTypeMetadata: MessageFns<EnumTypeMetadata> = {
     return {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       values: globalThis.Array.isArray(object?.values) ? object.values.map((e: any) => globalThis.String(e)) : [],
+      comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
     };
   },
 
@@ -4140,6 +4234,9 @@ export const EnumTypeMetadata: MessageFns<EnumTypeMetadata> = {
     if (message.values?.length) {
       obj.values = message.values;
     }
+    if (message.comment !== "") {
+      obj.comment = message.comment;
+    }
     return obj;
   },
 
@@ -4150,6 +4247,7 @@ export const EnumTypeMetadata: MessageFns<EnumTypeMetadata> = {
     const message = createBaseEnumTypeMetadata();
     message.name = object.name ?? "";
     message.values = object.values?.map((e) => e) || [];
+    message.comment = object.comment ?? "";
     return message;
   },
 };
@@ -4307,6 +4405,7 @@ function createBaseSequenceMetadata(): SequenceMetadata {
     lastValue: "",
     ownerTable: "",
     ownerColumn: "",
+    comment: "",
   };
 }
 
@@ -4344,6 +4443,9 @@ export const SequenceMetadata: MessageFns<SequenceMetadata> = {
     }
     if (message.ownerColumn !== "") {
       writer.uint32(90).string(message.ownerColumn);
+    }
+    if (message.comment !== "") {
+      writer.uint32(98).string(message.comment);
     }
     return writer;
   },
@@ -4443,6 +4545,14 @@ export const SequenceMetadata: MessageFns<SequenceMetadata> = {
           message.ownerColumn = reader.string();
           continue;
         }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.comment = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4465,6 +4575,7 @@ export const SequenceMetadata: MessageFns<SequenceMetadata> = {
       lastValue: isSet(object.lastValue) ? globalThis.String(object.lastValue) : "",
       ownerTable: isSet(object.ownerTable) ? globalThis.String(object.ownerTable) : "",
       ownerColumn: isSet(object.ownerColumn) ? globalThis.String(object.ownerColumn) : "",
+      comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
     };
   },
 
@@ -4503,6 +4614,9 @@ export const SequenceMetadata: MessageFns<SequenceMetadata> = {
     if (message.ownerColumn !== "") {
       obj.ownerColumn = message.ownerColumn;
     }
+    if (message.comment !== "") {
+      obj.comment = message.comment;
+    }
     return obj;
   },
 
@@ -4522,12 +4636,22 @@ export const SequenceMetadata: MessageFns<SequenceMetadata> = {
     message.lastValue = object.lastValue ?? "";
     message.ownerTable = object.ownerTable ?? "";
     message.ownerColumn = object.ownerColumn ?? "";
+    message.comment = object.comment ?? "";
     return message;
   },
 };
 
 function createBaseTriggerMetadata(): TriggerMetadata {
-  return { name: "", event: "", timing: "", body: "", sqlMode: "", characterSetClient: "", collationConnection: "" };
+  return {
+    name: "",
+    event: "",
+    timing: "",
+    body: "",
+    sqlMode: "",
+    characterSetClient: "",
+    collationConnection: "",
+    comment: "",
+  };
 }
 
 export const TriggerMetadata: MessageFns<TriggerMetadata> = {
@@ -4552,6 +4676,9 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
     }
     if (message.collationConnection !== "") {
       writer.uint32(66).string(message.collationConnection);
+    }
+    if (message.comment !== "") {
+      writer.uint32(74).string(message.comment);
     }
     return writer;
   },
@@ -4619,6 +4746,14 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
           message.collationConnection = reader.string();
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.comment = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4637,6 +4772,7 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
       sqlMode: isSet(object.sqlMode) ? globalThis.String(object.sqlMode) : "",
       characterSetClient: isSet(object.characterSetClient) ? globalThis.String(object.characterSetClient) : "",
       collationConnection: isSet(object.collationConnection) ? globalThis.String(object.collationConnection) : "",
+      comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
     };
   },
 
@@ -4663,6 +4799,9 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
     if (message.collationConnection !== "") {
       obj.collationConnection = message.collationConnection;
     }
+    if (message.comment !== "") {
+      obj.comment = message.comment;
+    }
     return obj;
   },
 
@@ -4678,6 +4817,7 @@ export const TriggerMetadata: MessageFns<TriggerMetadata> = {
     message.sqlMode = object.sqlMode ?? "";
     message.characterSetClient = object.characterSetClient ?? "";
     message.collationConnection = object.collationConnection ?? "";
+    message.comment = object.comment ?? "";
     return message;
   },
 };
@@ -6185,6 +6325,7 @@ function createBaseFunctionMetadata(): FunctionMetadata {
     collationConnection: "",
     databaseCollation: "",
     sqlMode: "",
+    comment: "",
   };
 }
 
@@ -6210,6 +6351,9 @@ export const FunctionMetadata: MessageFns<FunctionMetadata> = {
     }
     if (message.sqlMode !== "") {
       writer.uint32(58).string(message.sqlMode);
+    }
+    if (message.comment !== "") {
+      writer.uint32(66).string(message.comment);
     }
     return writer;
   },
@@ -6277,6 +6421,14 @@ export const FunctionMetadata: MessageFns<FunctionMetadata> = {
           message.sqlMode = reader.string();
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.comment = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6295,6 +6447,7 @@ export const FunctionMetadata: MessageFns<FunctionMetadata> = {
       collationConnection: isSet(object.collationConnection) ? globalThis.String(object.collationConnection) : "",
       databaseCollation: isSet(object.databaseCollation) ? globalThis.String(object.databaseCollation) : "",
       sqlMode: isSet(object.sqlMode) ? globalThis.String(object.sqlMode) : "",
+      comment: isSet(object.comment) ? globalThis.String(object.comment) : "",
     };
   },
 
@@ -6321,6 +6474,9 @@ export const FunctionMetadata: MessageFns<FunctionMetadata> = {
     if (message.sqlMode !== "") {
       obj.sqlMode = message.sqlMode;
     }
+    if (message.comment !== "") {
+      obj.comment = message.comment;
+    }
     return obj;
   },
 
@@ -6336,6 +6492,7 @@ export const FunctionMetadata: MessageFns<FunctionMetadata> = {
     message.collationConnection = object.collationConnection ?? "";
     message.databaseCollation = object.databaseCollation ?? "";
     message.sqlMode = object.sqlMode ?? "";
+    message.comment = object.comment ?? "";
     return message;
   },
 };
@@ -12152,6 +12309,7 @@ function createBaseChangelog(): Changelog {
     version: "",
     revision: "",
     changedResources: undefined,
+    type: Changelog_Type.TYPE_UNSPECIFIED,
   };
 }
 
@@ -12204,6 +12362,9 @@ export const Changelog: MessageFns<Changelog> = {
     }
     if (message.changedResources !== undefined) {
       ChangedResources.encode(message.changedResources, writer.uint32(130).fork()).join();
+    }
+    if (message.type !== Changelog_Type.TYPE_UNSPECIFIED) {
+      writer.uint32(136).int32(changelog_TypeToNumber(message.type));
     }
     return writer;
   },
@@ -12343,6 +12504,14 @@ export const Changelog: MessageFns<Changelog> = {
           message.changedResources = ChangedResources.decode(reader, reader.uint32());
           continue;
         }
+        case 17: {
+          if (tag !== 136) {
+            break;
+          }
+
+          message.type = changelog_TypeFromJSON(reader.int32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -12370,6 +12539,7 @@ export const Changelog: MessageFns<Changelog> = {
       version: isSet(object.version) ? globalThis.String(object.version) : "",
       revision: isSet(object.revision) ? globalThis.String(object.revision) : "",
       changedResources: isSet(object.changedResources) ? ChangedResources.fromJSON(object.changedResources) : undefined,
+      type: isSet(object.type) ? changelog_TypeFromJSON(object.type) : Changelog_Type.TYPE_UNSPECIFIED,
     };
   },
 
@@ -12423,6 +12593,9 @@ export const Changelog: MessageFns<Changelog> = {
     if (message.changedResources !== undefined) {
       obj.changedResources = ChangedResources.toJSON(message.changedResources);
     }
+    if (message.type !== Changelog_Type.TYPE_UNSPECIFIED) {
+      obj.type = changelog_TypeToJSON(message.type);
+    }
     return obj;
   },
 
@@ -12457,6 +12630,7 @@ export const Changelog: MessageFns<Changelog> = {
     message.changedResources = (object.changedResources !== undefined && object.changedResources !== null)
       ? ChangedResources.fromPartial(object.changedResources)
       : undefined;
+    message.type = object.type ?? Changelog_Type.TYPE_UNSPECIFIED;
     return message;
   },
 };
