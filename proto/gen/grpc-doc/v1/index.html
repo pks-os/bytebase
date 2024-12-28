@@ -8862,6 +8862,13 @@ view. </p></td>
                   <td><p>The columns is the ordered list of columns in a table. </p></td>
                 </tr>
               
+                <tr>
+                  <td>indexes</td>
+                  <td><a href="#bytebase.v1.IndexMetadata">IndexMetadata</a></td>
+                  <td>repeated</td>
+                  <td><p>The indexes is the list of indexes in a table. </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -19099,9 +19106,8 @@ Format: users/{email} </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The source of origin.
-1) change history: instances/{instance}/databases/{database}/changeHistories/{changeHistory}.
-2) branch: projects/{project}/branches/{branch}.
-3) raw SQL if empty. </p></td>
+1) changelog: instances/{instance}/databases/{database}/changelog/{changeHistory}.
+2) raw SQL if empty. </p></td>
                 </tr>
               
                 <tr>
@@ -30810,6 +30816,14 @@ Leave it empty if no needs to encrypt the zip file. </p></td>
                   <td></td>
                   <td><p>The resource name of the change history
 Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory} </p></td>
+                </tr>
+              
+                <tr>
+                  <td>changelog</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The resource name of the changelog.
+Format: instances/{instance}/databases/{database}/changelogs/{changelog} </p></td>
                 </tr>
               
                 <tr>

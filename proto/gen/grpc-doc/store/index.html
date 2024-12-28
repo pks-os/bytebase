@@ -3977,6 +3977,13 @@ engine. </p></td>
                   <td><p>The columns is the ordered list of columns in a table. </p></td>
                 </tr>
               
+                <tr>
+                  <td>indexes</td>
+                  <td><a href="#bytebase.store.IndexMetadata">IndexMetadata</a></td>
+                  <td>repeated</td>
+                  <td><p>The indexes is the list of indexes in a table. </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -5601,9 +5608,8 @@ Example: projects/project-id/branches/branch-id. </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The source of origin.
-1) change history: instances/{instance}/databases/{database}/changeHistories/{changeHistory}.
-2) branch: projects/{project}/branches/{branch}.
-3) raw SQL if empty. </p></td>
+1) changes: instances/{instance}/databases/{database}/changelogs/{changelog}.
+2) raw SQL if empty. </p></td>
                 </tr>
               
                 <tr>
@@ -12913,7 +12919,15 @@ Format: instances/{instance}/databases/{database} </p></td>
                   <td>change_history</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory} </p></td>
+                  <td><p>Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory}
+Deprecated. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>changelog</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Format: instances/{instance}/databases/{database}/changelogs/{changelog} </p></td>
                 </tr>
               
                 <tr>

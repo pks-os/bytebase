@@ -2940,6 +2940,7 @@ MaterializedViewMetadata is the metadata for materialized views.
 | comment | [string](#string) |  | The comment is the comment of a materialized view. |
 | dependent_columns | [DependentColumn](#bytebase-v1-DependentColumn) | repeated | The dependent_columns is the list of dependent columns of a materialized view. |
 | triggers | [TriggerMetadata](#bytebase-v1-TriggerMetadata) | repeated | The columns is the ordered list of columns in a table. |
+| indexes | [IndexMetadata](#bytebase-v1-IndexMetadata) | repeated | The indexes is the list of indexes in a table. |
 
 
 
@@ -6695,7 +6696,7 @@ The branch&#39;s `name` field is used to identify the branch to update. Format: 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | sheet | [string](#string) |  | The name of a sheet. |
-| source | [string](#string) |  | The source of origin. 1) change history: instances/{instance}/databases/{database}/changeHistories/{changeHistory}. 2) branch: projects/{project}/branches/{branch}. 3) raw SQL if empty. |
+| source | [string](#string) |  | The source of origin. 1) changelog: instances/{instance}/databases/{database}/changelog/{changeHistory}. 2) raw SQL if empty. |
 | version | [string](#string) |  | The migration version for a change. |
 
 
@@ -11173,6 +11174,7 @@ When paginating, all other parameters provided to `ListTaskRuns` must match the 
 | status | [TaskRun.Status](#bytebase-v1-TaskRun-Status) |  |  |
 | detail | [string](#string) |  | Below are the results of a task run. |
 | change_history | [string](#string) |  | The resource name of the change history Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory} |
+| changelog | [string](#string) |  | The resource name of the changelog. Format: instances/{instance}/databases/{database}/changelogs/{changelog} |
 | schema_version | [string](#string) |  |  |
 | start_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
 | export_archive_status | [TaskRun.ExportArchiveStatus](#bytebase-v1-TaskRun-ExportArchiveStatus) |  |  |

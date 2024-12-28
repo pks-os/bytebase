@@ -1293,6 +1293,7 @@ MaterializedViewMetadata is the metadata for materialized views.
 | comment | [string](#string) |  | The comment is the comment of a view. |
 | dependent_columns | [DependentColumn](#bytebase-store-DependentColumn) | repeated | The dependent_columns is the list of dependent columns of a view. |
 | triggers | [TriggerMetadata](#bytebase-store-TriggerMetadata) | repeated | The columns is the ordered list of columns in a table. |
+| indexes | [IndexMetadata](#bytebase-store-IndexMetadata) | repeated | The indexes is the list of indexes in a table. |
 
 
 
@@ -1886,7 +1887,7 @@ LIST, HASH (https://www.postgresql.org/docs/current/ddl-partitioning.html)
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | sheet | [string](#string) |  | The name of a sheet. |
-| source | [string](#string) |  | The source of origin. 1) change history: instances/{instance}/databases/{database}/changeHistories/{changeHistory}. 2) branch: projects/{project}/branches/{branch}. 3) raw SQL if empty. |
+| source | [string](#string) |  | The source of origin. 1) changes: instances/{instance}/databases/{database}/changelogs/{changelog}. 2) raw SQL if empty. |
 | version | [string](#string) |  | The migration version for a change. |
 
 
@@ -5182,7 +5183,8 @@ TaskDatabaseUpdatePayload is the task payload for updating database (DDL &amp; D
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | detail | [string](#string) |  |  |
-| change_history | [string](#string) |  | Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory} |
+| change_history | [string](#string) |  | Format: instances/{instance}/databases/{database}/changeHistories/{changeHistory} Deprecated. |
+| changelog | [string](#string) |  | Format: instances/{instance}/databases/{database}/changelogs/{changelog} |
 | version | [string](#string) |  |  |
 | start_position | [TaskRunResult.Position](#bytebase-store-TaskRunResult-Position) |  |  |
 | end_position | [TaskRunResult.Position](#bytebase-store-TaskRunResult-Position) |  |  |
