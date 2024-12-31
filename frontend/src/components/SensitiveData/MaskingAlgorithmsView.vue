@@ -51,6 +51,7 @@
     :show="state.showCreateDrawer"
     :algorithm="state.pendingEditData"
     :readonly="!hasPermission || !hasSensitiveDataFeature"
+    @apply="onAlgorithmUpsert"
     @dismiss="onDrawerDismiss"
   />
   <DataExampleModal
@@ -68,8 +69,8 @@ import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { featureToRef, useSettingV1Store, pushNotification } from "@/store";
 import {
-  MaskingAlgorithmSetting_Algorithm as Algorithm,
-  MaskingAlgorithmSetting_Algorithm_InnerOuterMask_MaskType,
+  Algorithm,
+  Algorithm_InnerOuterMask_MaskType,
 } from "@/types/proto/v1/setting_service";
 import { hasWorkspacePermissionV2 } from "@/utils";
 import DataExampleModal from "./components/DataExampleModal.vue";
@@ -120,6 +121,47 @@ const onCreate = () => {
 
 const onDrawerDismiss = () => {
   state.showCreateDrawer = false;
+};
+
+const algorithmList = computed((): Algorithm[] => {
+  return (
+    settingStore.getSettingByName("bb.workspace.masking-algorithm")?.value
+      ?.maskingAlgorithmSettingValue?.algorithms ?? []
+  );
+});
+
+const onAlgorithmUpsert = async (maskingAlgorithm: Algorithm) => {
+  state.processing = true;
+
+  const index = algorithmList.value.findIndex(
+    (item) => item.id === maskingAlgorithm.id
+  );
+  const newList = [...algorithmList.value];
+  if (index < 0) {
+    newList.push({ ...maskingAlgorithm });
+  } else {
+    newList[index] = { ...maskingAlgorithm };
+  }
+
+  try {
+    await settingStore.upsertSetting({
+      name: "bb.workspace.masking-algorithm",
+      value: {
+        maskingAlgorithmSettingValue: {
+          algorithms: newList,
+        },
+      },
+    });
+
+    pushNotification({
+      module: "bytebase",
+      style: "SUCCESS",
+      title: t("common.updated"),
+    });
+    onDrawerDismiss();
+  } finally {
+    state.processing = false;
+  }
 };
 
 const onEdit = (data: Algorithm) => {
@@ -254,7 +296,7 @@ const example: Algorithm[] = [
       prefixLen: 1,
       suffixLen: 2,
       substitution: "***",
-      type: MaskingAlgorithmSetting_Algorithm_InnerOuterMask_MaskType.INNER,
+      type: Algorithm_InnerOuterMask_MaskType.INNER,
     },
   },
   {
@@ -267,7 +309,7 @@ const example: Algorithm[] = [
       prefixLen: 1,
       suffixLen: 2,
       substitution: "***",
-      type: MaskingAlgorithmSetting_Algorithm_InnerOuterMask_MaskType.OUTER,
+      type: Algorithm_InnerOuterMask_MaskType.OUTER,
     },
   },
 ];

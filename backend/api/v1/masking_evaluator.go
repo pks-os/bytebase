@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"cmp"
 	"log/slog"
 	"reflect"
 	"time"
@@ -19,14 +18,14 @@ type maskingLevelEvaluator struct {
 	maskingRules            []*storepb.MaskingRulePolicy_MaskingRule
 	dataClassificationIDMap map[string]*storepb.DataClassificationSetting_DataClassificationConfig
 	semanticTypesMap        map[string]*storepb.SemanticTypeSetting_SemanticType
-	maskingAlgorithms       map[string]*storepb.MaskingAlgorithmSetting_Algorithm
+	maskingAlgorithms       map[string]*storepb.Algorithm
 }
 
 func newEmptyMaskingLevelEvaluator() *maskingLevelEvaluator {
 	return &maskingLevelEvaluator{
 		dataClassificationIDMap: make(map[string]*storepb.DataClassificationSetting_DataClassificationConfig),
 		semanticTypesMap:        make(map[string]*storepb.SemanticTypeSetting_SemanticType),
-		maskingAlgorithms:       make(map[string]*storepb.MaskingAlgorithmSetting_Algorithm),
+		maskingAlgorithms:       make(map[string]*storepb.Algorithm),
 	}
 }
 
@@ -84,8 +83,17 @@ type maskingPolicyKey struct {
 	column string
 }
 
+type maskData struct {
+	Schema                    string
+	Table                     string
+	Column                    string
+	MaskingLevel              storepb.MaskingLevel
+	FullMaskingAlgorithmID    string
+	PartialMaskingAlgorithmID string
+}
+
 // nolint
-func (m *maskingLevelEvaluator) evaluateMaskingAlgorithmOfColumn(databaseMessage *store.DatabaseMessage, schemaName, tableName, columnName, columnSemanticTypeID, columnClassification string, databaseProjectDataClassificationID string, maskingPolicyMap map[maskingPolicyKey]*storepb.MaskData, filteredMaskingExceptions []*storepb.MaskingExceptionPolicy_MaskingException) (*storepb.MaskingAlgorithmSetting_Algorithm, storepb.MaskingLevel, error) {
+func (m *maskingLevelEvaluator) evaluateMaskingAlgorithmOfColumn(databaseMessage *store.DatabaseMessage, schemaName, tableName, columnName, columnSemanticTypeID, columnClassification string, databaseProjectDataClassificationID string, maskingPolicyMap map[maskingPolicyKey]*maskData, filteredMaskingExceptions []*storepb.MaskingExceptionPolicy_MaskingException) (*storepb.Algorithm, storepb.MaskingLevel, error) {
 	maskingLevel, err := m.evaluateMaskingLevelOfColumn(databaseMessage, schemaName, tableName, columnName, columnClassification, databaseProjectDataClassificationID, maskingPolicyMap, filteredMaskingExceptions)
 	if err != nil {
 		return nil, storepb.MaskingLevel_MASKING_LEVEL_UNSPECIFIED, errors.Wrapf(err, "failed to evaluate masking level of column")
@@ -102,9 +110,9 @@ func (m *maskingLevelEvaluator) evaluateMaskingAlgorithmOfColumn(databaseMessage
 		algorithmID := ""
 		switch maskingLevel {
 		case storepb.MaskingLevel_PARTIAL:
-			algorithmID = maskingData.PartialMaskingAlgorithmId
+			algorithmID = maskingData.PartialMaskingAlgorithmID
 		case storepb.MaskingLevel_FULL:
-			algorithmID = maskingData.FullMaskingAlgorithmId
+			algorithmID = maskingData.FullMaskingAlgorithmID
 		}
 		if algorithmID != "" {
 			if v, ok := m.maskingAlgorithms[algorithmID]; ok {
@@ -177,7 +185,7 @@ func (m *maskingLevelEvaluator) evaluateMaskingAlgorithmOfColumn(databaseMessage
 // - maskingPolicyMap: the map of maskingPolicy for the database column belongs to.
 //
 // - filteredMaskingExceptions: the exceptions should apply for current principal.
-func (m *maskingLevelEvaluator) evaluateMaskingLevelOfColumn(databaseMessage *store.DatabaseMessage, schemaName, tableName, columnName, columnClassification string, databaseProjectDataClassificationID string, maskingPolicyMap map[maskingPolicyKey]*storepb.MaskData, filteredMaskingExceptions []*storepb.MaskingExceptionPolicy_MaskingException) (storepb.MaskingLevel, error) {
+func (m *maskingLevelEvaluator) evaluateMaskingLevelOfColumn(databaseMessage *store.DatabaseMessage, schemaName, tableName, columnName, columnClassification string, databaseProjectDataClassificationID string, maskingPolicyMap map[maskingPolicyKey]*maskData, filteredMaskingExceptions []*storepb.MaskingExceptionPolicy_MaskingException) (storepb.MaskingLevel, error) {
 	finalLevel := storepb.MaskingLevel_MASKING_LEVEL_UNSPECIFIED
 
 	key := maskingPolicyKey{
@@ -239,13 +247,8 @@ func (m *maskingLevelEvaluator) evaluateMaskingLevelOfColumn(databaseMessage *st
 		if err != nil {
 			return storepb.MaskingLevel_MASKING_LEVEL_UNSPECIFIED, errors.Wrapf(err, "failed to evaluate masking exception policy condition")
 		}
-		if !hit {
-			continue
-		}
-		// TODO(zp): Expectedly, a column should hit only one exception,
-		// but we can take the strictest level here to make the whole program more robust.
-		if cmp.Less[storepb.MaskingLevel](filteredMaskingException.MaskingLevel, finalLevel) {
-			finalLevel = filteredMaskingException.MaskingLevel
+		if hit {
+			return storepb.MaskingLevel_NONE, nil
 		}
 	}
 	return finalLevel, nil

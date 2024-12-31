@@ -831,6 +831,7 @@
         "table": {
           "semantic-type": "セマンティックタイプ",
           "description": "説明する",
+          "masking-algorithm": "マスキングアルゴリズム",
           "full-masking-algorithm": "完全マスクのアルゴリズム",
           "partial-masking-algorithm": "部分マスクのアルゴリズム",
           "delete": "このセマンティック タイプを削除しますか?"
@@ -1493,6 +1494,7 @@
     "account": "アカウント",
     "name": "名前",
     "host-or-socket": "ホストまたはソケット",
+    "endpoint": "終点",
     "project-id-and-instance-id": "プロジェクト ID とインスタンス ID",
     "project-id": "プロジェクトID",
     "instance-id": "インスタンスID",
