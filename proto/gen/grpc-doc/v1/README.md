@@ -2631,6 +2631,7 @@ IndexMetadata is the metadata for indexes.
 | parent_index_schema | [string](#string) |  | The schema name of the parent index. |
 | parent_index_name | [string](#string) |  | The index name of the parent index. |
 | granularity | [int64](#int64) |  | The number of granules in the block. It&#39;s a ClickHouse specific field. |
+| is_constraint | [bool](#bool) |  | It&#39;s a PostgreSQL specific field. The unique constraint and unique index are not the same thing in PostgreSQL. |
 
 
 
@@ -5007,9 +5008,7 @@ When paginating, all other parameters provided to `ListSettings` must match the 
 | id | [string](#string) |  | id is the uuid for semantic type. |
 | title | [string](#string) |  | the title of the semantic type, it should not be empty. |
 | description | [string](#string) |  | the description of the semantic type, it can be empty. |
-| partial_mask_algorithm_id | [string](#string) |  | Deprecated. the partial mask algorithm id for the semantic type, if it is empty, should use the default partial mask algorithm. |
-| full_mask_algorithm_id | [string](#string) |  | Deprecated. the full mask algorithm id for the semantic type, if it is empty, should use the default full mask algorithm. |
-| algorithms | [Algorithm](#bytebase-v1-Algorithm) |  |  |
+| algorithm | [Algorithm](#bytebase-v1-Algorithm) |  |  |
 
 
 

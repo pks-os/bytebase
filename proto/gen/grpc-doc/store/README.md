@@ -930,9 +930,9 @@ Metadata about the request.
 | semantic_type_id | [string](#string) |  |  |
 | labels | [ColumnCatalog.LabelsEntry](#bytebase-store-ColumnCatalog-LabelsEntry) | repeated | The user labels for a column. |
 | classification_id | [string](#string) |  |  |
-| masking_level | [MaskingLevel](#bytebase-store-MaskingLevel) |  |  |
-| full_masking_algorithm_id | [string](#string) |  |  |
-| partial_masking_algorithm_id | [string](#string) |  |  |
+| masking_level | [MaskingLevel](#bytebase-store-MaskingLevel) |  | Deprecated. |
+| full_masking_algorithm_id | [string](#string) |  | Deprecated. |
+| partial_masking_algorithm_id | [string](#string) |  | Deprecated. |
 | object_schema | [ObjectSchema](#bytebase-store-ObjectSchema) | optional |  |
 
 
@@ -1244,6 +1244,7 @@ IndexMetadata is the metadata for indexes.
 | parent_index_schema | [string](#string) |  | The schema name of the parent index. |
 | parent_index_name | [string](#string) |  | The index name of the parent index. |
 | granularity | [int64](#int64) |  | The number of granules in the block. It&#39;s a ClickHouse specific field. |
+| is_constraint | [bool](#bool) |  | It&#39;s a PostgreSQL specific field. The unique constraint and unique index are not the same thing in PostgreSQL. |
 
 
 
@@ -4719,9 +4720,7 @@ SlowQueryPolicy is the policy configuration for slow query.
 | id | [string](#string) |  | id is the uuid for semantic type. |
 | title | [string](#string) |  | the title of the semantic type, it should not be empty. |
 | description | [string](#string) |  | the description of the semantic type, it can be empty. |
-| partial_mask_algorithm_id | [string](#string) |  | Deprecated. the partial mask algorithm id for the semantic type, if it is empty, should use the default partial mask algorithm. |
-| full_mask_algorithm_id | [string](#string) |  | Deprecated. the full mask algorithm id for the semantic type, if it is empty, should use the default full mask algorithm. |
-| algorithms | [Algorithm](#bytebase-store-Algorithm) |  |  |
+| algorithm | [Algorithm](#bytebase-store-Algorithm) |  |  |
 
 
 
