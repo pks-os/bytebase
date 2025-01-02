@@ -26,7 +26,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/bytebase/google-sql-parser v0.0.0-20241218091245-c996640523f3
-	github.com/bytebase/mysql-parser v0.0.0-20240810145851-ab2c11629c24
+	github.com/bytebase/mysql-parser v0.0.0-20241224071214-cb9fd84811dd
 	github.com/bytebase/plsql-parser v0.0.0-20241217100236-775726d725f9
 	github.com/bytebase/postgresql-parser v0.0.0-20241108072816-e932f744004a
 	github.com/bytebase/snowsql-parser v0.0.0-20241211024554-093949951501
@@ -34,12 +34,12 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cockroachdb/cockroachdb-parser v0.23.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
-	github.com/databricks/databricks-sdk-go v0.52.0
+	github.com/databricks/databricks-sdk-go v0.54.0
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/epiclabs-io/diff3 v0.0.0-20241115194849-280ec18688b6
 	github.com/github/gh-ost v1.1.6
 	github.com/go-ego/gse v0.80.3
-	github.com/go-ldap/ldap/v3 v3.4.9
+	github.com/go-ldap/ldap/v3 v3.4.10
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-sql/sqlexp v0.1.0
@@ -48,7 +48,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/gosimple/slug v1.14.0
+	github.com/gosimple/slug v1.15.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.24.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
@@ -66,7 +66,7 @@ require (
 	github.com/mattn/go-oci8 v0.1.1
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/microsoft/go-mssqldb v1.8.0
-	github.com/nyaruka/phonenumbers v1.4.3
+	github.com/nyaruka/phonenumbers v1.4.4
 	github.com/paulmach/orb v0.11.1
 	github.com/pganalyze/pg_query_go/v5 v5.1.0
 	github.com/pingcap/tidb v1.1.0-beta.0.20241125141335-ec8b81b98edc
@@ -96,11 +96,11 @@ require (
 	golang.org/x/oauth2 v0.24.0
 	golang.org/x/text v0.21.0
 	google.golang.org/api v0.214.0
-	google.golang.org/genproto v0.0.0-20241219192143-6b3ec007d9bb
-	google.golang.org/genproto/googleapis/api v0.0.0-20241219192143-6b3ec007d9bb
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241219192143-6b3ec007d9bb
+	google.golang.org/genproto v0.0.0-20241230172942-26aa7a208def
+	google.golang.org/genproto/googleapis/api v0.0.0-20241230172942-26aa7a208def
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241230172942-26aa7a208def
 	google.golang.org/grpc v1.69.2
-	google.golang.org/protobuf v1.36.0
+	google.golang.org/protobuf v1.36.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
