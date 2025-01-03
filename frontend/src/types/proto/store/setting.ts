@@ -468,11 +468,6 @@ export interface SemanticTypeSetting_SemanticType {
   algorithm: Algorithm | undefined;
 }
 
-export interface MaskingAlgorithmSetting {
-  /** algorithms is the list of masking algorithms. */
-  algorithms: Algorithm[];
-}
-
 export interface Algorithm {
   /** id is the uuid for masking algorithm. */
   id: string;
@@ -480,13 +475,6 @@ export interface Algorithm {
   title: string;
   /** description is the description for masking algorithm. */
   description: string;
-  /**
-   * Category is the category for masking algorithm. Currently, it accepts 2 categories only: MASK and HASH.
-   * The range of accepted Payload is decided by the category.
-   * MASK: FullMask, RangeMask
-   * HASH: MD5Mask
-   */
-  category: string;
   fullMask?: Algorithm_FullMask | undefined;
   rangeMask?: Algorithm_RangeMask | undefined;
   md5Mask?: Algorithm_MD5Mask | undefined;
@@ -2859,74 +2847,11 @@ export const SemanticTypeSetting_SemanticType: MessageFns<SemanticTypeSetting_Se
   },
 };
 
-function createBaseMaskingAlgorithmSetting(): MaskingAlgorithmSetting {
-  return { algorithms: [] };
-}
-
-export const MaskingAlgorithmSetting: MessageFns<MaskingAlgorithmSetting> = {
-  encode(message: MaskingAlgorithmSetting, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.algorithms) {
-      Algorithm.encode(v!, writer.uint32(10).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): MaskingAlgorithmSetting {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMaskingAlgorithmSetting();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.algorithms.push(Algorithm.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): MaskingAlgorithmSetting {
-    return {
-      algorithms: globalThis.Array.isArray(object?.algorithms)
-        ? object.algorithms.map((e: any) => Algorithm.fromJSON(e))
-        : [],
-    };
-  },
-
-  toJSON(message: MaskingAlgorithmSetting): unknown {
-    const obj: any = {};
-    if (message.algorithms?.length) {
-      obj.algorithms = message.algorithms.map((e) => Algorithm.toJSON(e));
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<MaskingAlgorithmSetting>): MaskingAlgorithmSetting {
-    return MaskingAlgorithmSetting.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<MaskingAlgorithmSetting>): MaskingAlgorithmSetting {
-    const message = createBaseMaskingAlgorithmSetting();
-    message.algorithms = object.algorithms?.map((e) => Algorithm.fromPartial(e)) || [];
-    return message;
-  },
-};
-
 function createBaseAlgorithm(): Algorithm {
   return {
     id: "",
     title: "",
     description: "",
-    category: "",
     fullMask: undefined,
     rangeMask: undefined,
     md5Mask: undefined,
@@ -2944,9 +2869,6 @@ export const Algorithm: MessageFns<Algorithm> = {
     }
     if (message.description !== "") {
       writer.uint32(26).string(message.description);
-    }
-    if (message.category !== "") {
-      writer.uint32(34).string(message.category);
     }
     if (message.fullMask !== undefined) {
       Algorithm_FullMask.encode(message.fullMask, writer.uint32(42).fork()).join();
@@ -2992,14 +2914,6 @@ export const Algorithm: MessageFns<Algorithm> = {
           }
 
           message.description = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.category = reader.string();
           continue;
         }
         case 5: {
@@ -3048,7 +2962,6 @@ export const Algorithm: MessageFns<Algorithm> = {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       title: isSet(object.title) ? globalThis.String(object.title) : "",
       description: isSet(object.description) ? globalThis.String(object.description) : "",
-      category: isSet(object.category) ? globalThis.String(object.category) : "",
       fullMask: isSet(object.fullMask) ? Algorithm_FullMask.fromJSON(object.fullMask) : undefined,
       rangeMask: isSet(object.rangeMask) ? Algorithm_RangeMask.fromJSON(object.rangeMask) : undefined,
       md5Mask: isSet(object.md5Mask) ? Algorithm_MD5Mask.fromJSON(object.md5Mask) : undefined,
@@ -3068,9 +2981,6 @@ export const Algorithm: MessageFns<Algorithm> = {
     }
     if (message.description !== "") {
       obj.description = message.description;
-    }
-    if (message.category !== "") {
-      obj.category = message.category;
     }
     if (message.fullMask !== undefined) {
       obj.fullMask = Algorithm_FullMask.toJSON(message.fullMask);
@@ -3095,7 +3005,6 @@ export const Algorithm: MessageFns<Algorithm> = {
     message.id = object.id ?? "";
     message.title = object.title ?? "";
     message.description = object.description ?? "";
-    message.category = object.category ?? "";
     message.fullMask = (object.fullMask !== undefined && object.fullMask !== null)
       ? Algorithm_FullMask.fromPartial(object.fullMask)
       : undefined;

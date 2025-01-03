@@ -46,8 +46,10 @@ func TestEvalMaskingLevelOfColumn(t *testing.T) {
 			},
 		},
 	}
-	defaultAlgorithm := &storepb.Algorithm{
-		Id: "hash",
+	fullAlgorithm := &storepb.Algorithm{
+		Mask: &storepb.Algorithm_FullMask_{FullMask: &storepb.Algorithm_FullMask{Substitution: "******"}},
+	}
+	hashAlgorithm := &storepb.Algorithm{
 		Mask: &storepb.Algorithm_Md5Mask{
 			Md5Mask: &storepb.Algorithm_MD5Mask{Salt: "123"},
 		},
@@ -55,8 +57,12 @@ func TestEvalMaskingLevelOfColumn(t *testing.T) {
 	defaultSemanticType := &storepb.SemanticTypeSetting{
 		Types: []*storepb.SemanticTypeSetting_SemanticType{
 			{
+				Id:        "default",
+				Algorithm: fullAlgorithm,
+			},
+			{
 				Id:        "salary-amount",
-				Algorithm: defaultAlgorithm,
+				Algorithm: hashAlgorithm,
 			},
 		},
 	}
@@ -89,7 +95,7 @@ func TestEvalMaskingLevelOfColumn(t *testing.T) {
 					{
 						// Classification hit.
 						Condition:    &expr.Expr{Expression: `(table_name == "no_table") || (classification_level == "S2")`},
-						MaskingLevel: storepb.MaskingLevel_FULL,
+						SemanticType: "default",
 					},
 				},
 			},
@@ -97,7 +103,7 @@ func TestEvalMaskingLevelOfColumn(t *testing.T) {
 			dataClassification:                      defaultClassification,
 			databaseProjectDatabaseClassificationID: defaultProjectDatabaseDataClassificationID,
 
-			want: defaultFullAlgorithm,
+			want: fullAlgorithm,
 		},
 		{
 			description:     "Respect The Exception",
@@ -113,7 +119,7 @@ func TestEvalMaskingLevelOfColumn(t *testing.T) {
 					{
 						// Classification hit.
 						Condition:    &expr.Expr{Expression: `(table_name == "no_table") || (classification_level == "S2")`},
-						MaskingLevel: storepb.MaskingLevel_FULL,
+						SemanticType: "default",
 					},
 				},
 			},
@@ -144,7 +150,7 @@ func TestEvalMaskingLevelOfColumn(t *testing.T) {
 			dataClassification:                      defaultClassification,
 			databaseProjectDatabaseClassificationID: defaultProjectDatabaseDataClassificationID,
 
-			want: defaultAlgorithm,
+			want: hashAlgorithm,
 		},
 	}
 

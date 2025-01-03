@@ -243,11 +243,6 @@ message SemanticTypeSetting {
   repeated SemanticType types = 1;
 }
 
-message MaskingAlgorithmSetting {
-  // algorithms is the list of masking algorithms.
-  repeated Algorithm algorithms = 1;
-}
-
 message Algorithm {
   // id is the uuid for masking algorithm.
   string id = 1;
@@ -255,12 +250,6 @@ message Algorithm {
   string title = 2;
   // description is the description for masking algorithm.
   string description = 3;
-
-  // Category is the category for masking algorithm. Currently, it accepts 2 categories only: MASK and HASH.
-  // The range of accepted Payload is decided by the category.
-  // MASK: FullMask, RangeMask
-  // HASH: MD5Mask
-  string category = 4;
 
   message FullMask {
     // substitution is the string used to replace the original value, the

@@ -76,13 +76,10 @@ var whitelistSettings = []api.SettingName{
 	api.SettingSchemaTemplate,
 	api.SettingDataClassification,
 	api.SettingSemanticTypes,
-	api.SettingMaskingAlgorithm,
 	api.SettingSQLResultSizeLimit,
 	api.SettingSCIM,
 	api.SettingPasswordRestriction,
 }
-
-var preservedMaskingAlgorithmIDMatcher = regexp.MustCompile("^[0]{8}-[0]{4}-[0]{4}-[0]{4}-[0]{9}[0-9a-fA-F]{3}$")
 
 //go:embed mail_templates/testmail/template.html
 //go:embed mail_templates/testmail/statics/logo-full.png
@@ -556,9 +553,6 @@ func (s *SettingService) UpdateSetting(ctx context.Context, request *v1pb.Update
 		}
 		idMap := make(map[string]struct{})
 		for _, tp := range storeSemanticTypeSetting.Types {
-			if !isValidUUID(tp.Id) {
-				return nil, status.Errorf(codes.InvalidArgument, "invalid semantic type id format: %s", tp.Id)
-			}
 			if tp.Title == "" {
 				return nil, status.Errorf(codes.InvalidArgument, "category title cannot be empty: %s", tp.Id)
 			}
@@ -568,26 +562,6 @@ func (s *SettingService) UpdateSetting(ctx context.Context, request *v1pb.Update
 			idMap[tp.Id] = struct{}{}
 		}
 		bytes, err := protojson.Marshal(storeSemanticTypeSetting)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to marshal setting for %s with error: %v", apiSettingName, err)
-		}
-		storeSettingValue = string(bytes)
-	case api.SettingMaskingAlgorithm:
-		idMap := make(map[string]struct{})
-		for _, algorithm := range request.Setting.Value.GetMaskingAlgorithmSettingValue().Algorithms {
-			if err := validateMaskingAlgorithm(algorithm); err != nil {
-				return nil, err
-			}
-			if _, ok := idMap[algorithm.Id]; ok {
-				return nil, status.Errorf(codes.InvalidArgument, "duplicate masking algorithm id: %s", algorithm.Id)
-			}
-			idMap[algorithm.Id] = struct{}{}
-		}
-		storeMaskingAlgorithmSetting := new(storepb.MaskingAlgorithmSetting)
-		if err := convertProtoToProto(request.Setting.Value.GetMaskingAlgorithmSettingValue(), storeMaskingAlgorithmSetting); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to unmarshal setting value for %s with error: %v", apiSettingName, err)
-		}
-		bytes, err := protojson.Marshal(storeMaskingAlgorithmSetting)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to marshal setting for %s with error: %v", apiSettingName, err)
 		}
@@ -858,19 +832,6 @@ func (s *SettingService) convertToSettingMessage(ctx context.Context, setting *s
 			Value: &v1pb.Value{
 				Value: &v1pb.Value_SemanticTypeSettingValue{
 					SemanticTypeSettingValue: v1Value,
-				},
-			},
-		}, nil
-	case api.SettingMaskingAlgorithm:
-		v1Value := new(v1pb.MaskingAlgorithmSetting)
-		if err := common.ProtojsonUnmarshaler.Unmarshal([]byte(setting.Value), v1Value); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to unmarshal setting value for %s with error: %v", setting.Name, err)
-		}
-		return &v1pb.Setting{
-			Name: settingName,
-			Value: &v1pb.Value{
-				Value: &v1pb.Value_MaskingAlgorithmSettingValue{
-					MaskingAlgorithmSettingValue: v1Value,
 				},
 			},
 		}, nil
@@ -1339,76 +1300,6 @@ func convertV1SchemaTemplateSetting(template *v1pb.SchemaTemplateSetting) (*stor
 	}
 
 	return v1Setting, nil
-}
-
-func validateMaskingAlgorithm(algorithm *v1pb.Algorithm) error {
-	if !isValidUUID(algorithm.Id) {
-		return status.Errorf(codes.InvalidArgument, "invalid masking algorithm id format: %s", algorithm.Id)
-	}
-	if preservedMaskingAlgorithmIDMatcher.MatchString(algorithm.Id) {
-		return status.Errorf(codes.InvalidArgument, "masking algorithm id cannot be preserved id: %s", algorithm.Id)
-	}
-	if algorithm.Title == "" {
-		return status.Errorf(codes.InvalidArgument, "masking algorithm title cannot be empty: %s", algorithm.Id)
-	}
-
-	switch algorithm.Category {
-	case "MASK":
-		if algorithm.Mask == nil {
-			return nil
-		}
-		switch m := algorithm.Mask.(type) {
-		case *v1pb.Algorithm_FullMask_:
-			if err := checkSubstitution(m.FullMask.Substitution); err != nil {
-				return err
-			}
-		case *v1pb.Algorithm_RangeMask_:
-			for i, slice := range m.RangeMask.Slices {
-				if slice.Substitution == "" {
-					return status.Errorf(codes.InvalidArgument, "the substitution for slice is required")
-				}
-				if len(slice.Substitution) > 16 {
-					return status.Errorf(codes.InvalidArgument, "the substitution should less than 16 bytes")
-				}
-				for j := 0; j < i; j++ {
-					pre := m.RangeMask.Slices[j]
-					if slice.Start >= pre.End || pre.Start >= slice.End {
-						continue
-					}
-					return status.Errorf(codes.InvalidArgument, "the slice range cannot overlap: [%d,%d) and [%d,%d)", pre.Start, pre.End, slice.Start, slice.End)
-				}
-			}
-		case *v1pb.Algorithm_InnerOuterMask_:
-			if err := checkSubstitution(m.InnerOuterMask.Substitution); err != nil {
-				return err
-			}
-		default:
-			return status.Errorf(codes.InvalidArgument, "mismatch masking algorithm category and mask type: %T, %s", algorithm.Mask, algorithm.Category)
-		}
-	case "HASH":
-		if algorithm.Mask == nil {
-			return nil
-		}
-		switch algorithm.Mask.(type) {
-		case *v1pb.Algorithm_Md5Mask:
-		default:
-			return status.Errorf(codes.InvalidArgument, "mismatch masking algorithm category and mask type: %T, %s", algorithm.Mask, algorithm.Category)
-		}
-	default:
-		return status.Errorf(codes.InvalidArgument, "invalid masking algorithm category: %s", algorithm.Category)
-	}
-
-	return nil
-}
-
-func checkSubstitution(substitution string) error {
-	if substitution == "" {
-		return status.Errorf(codes.InvalidArgument, "the substitution for inner or outer masks is required")
-	}
-	if len(substitution) > 16 {
-		return status.Errorf(codes.InvalidArgument, "the substitution should less than 16 bytes")
-	}
-	return nil
 }
 
 var domainRegexp = regexp.MustCompile(`^(?i:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$`)

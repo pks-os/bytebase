@@ -290,7 +290,6 @@
     - [ExternalApprovalPayload](#bytebase-store-ExternalApprovalPayload)
     - [ExternalApprovalSetting](#bytebase-store-ExternalApprovalSetting)
     - [ExternalApprovalSetting.Node](#bytebase-store-ExternalApprovalSetting-Node)
-    - [MaskingAlgorithmSetting](#bytebase-store-MaskingAlgorithmSetting)
     - [MaximumSQLResultSizeSetting](#bytebase-store-MaximumSQLResultSizeSetting)
     - [PasswordRestrictionSetting](#bytebase-store-PasswordRestrictionSetting)
     - [SCIMSetting](#bytebase-store-SCIMSetting)
@@ -3708,7 +3707,7 @@ Format: users/{userUID} or groups/{group email} |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | A unique identifier for a node in UUID format. |
 | condition | [google.type.Expr](#google-type-Expr) |  |  |
-| masking_level | [MaskingLevel](#bytebase-store-MaskingLevel) |  |  |
+| semantic_type | [string](#string) |  |  |
 
 
 
@@ -4205,7 +4204,6 @@ SlowQueryPolicy is the policy configuration for slow query.
 | id | [string](#string) |  | id is the uuid for masking algorithm. |
 | title | [string](#string) |  | title is the title for masking algorithm. |
 | description | [string](#string) |  | description is the description for masking algorithm. |
-| category | [string](#string) |  | Category is the category for masking algorithm. Currently, it accepts 2 categories only: MASK and HASH. The range of accepted Payload is decided by the category. MASK: FullMask, RangeMask HASH: MD5Mask |
 | full_mask | [Algorithm.FullMask](#bytebase-store-Algorithm-FullMask) |  |  |
 | range_mask | [Algorithm.RangeMask](#bytebase-store-Algorithm-RangeMask) |  |  |
 | md5_mask | [Algorithm.MD5Mask](#bytebase-store-Algorithm-MD5Mask) |  |  |
@@ -4526,21 +4524,6 @@ SlowQueryPolicy is the policy configuration for slow query.
 | id | [string](#string) |  | A unique identifier for a node in UUID format. We will also include the id in the message sending to the external relay service to identify the node. |
 | title | [string](#string) |  | The title of the node. |
 | endpoint | [string](#string) |  | The external endpoint for the relay service, e.g. &#34;http://hello:1234&#34;. |
-
-
-
-
-
-
-<a name="bytebase-store-MaskingAlgorithmSetting"></a>
-
-### MaskingAlgorithmSetting
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| algorithms | [Algorithm](#bytebase-store-Algorithm) | repeated | algorithms is the list of masking algorithms. |
 
 
 

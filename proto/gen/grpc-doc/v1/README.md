@@ -259,7 +259,6 @@
     - [GetSettingResponse](#bytebase-v1-GetSettingResponse)
     - [ListSettingsRequest](#bytebase-v1-ListSettingsRequest)
     - [ListSettingsResponse](#bytebase-v1-ListSettingsResponse)
-    - [MaskingAlgorithmSetting](#bytebase-v1-MaskingAlgorithmSetting)
     - [MaximumSQLResultSizeSetting](#bytebase-v1-MaximumSQLResultSizeSetting)
     - [PasswordRestrictionSetting](#bytebase-v1-PasswordRestrictionSetting)
     - [SCIMSetting](#bytebase-v1-SCIMSetting)
@@ -4444,7 +4443,6 @@ ANY means approving any node will proceed.
 | id | [string](#string) |  | id is the uuid for masking algorithm. |
 | title | [string](#string) |  | title is the title for masking algorithm. |
 | description | [string](#string) |  | description is the description for masking algorithm. |
-| category | [string](#string) |  | Category is the category for masking algorithm. Currently, it accepts 2 categories only: MASK and HASH. The range of accepted Payload is decided by the category. MASK: FullMask, RangeMask HASH: MD5Mask |
 | full_mask | [Algorithm.FullMask](#bytebase-v1-Algorithm-FullMask) |  |  |
 | range_mask | [Algorithm.RangeMask](#bytebase-v1-Algorithm-RangeMask) |  |  |
 | md5_mask | [Algorithm.MD5Mask](#bytebase-v1-Algorithm-MD5Mask) |  |  |
@@ -4819,21 +4817,6 @@ When paginating, all other parameters provided to `ListSettings` must match the 
 
 
 
-<a name="bytebase-v1-MaskingAlgorithmSetting"></a>
-
-### MaskingAlgorithmSetting
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| algorithms | [Algorithm](#bytebase-v1-Algorithm) | repeated | algorithms is the list of masking algorithms. |
-
-
-
-
-
-
 <a name="bytebase-v1-MaximumSQLResultSizeSetting"></a>
 
 ### MaximumSQLResultSizeSetting
@@ -5070,7 +5053,6 @@ The data in setting value.
 | schema_template_setting_value | [SchemaTemplateSetting](#bytebase-v1-SchemaTemplateSetting) |  |  |
 | data_classification_setting_value | [DataClassificationSetting](#bytebase-v1-DataClassificationSetting) |  |  |
 | semantic_type_setting_value | [SemanticTypeSetting](#bytebase-v1-SemanticTypeSetting) |  |  |
-| masking_algorithm_setting_value | [MaskingAlgorithmSetting](#bytebase-v1-MaskingAlgorithmSetting) |  |  |
 | maximum_sql_result_size_setting | [MaximumSQLResultSizeSetting](#bytebase-v1-MaximumSQLResultSizeSetting) |  |  |
 | scim_setting | [SCIMSetting](#bytebase-v1-SCIMSetting) |  |  |
 | password_restriction_setting | [PasswordRestrictionSetting](#bytebase-v1-PasswordRestrictionSetting) |  |  |
@@ -7783,7 +7765,7 @@ MaskingExceptionPolicy is the allowlist of users who can access sensitive data.
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | A unique identifier for a node in UUID format. |
 | condition | [google.type.Expr](#google-type-Expr) |  |  |
-| masking_level | [MaskingLevel](#bytebase-v1-MaskingLevel) |  |  |
+| semantic_type | [string](#string) |  |  |
 
 
 
