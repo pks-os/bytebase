@@ -344,7 +344,7 @@ const columns = computed(() => {
     },
     {
       key: "semantic-types",
-      title: t("settings.sensitive-data.semantic-types.self"),
+      title: t("settings.sensitive-data.semantic-types.table.semantic-type"),
       resizable: true,
       minWidth: 140,
       maxWidth: 320,
@@ -373,6 +373,7 @@ const columns = computed(() => {
       minWidth: 140,
       maxWidth: 320,
       render: (column) => {
+        // TODO(ed): use catalog
         const config = configForColumn(column);
         return h(ClassificationCell, {
           classification: config.classificationId,

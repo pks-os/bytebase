@@ -1,5 +1,6 @@
 <template>
   <NDataTable
+    :size="size"
     :data="semanticItemList"
     :columns="columnList"
     :striped="true"
@@ -21,7 +22,6 @@
 import { CheckIcon, PencilIcon, TrashIcon, Undo2Icon } from "lucide-vue-next";
 import { NPopconfirm, NInput, NDataTable } from "naive-ui";
 import type { DataTableColumn } from "naive-ui";
-import { v4 as uuidv4 } from "uuid";
 import { computed, reactive } from "vue";
 import { useI18n } from "vue-i18n";
 import { MiniActionButton } from "@/components/v2";
@@ -30,6 +30,7 @@ import {
   type SemanticTypeSetting_SemanticType,
 } from "@/types/proto/v1/setting_service";
 import MaskingAlgorithmsCreateDrawer from "./MaskingAlgorithmsCreateDrawer.vue";
+import { getMaskingType } from "./utils";
 
 type SemanticItemMode = "NORMAL" | "CREATE" | "EDIT";
 
@@ -41,16 +42,20 @@ export interface SemanticItem {
 
 interface LocalState {
   showAlgorithmDrawer: boolean;
-  pendingEditAlgorithm: Algorithm;
+  pendingEditAlgorithm?: Algorithm;
   pendingEditSemanticIndex?: number;
   processing: boolean;
 }
 
-const props = defineProps<{
-  readonly: boolean;
-  semanticItemList: SemanticItem[];
-  rowClickable: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    size?: "small" | "medium" | "large";
+    readonly: boolean;
+    semanticItemList: SemanticItem[];
+    rowClickable: boolean;
+  }>(),
+  { size: "medium" }
+);
 
 const emit = defineEmits<{
   (event: "select", id: string): void;
@@ -61,9 +66,6 @@ const emit = defineEmits<{
 
 const state = reactive<LocalState>({
   showAlgorithmDrawer: false,
-  pendingEditAlgorithm: Algorithm.fromPartial({
-    id: uuidv4(),
-  }),
   processing: false,
 });
 
@@ -95,7 +97,7 @@ const columnList = computed(() => {
     {
       key: "title",
       title: t("settings.sensitive-data.semantic-types.table.semantic-type"),
-      width: 300,
+      width: "minmax(min-content, auto)",
       render: (item, row) => {
         if (item.mode === "NORMAL") {
           return <h3 class="break-normal">{item.item.title}</h3>;
@@ -150,17 +152,18 @@ const columnList = computed(() => {
       return (
         <div class="flex items-center space-x-1">
           <h3>
-            {item.item.algorithm?.title ??
-              t("settings.sensitive-data.algorithms.default")}
+            {getMaskingType(item.item.algorithm)
+              ? t(
+                  `settings.sensitive-data.algorithms.${getMaskingType(item.item.algorithm)?.toLowerCase()}.self`
+                )
+              : t("settings.sensitive-data.algorithms.default")}
           </h3>
           {!props.readonly && (
             <MiniActionButton
               onClick={() => {
-                state.pendingEditAlgorithm =
-                  item.item.algorithm ??
-                  Algorithm.fromPartial({
-                    id: uuidv4(),
-                  });
+                state.pendingEditAlgorithm = getMaskingType(item.item.algorithm)
+                  ? item.item.algorithm
+                  : undefined;
                 state.pendingEditSemanticIndex = row;
                 state.showAlgorithmDrawer = true;
               }}

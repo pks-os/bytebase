@@ -890,6 +890,8 @@
       },
       "algorithms": {
         "self": "アルゴリズム",
+        "add": "アルゴリズムを追加",
+        "edit": "アルゴリズムを編集",
         "upload": "アルゴリズムをアップロード",
         "upload-label": "アルゴリズム ファイルを JSON 形式でアップロードできます。",
         "override-title": "カバーアルゴリズムデータ",
@@ -1299,7 +1301,6 @@
       },
       "statement-is-too-large": "現在のステートメント サイズが 1MB を超えているため、SQL チェックはスキップされます。",
       "back-to-edit": "編集に戻る",
-      "continue-anyway": "まだ続く",
       "sql-review-violations": "SQL監査ルール違反"
     },
     "error": {
@@ -2187,6 +2188,10 @@
         "enforce-issue-title": {
           "self": "問題のタイトルを強制する",
           "description": "問題のタイトルが空でないこと、および自動生成ではなくユーザーが作成することを強制します。"
+        },
+        "allow-self-approval": {
+          "self": "自己承認を許可する",
+          "description": "問題の作成者が問題を承認できるようにします。"
         },
         "default-backup-behavior": {
           "self": "デフォルトのバックアップ動作",

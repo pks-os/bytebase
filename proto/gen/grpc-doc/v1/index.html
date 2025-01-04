@@ -227,10 +227,6 @@
                 </li>
               
                 <li>
-                  <a href="#bytebase.v1.MaskingLevel"><span class="badge">E</span>MaskingLevel</a>
-                </li>
-              
-                <li>
                   <a href="#bytebase.v1.State"><span class="badge">E</span>State</a>
                 </li>
               
@@ -3501,41 +3497,6 @@
           </tbody>
         </table>
       
-        <h3 id="bytebase.v1.MaskingLevel">MaskingLevel</h3>
-        <p></p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            
-              <tr>
-                <td>MASKING_LEVEL_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p></p></td>
-              </tr>
-            
-              <tr>
-                <td>NONE</td>
-                <td>1</td>
-                <td><p></p></td>
-              </tr>
-            
-              <tr>
-                <td>PARTIAL</td>
-                <td>2</td>
-                <td><p></p></td>
-              </tr>
-            
-              <tr>
-                <td>FULL</td>
-                <td>3</td>
-                <td><p></p></td>
-              </tr>
-            
-          </tbody>
-        </table>
-      
         <h3 id="bytebase.v1.State">State</h3>
         <p></p>
         <table class="enum-table">
@@ -3652,27 +3613,6 @@ edition(ee).</p></td>
               
                 <tr>
                   <td>classification_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>masking_level</td>
-                  <td><a href="#bytebase.v1.MaskingLevel">MaskingLevel</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>full_masking_algorithm_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>partial_masking_algorithm_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -13168,27 +13108,6 @@ The access is based on approval flow.</p></td>
             <tbody>
               
                 <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>id is the uuid for masking algorithm. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>title</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>title is the title for masking algorithm. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>description</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>description is the description for masking algorithm. </p></td>
-                </tr>
-              
-                <tr>
                   <td>full_mask</td>
                   <td><a href="#bytebase.v1.Algorithm.FullMask">Algorithm.FullMask</a></td>
                   <td></td>
@@ -20330,6 +20249,13 @@ This value should be 4-63 characters, and valid characters
 are /[a-z][0-9]-/. </p></td>
                 </tr>
               
+                <tr>
+                  <td>validate_only</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>If set to true, the request will be validated without actually creating the identity provider. </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -23050,6 +22976,13 @@ Format: projects/{project} </p></td>
                   <td></td>
                   <td><p>Whether to enable the database tenant mode for PostgreSQL.
 If enabled, the issue will be created with the pre-appended &#34;set role &lt;db_owner&gt;&#34; statement. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>allow_self_approval</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>Whether to allow the issue creator to self-approve the issue. </p></td>
                 </tr>
               
             </tbody>

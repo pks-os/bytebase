@@ -890,6 +890,8 @@
       },
       "algorithms": {
         "self": "Masking Algorithm",
+        "add": "Add algorithm",
+        "edit": "Edit algorithm",
         "upload": "Upload algorithm",
         "upload-label": "You can upload algorithm file with JSON format.",
         "override-title": "Algorithm data override",
@@ -1299,7 +1301,6 @@
       },
       "statement-is-too-large": "As the current statement size exceeds 2MB, the SQL check will be skipped.",
       "back-to-edit": "Back to edit",
-      "continue-anyway": "Continue anyway",
       "sql-review-violations": "SQL Review Violations"
     },
     "error": {
@@ -2187,6 +2188,10 @@
         "enforce-issue-title": {
           "self": "Enforce issue title",
           "description": "Enforce issue title to be non-empty and created by user instead of auto generated."
+        },
+        "allow-self-approval": {
+          "self": "Allow self approval",
+          "description": "Allow the issue creator to approve the issue."
         },
         "default-backup-behavior": {
           "self": "Default backup behavior",
