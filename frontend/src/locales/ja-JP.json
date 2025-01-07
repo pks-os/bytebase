@@ -74,6 +74,7 @@
     "edit": "編集",
     "update": "更新する",
     "updated": "更新しました",
+    "removed": "削除されました",
     "visit": "アクセス",
     "role": {
       "self": "役割"
@@ -491,7 +492,7 @@
       "gitops": "GitOps",
       "subscription": "サブスクリプション",
       "labels": "ラベル",
-      "data-masking": "データマスキング",
+      "global-masking": "グローバルマスキング",
       "data-classification": "データ分類",
       "access-control": "アクセス制御",
       "data-access": "データアクセス",
@@ -811,6 +812,8 @@
     },
     "sensitive-data": {
       "remove-sensitive-column-tips": "このデータ列の感度を下げなくなりますか?",
+      "remove-semantic-type-tips": "この列のセマンティック タイプを削除しますか?",
+      "remove-classification-tips": "この列の分類を削除しますか?",
       "global-masking-rule": "グローバルマスキングルール",
       "grant-access": "許可されたアクセス",
       "never-expires": "有効期限なし",
@@ -836,6 +839,24 @@
           "delete": "このセマンティック タイプを削除しますか?"
         },
         "template": {
+          "description": "テンプレートから組み込みのセマンティック タイプを適用できます。組み込みテンプレートは変更できません。",
+          "duplicate-warning": "セマンティック タイプ \"{title}\" は既に存在します",
+          "bb-default": {
+            "title": "デフォルト",
+            "description": "完全なマスク付きのデフォルトタイプ",
+            "algorithm": {
+              "title": "フルマスク",
+              "description": "すべての値は「******」としてマスクされます"
+            }
+          },
+          "bb-default-partial": {
+            "title": "デフォルト 部分的",
+            "description": "部分マスク付きのデフォルトの部分タイプ",
+            "algorithm": {
+              "title": "範囲マスク",
+              "description": "中央の生データのみを保持し、先頭と末尾を「**」で覆います。\nたとえば、「address」は「**dre**」としてマスクされます。"
+            }
+          },
           "address": {
             "title": "中国の詳細な住所",
             "description": ""
@@ -2253,10 +2274,10 @@
       "create-success": "GitOps 接続が作成されました",
       "delete-success": "GitOps 接続が削除されました"
     },
-    "masking-access": {
-      "self": "マスキングアクセス",
-      "grant-access": "アクセスを許可する",
-      "revoke-access-title": "{member} のエクスポート アクセスとクエリ アクセスの両方を削除しますか?"
+    "masking-exemption": {
+      "self": "マスキング免除",
+      "grant-exemption": "免除を付与",
+      "revoke-exemption-title": "{member} のエクスポートおよびクエリのマスキング免除を両方削除しますか？"
     }
   },
   "gitops": {
@@ -2599,7 +2620,8 @@
       "go-to-create": "作成に行く",
       "contact-the-admin-to-grant-access": "管理者に連絡してアクセスを許可してください。"
     },
-    "upload-file": "ファイルをアップロードする"
+    "upload-file": "ファイルをアップロードする",
+    "copy-selected-results": "選択したデータを{action}または{button}でコピーします"
   },
   "schema-editor": {
     "self": "スキーマエディタ",

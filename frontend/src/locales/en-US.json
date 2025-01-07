@@ -74,6 +74,7 @@
     "edit": "Edit",
     "update": "Update",
     "updated": "Updated",
+    "removed": "Removed",
     "visit": "Visit",
     "role": {
       "self": "Role"
@@ -491,7 +492,7 @@
       "gitops": "GitOps",
       "subscription": "Subscription",
       "labels": "Labels",
-      "data-masking": "Data Masking",
+      "global-masking": "Global Masking",
       "data-classification": "Data Classification",
       "access-control": "Access Control",
       "data-access": "Data Access",
@@ -811,6 +812,8 @@
     },
     "sensitive-data": {
       "remove-sensitive-column-tips": "Expose this column?",
+      "remove-semantic-type-tips": "Remove the semantic type for this column?",
+      "remove-classification-tips": "Remove the classification for this column?",
       "global-masking-rule": "Global Masking Rule",
       "grant-access": "Grant Access",
       "never-expires": "Never expires",
@@ -836,6 +839,24 @@
           "delete": "Delete this semantic type?"
         },
         "template": {
+          "description": "You can apply built-in semantic types from the template. Built-in template cannot be changed.",
+          "duplicate-warning": "Semantic type \"{title}\" already exists",
+          "bb-default": {
+            "title": "Default",
+            "description": "Default type with full masking",
+            "algorithm": {
+              "title": "Full mask",
+              "description": "All values will be masked as \"******\""
+            }
+          },
+          "bb-default-partial": {
+            "title": "Default Partial",
+            "description": "Default partial type with partial masking",
+            "algorithm": {
+              "title": "Range mask",
+              "description": "Only keep the raw data in the middle, and cover the beginning and end with \"**\".\nFor example, \"address\" will be masked as \"**dre**\"."
+            }
+          },
           "address": {
             "title": "Address",
             "description": ""
@@ -2253,10 +2274,10 @@
       "create-success": "Successfully created GitOps connector",
       "delete-success": "The GitOps connector is removed"
     },
-    "masking-access": {
-      "self": "Masking Access",
-      "grant-access": "Grant Access",
-      "revoke-access-title": "Remove both export and query access for {member}?"
+    "masking-exemption": {
+      "self": "Masking Exemptions",
+      "grant-exemption": "Grant Exemption",
+      "revoke-exemption-title": "Remove both export and query masking exemptions for {member}?"
     }
   },
   "gitops": {
@@ -2599,7 +2620,8 @@
       "go-to-create": "Go to create",
       "contact-the-admin-to-grant-access": "Contact to the admin to grant access."
     },
-    "upload-file": "Upload file"
+    "upload-file": "Upload file",
+    "copy-selected-results": "Copy selected data by {action} or {button}"
   },
   "schema-editor": {
     "self": "Schema Editor",

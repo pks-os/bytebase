@@ -74,6 +74,7 @@
     "edit": "编辑",
     "update": "更新",
     "updated": "已更新",
+    "removed": "已移除",
     "visit": "访问",
     "role": {
       "self": "角色"
@@ -491,7 +492,7 @@
       "gitops": "GitOps",
       "subscription": "订阅",
       "labels": "标签",
-      "data-masking": "数据屏蔽",
+      "global-masking": "全局数据屏蔽",
       "data-classification": "数据分类",
       "access-control": "访问控制",
       "data-access": "数据访问",
@@ -811,6 +812,8 @@
     },
     "sensitive-data": {
       "remove-sensitive-column-tips": "不再对此列数据脱敏？",
+      "remove-semantic-type-tips": "删除此列的语义类型吗？",
+      "remove-classification-tips": "删除此列的分类吗？",
       "global-masking-rule": "全局脱敏规则",
       "grant-access": "授权访问",
       "never-expires": "无过期时间",
@@ -836,6 +839,24 @@
           "delete": "删除这个语义类型？"
         },
         "template": {
+          "description": "您可以从模板中应用内置语义类型。内置模板无法更改。",
+          "duplicate-warning": "语义类型“{title}”已存在",
+          "bb-default": {
+            "title": "全遮掩",
+            "description": "遮掩全部数据",
+            "algorithm": {
+              "title": "全遮掩",
+              "description": "所有值都将被屏蔽为“******”"
+            }
+          },
+          "bb-default-partial": {
+            "title": "半遮掩",
+            "description": "遮掩部分数据",
+            "algorithm": {
+              "title": "范围遮掩",
+              "description": "只保留中间的原始数据，并用“**”覆盖开头和结尾。\n例如，“address”将被屏蔽为“**dre**”。"
+            }
+          },
           "address": {
             "title": "中文详细地址",
             "description": ""
@@ -2253,10 +2274,10 @@
       "create-success": "GitOps 连接已创建",
       "delete-success": "GitOps 连接已删除"
     },
-    "masking-access": {
-      "self": "脱敏管控",
-      "grant-access": "授予访问权限",
-      "revoke-access-title": "是否删除 {member} 的导出和查询访问权限？"
+    "masking-exemption": {
+      "self": "脱敏豁免",
+      "grant-exemption": "授予豁免",
+      "revoke-exemption-title": "是否移除 {member} 的导出和查询屏蔽豁免？"
     }
   },
   "gitops": {
@@ -2599,7 +2620,8 @@
       "go-to-create": "去创建",
       "contact-the-admin-to-grant-access": "联系管理员以授予访问权限。"
     },
-    "upload-file": "上传文件"
+    "upload-file": "上传文件",
+    "copy-selected-results": "通过 {action} 或 {button} 来快速复制选定的数据"
   },
   "schema-editor": {
     "self": "Schema 编辑器",

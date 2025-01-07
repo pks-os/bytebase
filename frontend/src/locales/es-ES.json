@@ -74,6 +74,7 @@
     "edit": "Editar",
     "update": "Actualizar",
     "updated": "Actualizado",
+    "removed": "Remoto",
     "visit": "Visitar",
     "role": {
       "self": "Rol"
@@ -491,7 +492,7 @@
       "gitops": "GitOps",
       "subscription": "Suscripción",
       "labels": "Etiquetas",
-      "data-masking": "Enmascaramiento de datos",
+      "global-masking": "Enmascaramiento Global",
       "data-classification": "Clasificación de datos",
       "access-control": "Control de acceso",
       "data-access": "Acceso a datos",
@@ -811,6 +812,8 @@
     },
     "sensitive-data": {
       "remove-sensitive-column-tips": "¿Exponer esta columna?",
+      "remove-semantic-type-tips": "¿Eliminar el tipo semántico de esta columna?",
+      "remove-classification-tips": "¿Eliminar la clasificación de esta columna?",
       "global-masking-rule": "Regla De Enmascaramiento Global",
       "grant-access": "Autorizará el acceso",
       "never-expires": "Nunca expira",
@@ -836,6 +839,24 @@
           "delete": "¿Eliminar este tipo semántico?"
         },
         "template": {
+          "description": "Puede aplicar tipos semánticos integrados desde la plantilla. La plantilla integrada no se puede modificar.",
+          "duplicate-warning": "El tipo semántico \"{title}\" ya existe",
+          "bb-default": {
+            "title": "Por defecto",
+            "description": "Tipo predeterminado con enmascaramiento completo",
+            "algorithm": {
+              "title": "Máscara completa",
+              "description": "Todos los valores se enmascararán como \"******\""
+            }
+          },
+          "bb-default-partial": {
+            "title": "Predeterminado Parcial",
+            "description": "Tipo parcial predeterminado con enmascaramiento parcial",
+            "algorithm": {
+              "title": "Máscara de rango",
+              "description": "Solo se conservan los datos sin procesar en el medio y se tapa el principio y el final con \"**\".\nPor ejemplo, \"dirección\" se enmascarará como \"**dre**\"."
+            }
+          },
           "address": {
             "title": "La dirección",
             "description": ""
@@ -2253,10 +2274,10 @@
       "create-success": "Conector GitOps creado correctamente",
       "delete-success": "Se elimina el conector GitOps"
     },
-    "masking-access": {
-      "self": "Acceso enmascarado",
-      "grant-access": "Conceder acceso",
-      "revoke-access-title": "¿Eliminar el acceso de exportación y consulta para {member}?"
+    "masking-exemption": {
+      "self": "Exenciones de Enmascaramiento",
+      "grant-exemption": "Conceder Exención",
+      "revoke-exemption-title": "Eliminar tanto las exenciones de exportación como de consulta de enmascaramiento para {member}?"
     }
   },
   "gitops": {
@@ -2599,7 +2620,8 @@
       "go-to-create": "ir a crear",
       "contact-the-admin-to-grant-access": "Póngase en contacto con el administrador para otorgar acceso."
     },
-    "upload-file": "Subir archivo"
+    "upload-file": "Subir archivo",
+    "copy-selected-results": "Copiar datos seleccionados por {action} o {button}"
   },
   "schema-editor": {
     "self": "Editor de esquema",

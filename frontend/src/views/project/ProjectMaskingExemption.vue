@@ -36,7 +36,7 @@
                 return;
               }
               router.push({
-                name: PROJECT_V1_ROUTE_MASKING_ACCESS_CREATE,
+                name: PROJECT_V1_ROUTE_MASKING_EXEMPTION_CREATE,
               });
             }
           "
@@ -49,7 +49,7 @@
               custom-class="text-white"
             />
           </template>
-          {{ $t("project.masking-access.grant-access") }}
+          {{ $t("project.masking-exemption.grant-exemption") }}
         </NButton>
       </div>
     </div>
@@ -78,7 +78,7 @@ import { FeatureModal, FeatureBadge } from "@/components/FeatureGuard";
 import MaskingExceptionUserTable from "@/components/SensitiveData/MaskingExceptionUserTable.vue";
 import MaskingActionDropdown from "@/components/SensitiveData/components/MaskingActionDropdown.vue";
 import { SearchBox, DatabaseSelect } from "@/components/v2";
-import { PROJECT_V1_ROUTE_MASKING_ACCESS_CREATE } from "@/router/dashboard/projectV1";
+import { PROJECT_V1_ROUTE_MASKING_EXEMPTION_CREATE } from "@/router/dashboard/projectV1";
 import { useProjectByName, hasFeature } from "@/store";
 import { projectNamePrefix } from "@/store/modules/v1/common";
 import type { MaskingExceptionPolicy_MaskingException } from "@/types/proto/v1/org_policy_service";
