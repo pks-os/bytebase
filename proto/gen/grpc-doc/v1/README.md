@@ -108,7 +108,8 @@
     - [DatabaseSchema](#bytebase-v1-DatabaseSchema)
     - [DeleteRevisionRequest](#bytebase-v1-DeleteRevisionRequest)
     - [DeleteSecretRequest](#bytebase-v1-DeleteSecretRequest)
-    - [DependentColumn](#bytebase-v1-DependentColumn)
+    - [DependencyColumn](#bytebase-v1-DependencyColumn)
+    - [DependencyTable](#bytebase-v1-DependencyTable)
     - [DiffSchemaRequest](#bytebase-v1-DiffSchemaRequest)
     - [DiffSchemaResponse](#bytebase-v1-DiffSchemaResponse)
     - [EnumTypeMetadata](#bytebase-v1-EnumTypeMetadata)
@@ -2309,10 +2310,10 @@ DatabaseSchema is the metadata for databases.
 
 
 
-<a name="bytebase-v1-DependentColumn"></a>
+<a name="bytebase-v1-DependencyColumn"></a>
 
-### DependentColumn
-DependentColumn is the metadata for dependent columns.
+### DependencyColumn
+DependencyColumn is the metadata for dependency columns.
 
 
 | Field | Type | Label | Description |
@@ -2320,6 +2321,22 @@ DependentColumn is the metadata for dependent columns.
 | schema | [string](#string) |  | The schema is the schema of a reference column. |
 | table | [string](#string) |  | The table is the table of a reference column. |
 | column | [string](#string) |  | The column is the name of a reference column. |
+
+
+
+
+
+
+<a name="bytebase-v1-DependencyTable"></a>
+
+### DependencyTable
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| schema | [string](#string) |  | The schema is the schema of a reference table. |
+| table | [string](#string) |  | The table is the name of a reference table. |
 
 
 
@@ -2488,6 +2505,7 @@ FunctionMetadata is the metadata for functions.
 | database_collation | [string](#string) |  |  |
 | sql_mode | [string](#string) |  |  |
 | comment | [string](#string) |  |  |
+| dependency_tables | [DependencyTable](#bytebase-v1-DependencyTable) | repeated | The dependency_tables is the list of dependency tables of a function. For PostgreSQL, it&#39;s the list of tables that the function depends on the return type definition. |
 
 
 
@@ -2848,7 +2866,7 @@ MaterializedViewMetadata is the metadata for materialized views.
 | name | [string](#string) |  | The name is the name of a materialized view. |
 | definition | [string](#string) |  | The definition is the definition of a materialized view. |
 | comment | [string](#string) |  | The comment is the comment of a materialized view. |
-| dependent_columns | [DependentColumn](#bytebase-v1-DependentColumn) | repeated | The dependent_columns is the list of dependent columns of a materialized view. |
+| dependency_columns | [DependencyColumn](#bytebase-v1-DependencyColumn) | repeated | The dependency_columns is the list of dependency columns of a materialized view. |
 | triggers | [TriggerMetadata](#bytebase-v1-TriggerMetadata) | repeated | The columns is the ordered list of columns in a table. |
 | indexes | [IndexMetadata](#bytebase-v1-IndexMetadata) | repeated | The indexes is the list of indexes in a table. |
 
@@ -3327,7 +3345,7 @@ ViewMetadata is the metadata for views.
 | name | [string](#string) |  | The name is the name of a view. |
 | definition | [string](#string) |  | The definition is the definition of a view. |
 | comment | [string](#string) |  | The comment is the comment of a view. |
-| dependent_columns | [DependentColumn](#bytebase-v1-DependentColumn) | repeated | The dependent_columns is the list of dependent columns of a view. |
+| dependency_columns | [DependencyColumn](#bytebase-v1-DependencyColumn) | repeated | The dependency_columns is the list of dependency columns of a view. |
 | columns | [ColumnMetadata](#bytebase-v1-ColumnMetadata) | repeated | The columns is the ordered list of columns in a table. |
 | triggers | [TriggerMetadata](#bytebase-v1-TriggerMetadata) | repeated | The triggers is the list of triggers in a view. |
 
@@ -9286,6 +9304,7 @@ Type is the database change type.
 | limit | [int32](#int32) |  | The maximum number of rows to return. |
 | timeout | [google.protobuf.Duration](#google-protobuf-Duration) |  | The timeout for the request. |
 | schema | [string](#string) | optional | The default schema to execute the statement. Equals to the current schema in Oracle and search path in Postgres. |
+| container | [string](#string) | optional | Container is the container name to execute the query against, used for CosmosDB only. |
 
 
 
@@ -9515,6 +9534,7 @@ Type is the database change type.
 | explain | [bool](#bool) |  | Explain the statement. |
 | schema | [string](#string) | optional | The default schema to search objects. Equals to the current schema in Oracle and search path in Postgres. |
 | query_option | [QueryOption](#bytebase-v1-QueryOption) |  |  |
+| container | [string](#string) | optional | Container is the container name to execute the query against, used for CosmosDB only. |
 
 
 

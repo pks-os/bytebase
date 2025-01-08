@@ -370,7 +370,11 @@
                 </li>
               
                 <li>
-                  <a href="#bytebase.store.DependentColumn"><span class="badge">M</span>DependentColumn</a>
+                  <a href="#bytebase.store.DependencyColumn"><span class="badge">M</span>DependencyColumn</a>
+                </li>
+              
+                <li>
+                  <a href="#bytebase.store.DependencyTable"><span class="badge">M</span>DependencyTable</a>
                 </li>
               
                 <li>
@@ -3311,8 +3315,8 @@ classification and user_comment is parsed from the comment. </p></td>
 
         
       
-        <h3 id="bytebase.store.DependentColumn">DependentColumn</h3>
-        <p>DependentColumn is the metadata for dependent columns.</p>
+        <h3 id="bytebase.store.DependencyColumn">DependencyColumn</h3>
+        <p>DependencyColumn is the metadata for dependency columns.</p>
 
         
           <table class="field-table">
@@ -3340,6 +3344,37 @@ classification and user_comment is parsed from the comment. </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The column is the name of a reference column. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="bytebase.store.DependencyTable">DependencyTable</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>schema</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The schema is the schema of a reference table. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>table</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The table is the name of a reference table. </p></td>
                 </tr>
               
             </tbody>
@@ -3727,6 +3762,14 @@ function takes. </p></td>
                   <td><p> </p></td>
                 </tr>
               
+                <tr>
+                  <td>dependency_tables</td>
+                  <td><a href="#bytebase.store.DependencyTable">DependencyTable</a></td>
+                  <td>repeated</td>
+                  <td><p>The dependency_tables is the list of dependency tables of a function.
+For PostgreSQL, it&#39;s the list of tables that the function depends on the return type definition. </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -3985,10 +4028,10 @@ engine. </p></td>
                 </tr>
               
                 <tr>
-                  <td>dependent_columns</td>
-                  <td><a href="#bytebase.store.DependentColumn">DependentColumn</a></td>
+                  <td>dependency_columns</td>
+                  <td><a href="#bytebase.store.DependencyColumn">DependencyColumn</a></td>
                   <td>repeated</td>
-                  <td><p>The dependent_columns is the list of dependent columns of a view. </p></td>
+                  <td><p>The dependency_columns is the list of dependency columns of a view. </p></td>
                 </tr>
               
                 <tr>
@@ -5234,10 +5277,10 @@ Format: projcets/{project}/branches/{branch} </p></td>
                 </tr>
               
                 <tr>
-                  <td>dependent_columns</td>
-                  <td><a href="#bytebase.store.DependentColumn">DependentColumn</a></td>
+                  <td>dependency_columns</td>
+                  <td><a href="#bytebase.store.DependencyColumn">DependencyColumn</a></td>
                   <td>repeated</td>
-                  <td><p>The dependent_columns is the list of dependent columns of a view. </p></td>
+                  <td><p>The dependency_columns is the list of dependency columns of a view. </p></td>
                 </tr>
               
                 <tr>

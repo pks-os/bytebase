@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/bytebase/bytebase/backend/plugin/parser/base"
 	"github.com/bytebase/bytebase/backend/plugin/parser/sql/ast"
 	pgrawparser "github.com/bytebase/bytebase/backend/plugin/parser/sql/engine/pg"
 	storepb "github.com/bytebase/bytebase/proto/generated-go/store"
@@ -106,7 +107,7 @@ func (*Driver) Dump(_ context.Context, out io.Writer, metadata *storepb.Database
 		}
 	}
 
-	graph := NewGraph()
+	graph := base.NewGraph()
 	viewMap := make(map[string]*storepb.ViewMetadata)
 	materializedViewMap := make(map[string]*storepb.MaterializedViewMetadata)
 
@@ -116,7 +117,7 @@ func (*Driver) Dump(_ context.Context, out io.Writer, metadata *storepb.Database
 			viewID := getTableID(schema.Name, view.Name)
 			viewMap[viewID] = view
 			graph.AddNode(viewID)
-			for _, dependency := range view.DependentColumns {
+			for _, dependency := range view.DependencyColumns {
 				dependencyID := getTableID(dependency.Schema, dependency.Table)
 				graph.AddEdge(dependencyID, viewID)
 			}
@@ -125,14 +126,14 @@ func (*Driver) Dump(_ context.Context, out io.Writer, metadata *storepb.Database
 			viewID := getTableID(schema.Name, view.Name)
 			materializedViewMap[viewID] = view
 			graph.AddNode(viewID)
-			for _, dependency := range view.DependentColumns {
+			for _, dependency := range view.DependencyColumns {
 				dependencyID := getTableID(dependency.Schema, dependency.Table)
 				graph.AddEdge(dependencyID, viewID)
 			}
 		}
 	}
 
-	orderedList, err := graph.GetTopoSort()
+	orderedList, err := graph.TopologicalSort()
 	if err != nil {
 		return errors.Wrap(err, "failed to get topological sort")
 	}
