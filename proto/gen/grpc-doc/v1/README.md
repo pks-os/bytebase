@@ -5444,6 +5444,7 @@ InstanceConnectionDetail is the detail for instance connection anomaly.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| parent | [string](#string) |  | The parent resource whose anomalies are to be listed. Format: projects/{project} |
 | filter | [string](#string) |  | filter is the filter to apply on the search anomaly request, follow the [ebnf](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) syntax. Only support filter by resource and type for now. For example: Search the anomalies of a specific resource: &#39;resource=&#34;instances/{instance}&#34;.&#39; Search the specified types of anomalies: &#39;type=&#34;MIGRATION_SCHEMA&#34;.&#39; |
 | page_size | [int32](#int32) |  | Not used. The maximum number of anomalies to return. The service may return fewer than this value. If unspecified, at most 10 anomalies will be returned. The maximum value is 1000; values above 1000 will be coerced to 1000. |
 | page_token | [string](#string) |  | Not used. A page token, received from a previous `SearchAnomalies` call. Provide this to retrieve the subsequent page.
@@ -5495,10 +5496,6 @@ AnomalyType is the type of the anomaly.
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | ANOMALY_TYPE_UNSPECIFIED | 0 | Unspecified anomaly type. |
-| INSTANCE_CONNECTION | 1 | Instance level anomaly.
-
-INSTANCE_CONNECTION is the anomaly type for instance connection, e.g. the instance is down. |
-| MIGRATION_SCHEMA | 2 | MIGRATION_SCHEMA is the anomaly type for migration schema, e.g. the migration schema in the instance is missing. |
 | DATABASE_CONNECTION | 5 | Database level anomaly.
 
 DATABASE_CONNECTION is the anomaly type for database connection, e.g. the database had been deleted. |
@@ -9865,7 +9862,7 @@ for field description.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| file | [string](#string) |  | The file id that is being checked. |
+| file | [string](#string) |  | The file path that is being checked. |
 | advices | [Advice](#bytebase-v1-Advice) | repeated |  |
 
 

@@ -1,9 +1,10 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div
-    class="relative px-2 py-1 text-sm dark:text-gray-100 leading-5 whitespace-nowrap break-all"
+    class="relative px-2 py-1"
     :class="classes"
     @click="handleClick"
+    @dblclick="showDetail"
   >
     <div
       ref="wrapperRef"
@@ -27,47 +28,51 @@
 
 <script setup lang="ts">
 import { type Table } from "@tanstack/vue-table";
+import { useResizeObserver } from "@vueuse/core";
 import { escape, uniq } from "lodash-es";
 import { NButton } from "naive-ui";
-import stringWidth from "string-width";
 import { computed, ref } from "vue";
 import { useConnectionOfCurrentSQLEditorTab } from "@/store";
 import { Engine } from "@/types/proto/v1/common";
 import type { QueryRow, RowValue } from "@/types/proto/v1/sql_service";
-import { extractSQLRowValue, getHighlightHTMLByRegExp } from "@/utils";
-import { useSQLResultViewContext } from "../../context";
-import { useSelectionContext } from "../common/selection-logic";
+import { extractSQLRowValuePlain, getHighlightHTMLByRegExp } from "@/utils";
+import { useSQLResultViewContext } from "../context";
+import { useSelectionContext } from "./common/selection-logic";
 
 const props = defineProps<{
   table: Table<QueryRow>;
   value: RowValue;
-  width: number;
   setIndex: number;
   rowIndex: number;
   colIndex: number;
+  allowSelect?: boolean;
 }>();
+
+const { dark, disallowCopyingData, detail, keyword } =
+  useSQLResultViewContext();
 
 const {
   state: selectionState,
   disabled: selectionDisabled,
   selectRow,
 } = useSelectionContext();
-const { dark, disallowCopyingData, detail, keyword } =
-  useSQLResultViewContext();
 const wrapperRef = ref<HTMLDivElement>();
-const plainValue = computed(() => {
-  return extractSQLRowValue(props.value).plain;
-});
-const truncated = computed(() => {
-  // not that accurate
-  const content = String(plainValue.value);
-  const em = 8;
-  const padding = 8;
-  const guessedContentWidth = stringWidth(content) * em + padding * 2;
+const truncated = ref(false);
 
-  return guessedContentWidth > props.width;
+const allowSelect = computed(() => {
+  return props.allowSelect && !selectionDisabled.value;
 });
 
+useResizeObserver(wrapperRef, (entries) => {
+  const div = entries[0].target as HTMLDivElement;
+  const contentWidth = div.scrollWidth;
+  const visibleWidth = div.offsetWidth;
+  if (contentWidth > visibleWidth) {
+    truncated.value = true;
+  } else {
+    truncated.value = false;
+  }
+});
 const { database } = useConnectionOfCurrentSQLEditorTab();
 
 const clickable = computed(() => {
@@ -88,16 +93,16 @@ const classes = computed(() => {
   if (disallowCopyingData.value) {
     classes.push("select-none");
   }
-  if (!selectionDisabled.value) {
+  if (allowSelect.value) {
     if (props.colIndex === 0) {
       classes.push("cursor-pointer");
-      classes.push("hover:bg-accent/10");
+      classes.push("hover:bg-accent/10 hover:dark:bg-accent/40");
     }
     if (
       selectionState.value.columns.includes(props.colIndex) ||
       selectionState.value.rows.includes(props.rowIndex)
     ) {
-      classes.push("bg-accent/10");
+      classes.push("bg-accent/10 dark:bg-accent/40");
     }
   }
   if (clickable.value) {
@@ -108,7 +113,7 @@ const classes = computed(() => {
 });
 
 const html = computed(() => {
-  const value = plainValue.value;
+  const value = extractSQLRowValuePlain(props.value);
   if (value === undefined) {
     return `<span class="text-gray-400 italic">UNSET</span>`;
   }
@@ -133,7 +138,7 @@ const html = computed(() => {
 });
 
 const handleClick = (e: MouseEvent) => {
-  if (props.colIndex === 0 && !selectionDisabled.value) {
+  if (props.colIndex === 0 && allowSelect.value) {
     selectRow(props.rowIndex);
     e.stopPropagation();
   }

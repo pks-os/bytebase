@@ -15631,6 +15631,14 @@ Format:
             <tbody>
               
                 <tr>
+                  <td>parent</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The parent resource whose anomalies are to be listed.
+Format: projects/{project} </p></td>
+                </tr>
+              
+                <tr>
                   <td>filter</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -15756,20 +15764,6 @@ If this field is omitted, there are no subsequent pages. </p></td>
               </tr>
             
               <tr>
-                <td>INSTANCE_CONNECTION</td>
-                <td>1</td>
-                <td><p>Instance level anomaly.
-
-INSTANCE_CONNECTION is the anomaly type for instance connection, e.g. the instance is down.</p></td>
-              </tr>
-            
-              <tr>
-                <td>MIGRATION_SCHEMA</td>
-                <td>2</td>
-                <td><p>MIGRATION_SCHEMA is the anomaly type for migration schema, e.g. the migration schema in the instance is missing.</p></td>
-              </tr>
-            
-              <tr>
                 <td>DATABASE_CONNECTION</td>
                 <td>5</td>
                 <td><p>Database level anomaly.
@@ -15829,7 +15823,7 @@ e.g. the database schema had been changed without bytebase migration.</p></td>
               <tr>
                 <td>SearchAnomalies</td>
                 <td>POST</td>
-                <td>/v1/anomalies:search</td>
+                <td>/v1/{parent=projects/*}/anomalies:search</td>
                 <td>*</td>
               </tr>
               
@@ -27400,7 +27394,7 @@ instances/{instance}/databases/{database} </p></td>
                   <td>file</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>The file id that is being checked. </p></td>
+                  <td><p>The file path that is being checked. </p></td>
                 </tr>
               
                 <tr>

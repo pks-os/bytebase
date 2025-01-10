@@ -2,10 +2,6 @@
   <div
     ref="containerRef"
     class="bb-data-table relative w-full flex-1 overflow-hidden flex flex-col"
-    :style="{
-      maxHeight: maxHeight ? `${maxHeight}px` : undefined,
-    }"
-    :data-container-height="containerHeight"
   >
     <div class="w-full flex-1 flex flex-col overflow-hidden">
       <div
@@ -74,7 +70,9 @@
 
                   <ColumnSortedIcon
                     :is-sorted="header.column.getIsSorted()"
-                    @click="header.column.getToggleSortingHandler()?.($event)"
+                    @click.stop.prevent="
+                      header.column.getToggleSortingHandler()?.($event)
+                    "
                   />
                 </div>
 
@@ -83,6 +81,7 @@
                   class="absolute w-[8px] right-0 top-0 bottom-0 cursor-col-resize"
                   @dblclick="tableResize.autoAdjustColumnWidth([header.index])"
                   @pointerdown="tableResize.startResizing(header.index)"
+                  @click.stop.prevent
                 />
               </th>
             </tr>
@@ -102,11 +101,12 @@
               >
                 <TableCell
                   :table="table"
-                  :value="cell.getValue() as RowValue"
+                  :value="cell.getValue<RowValue>()"
                   :keyword="keyword"
                   :set-index="setIndex"
                   :row-index="offset + rowIndex"
                   :col-index="cellIndex"
+                  :allow-select="true"
                 />
               </td>
             </tr>
@@ -145,17 +145,12 @@ import {
 import { useSubscriptionV1Store } from "@/store";
 import type { QueryRow, RowValue } from "@/types/proto/v1/sql_service";
 import { usePreventBackAndForward } from "@/utils";
-import { useSQLResultViewContext } from "../../context";
-import ColumnSortedIcon from "../common/ColumnSortedIcon.vue";
-import SensitiveDataIcon from "../common/SensitiveDataIcon.vue";
-import { useSelectionContext } from "../common/selection-logic";
+import { useSQLResultViewContext } from "../context";
 import TableCell from "./TableCell.vue";
+import ColumnSortedIcon from "./common/ColumnSortedIcon.vue";
+import SensitiveDataIcon from "./common/SensitiveDataIcon.vue";
+import { useSelectionContext } from "./common/selection-logic";
 import useTableColumnWidthLogic from "./useTableResize";
-
-export type DataTableColumn = {
-  key: string;
-  title: string;
-};
 
 const props = defineProps<{
   table: Table<QueryRow>;

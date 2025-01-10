@@ -285,10 +285,8 @@ func (s *Syncer) SyncInstance(ctx context.Context, instance *store.InstanceMessa
 
 	instanceMeta, err := s.GetInstanceMeta(ctx, instance)
 	if err != nil {
-		s.upsertInstanceConnectionAnomaly(ctx, instance, err)
 		return nil, nil, nil, err
 	}
-	s.upsertInstanceConnectionAnomaly(ctx, instance, nil)
 
 	updateInstance := &store.UpdateInstanceMessage{
 		ResourceID: instance.ResourceID,
@@ -613,6 +611,7 @@ func (s *Syncer) SyncDatabaseSchema(ctx context.Context, database *store.Databas
 					return errors.Wrapf(err, "failed to marshal payload")
 				} else {
 					if _, err = s.store.UpsertActiveAnomalyV2(ctx, api.SystemBotID, &store.AnomalyMessage{
+						ProjectID:   database.ProjectID,
 						InstanceID:  instance.ResourceID,
 						DatabaseUID: &database.UID,
 						Type:        api.AnomalyDatabaseSchemaDrift,
@@ -679,44 +678,6 @@ func (s *Syncer) hasBackupSchema(ctx context.Context, instance *store.InstanceMe
 	return false
 }
 
-func (s *Syncer) upsertInstanceConnectionAnomaly(ctx context.Context, instance *store.InstanceMessage, connErr error) {
-	if connErr != nil {
-		anomalyPayload := &storepb.AnomalyConnectionPayload{
-			Detail: connErr.Error(),
-		}
-		payload, err := protojson.Marshal(anomalyPayload)
-		if err != nil {
-			slog.Error("Failed to marshal anomaly payload",
-				slog.String("instance", instance.ResourceID),
-				slog.String("type", string(api.AnomalyInstanceConnection)),
-				log.BBError(err))
-			return
-		}
-		if _, err = s.store.UpsertActiveAnomalyV2(ctx, api.SystemBotID, &store.AnomalyMessage{
-			InstanceID: instance.ResourceID,
-			Type:       api.AnomalyInstanceConnection,
-			Payload:    string(payload),
-		}); err != nil {
-			slog.Error("Failed to create anomaly",
-				slog.String("instance", instance.ResourceID),
-				slog.String("type", string(api.AnomalyInstanceConnection)),
-				log.BBError(err))
-		}
-		return
-	}
-
-	err := s.store.ArchiveAnomalyV2(ctx, &store.ArchiveAnomalyMessage{
-		InstanceID: &instance.ResourceID,
-		Type:       api.AnomalyInstanceConnection,
-	})
-	if err != nil && common.ErrorCode(err) != common.NotFound {
-		slog.Error("Failed to close anomaly",
-			slog.String("instance", instance.ResourceID),
-			slog.String("type", string(api.AnomalyInstanceConnection)),
-			log.BBError(err))
-	}
-}
-
 func (s *Syncer) upsertDatabaseConnectionAnomaly(ctx context.Context, instance *store.InstanceMessage, database *store.DatabaseMessage, connErr error) {
 	if connErr != nil {
 		anomalyPayload := &storepb.AnomalyConnectionPayload{
@@ -731,6 +692,7 @@ func (s *Syncer) upsertDatabaseConnectionAnomaly(ctx context.Context, instance *
 				log.BBError(err))
 		} else {
 			if _, err = s.store.UpsertActiveAnomalyV2(ctx, api.SystemBotID, &store.AnomalyMessage{
+				ProjectID:   database.ProjectID,
 				InstanceID:  instance.ResourceID,
 				DatabaseUID: &database.UID,
 				Type:        api.AnomalyDatabaseConnection,

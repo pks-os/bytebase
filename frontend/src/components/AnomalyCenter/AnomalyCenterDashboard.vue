@@ -123,12 +123,12 @@
 
 <script lang="ts" setup>
 import { NTooltip } from "naive-ui";
-import { computed, reactive } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { BBTableSectionDataSource } from "@/bbkit/types";
 import {
   featureToRef,
-  useAnomalyV1List,
+  useAnomalyV1Store,
   useDatabaseV1Store,
   useEnvironmentV1List,
   useEnvironmentV1Store,
@@ -160,20 +160,28 @@ interface LocalState {
 }
 
 const props = defineProps<{
-  project?: ComposedProject;
+  project: ComposedProject;
   selectedTab?: AnomalyTabId;
 }>();
 
 const { t } = useI18n();
 const databaseStore = useDatabaseV1Store();
 const environmentStore = useEnvironmentV1Store();
-const allAnomalyList = useAnomalyV1List();
 const instanceList = useInstanceResourceList();
 const environmentList = useEnvironmentV1List(false /* !showDeleted */);
+const allAnomalyList = ref<Anomaly[]>([]);
 
 const state = reactive<LocalState>({
   selectedTab: props.selectedTab ?? "database",
   searchText: "",
+});
+
+onMounted(async () => {
+  // Prepare all anomaly list.
+  allAnomalyList.value = await useAnomalyV1Store().fetchAnomalyList(
+    props.project?.name,
+    {}
+  );
 });
 
 const databaseList = computed(() => {
