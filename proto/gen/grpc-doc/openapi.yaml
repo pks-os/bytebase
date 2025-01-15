@@ -5765,6 +5765,7 @@ paths:
                      The rollout is created according to the plan and the
                      stages are created up to the stage_id.
                      If unspecified, all stages are created.
+                     If set to "", no stages are created.
                   schema:
                     type: string
                 - name: validateOnly
@@ -8629,9 +8630,6 @@ components:
                 content:
                     type: string
                     description: The advice content.
-                detail:
-                    type: string
-                    description: The advice detail.
                 startPosition:
                     allOf:
                         - $ref: '#/components/schemas/Position'
@@ -12822,12 +12820,6 @@ components:
                 column:
                     type: integer
                     format: int32
-                detail:
-                    type: string
-                code:
-                    type: integer
-                    description: Code from sql review.
-                    format: int32
                 startPosition:
                     allOf:
                         - $ref: '#/components/schemas/Position'
@@ -12839,9 +12831,6 @@ components:
         Result_SqlSummaryReport:
             type: object
             properties:
-                code:
-                    type: integer
-                    format: int32
                 statementTypes:
                     type: array
                     items:
