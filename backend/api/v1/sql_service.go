@@ -1502,7 +1502,7 @@ func (*SQLService) ParseMyBatisMapper(_ context.Context, request *v1pb.ParseMyBa
 }
 
 // StringifyMetadata returns the stringified schema of the given metadata.
-func (*SQLService) StringifyMetadata(ctx context.Context, request *v1pb.StringifyMetadataRequest) (*v1pb.StringifyMetadataResponse, error) {
+func (*SQLService) StringifyMetadata(_ context.Context, request *v1pb.StringifyMetadataRequest) (*v1pb.StringifyMetadataResponse, error) {
 	switch request.Engine {
 	case v1pb.Engine_MYSQL, v1pb.Engine_OCEANBASE, v1pb.Engine_POSTGRES, v1pb.Engine_TIDB, v1pb.Engine_ORACLE, v1pb.Engine_REDSHIFT, v1pb.Engine_CLICKHOUSE:
 	default:
@@ -1517,12 +1517,10 @@ func (*SQLService) StringifyMetadata(ctx context.Context, request *v1pb.Stringif
 		return nil, err
 	}
 	config := convertV1DatabaseConfig(
-		ctx,
 		&v1pb.DatabaseConfig{
 			Name:          request.Metadata.Name,
 			SchemaConfigs: request.Metadata.SchemaConfigs,
 		},
-		nil, /* optionalStores */
 	)
 
 	if !request.ClassificationFromConfig {
@@ -1555,6 +1553,28 @@ func (*SQLService) StringifyMetadata(ctx context.Context, request *v1pb.Stringif
 	return &v1pb.StringifyMetadataResponse{
 		Schema: schema,
 	}, nil
+}
+
+func sanitizeCommentForSchemaMetadata(dbSchema *storepb.DatabaseSchemaMetadata, dbModelConfig *model.DatabaseConfig, classificationFromConfig bool) {
+	for _, schema := range dbSchema.Schemas {
+		schemaConfig := dbModelConfig.CreateOrGetSchemaConfig(schema.Name)
+		for _, table := range schema.Tables {
+			tableConfig := schemaConfig.CreateOrGetTableConfig(table.Name)
+			classificationID := ""
+			if !classificationFromConfig {
+				classificationID = tableConfig.Classification
+			}
+			table.Comment = common.GetCommentFromClassificationAndUserComment(classificationID, table.UserComment)
+			for _, col := range table.Columns {
+				columnConfig := tableConfig.CreateOrGetColumnConfig(col.Name)
+				classificationID := ""
+				if !classificationFromConfig {
+					classificationID = columnConfig.Classification
+				}
+				col.Comment = common.GetCommentFromClassificationAndUserComment(classificationID, col.UserComment)
+			}
+		}
+	}
 }
 
 func appendComments(schema string, storeSchemaMetadata *storepb.DatabaseSchemaMetadata) (string, error) {

@@ -25,7 +25,7 @@ require (
 	github.com/beltran/gohive v1.7.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/jsonparser v1.1.1
-	github.com/bytebase/google-sql-parser v0.0.0-20241218091245-c996640523f3
+	github.com/bytebase/google-sql-parser v0.0.0-20250116032737-689a327f9465
 	github.com/bytebase/mysql-parser v0.0.0-20241224071214-cb9fd84811dd
 	github.com/bytebase/plsql-parser v0.0.0-20241217100236-775726d725f9
 	github.com/bytebase/postgresql-parser v0.0.0-20241108072816-e932f744004a
@@ -36,7 +36,6 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/databricks/databricks-sdk-go v0.54.0
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
-	github.com/epiclabs-io/diff3 v0.0.0-20241115194849-280ec18688b6
 	github.com/github/gh-ost v1.1.6
 	github.com/go-ego/gse v0.80.3
 	github.com/go-ldap/ldap/v3 v3.4.10
