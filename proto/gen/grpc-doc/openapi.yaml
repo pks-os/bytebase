@@ -7087,8 +7087,8 @@ paths:
     /v1/schemaDesign:diffMetadata:
         post:
             tags:
-                - BranchService
-            operationId: BranchService_DiffMetadata
+                - SQLService
+            operationId: SQLService_DiffMetadata
             requestBody:
                 content:
                     application/json:
@@ -9601,6 +9601,10 @@ components:
                     allOf:
                         - $ref: '#/components/schemas/DatabaseMetadata'
                     description: The metadata of the target schema.
+                sourceCatalog:
+                    $ref: '#/components/schemas/DatabaseCatalog'
+                targetCatalog:
+                    $ref: '#/components/schemas/DatabaseCatalog'
                 engine:
                     enum:
                         - ENGINE_UNSPECIFIED
@@ -14846,7 +14850,6 @@ tags:
     - name: AnomalyService
     - name: AuditLogService
     - name: AuthService
-    - name: BranchService
     - name: CelService
     - name: ChangelistService
     - name: DatabaseCatalogService
